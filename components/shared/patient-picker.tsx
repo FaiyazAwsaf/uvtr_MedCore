@@ -118,6 +118,7 @@ export function PatientPicker({
 }: PatientPickerProps) {
   const db = useDb()
   const { t } = useLocale()
+  const nowMs = useNow(60_000)
   const listId = React.useId()
   const [query, setQuery] = React.useState("")
   const [open, setOpen] = React.useState(false)
@@ -218,6 +219,7 @@ export function PatientPicker({
               <PatientOption
                 key={patient.id}
                 patient={patient}
+                nowMs={nowMs}
                 active={index === active}
                 onHover={() => setActive(index)}
                 onPick={() => pick(patient)}
@@ -232,17 +234,18 @@ export function PatientPicker({
 
 function PatientOption({
   patient,
+  nowMs,
   active,
   onHover,
   onPick,
 }: {
   patient: PatientRow
+  nowMs: number
   active: boolean
   onHover: () => void
   onPick: () => void
 }) {
   const { t, num, locale, digits } = useLocale()
-  const nowMs = useNow(60_000)
   const age = ageOf(patient.dob, nowMs)
   const secondary = otherName(patient, locale)
   return (

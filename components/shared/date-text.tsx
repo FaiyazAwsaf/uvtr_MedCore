@@ -30,6 +30,11 @@ export function DateText({
   // Only relative text needs to tick; the others re-render with their parent.
   useNow(variant === "relative" ? 30_000 : 3_600_000)
 
+  const ms = new Date(value).getTime()
+  if (!Number.isFinite(ms)) {
+    return <span className={cn("text-muted-foreground", className)}>-</span>
+  }
+
   const text =
     variant === "dmy"
       ? dmy(value)
@@ -46,7 +51,7 @@ export function DateText({
   return (
     <time
       data-slot="date-text"
-      dateTime={new Date(value).toISOString()}
+      dateTime={new Date(ms).toISOString()}
       title={`${dmy(value)}, ${time(value)}`}
       className={cn("nums whitespace-nowrap tabular-nums", className)}
     >

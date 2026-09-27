@@ -53,9 +53,10 @@ export function IdentityBanner({
   className,
 }: IdentityBannerProps) {
   const db = useDb()
+  const given = !!patient
   const loaded = useLiveQuery(
-    () => (patient || !patientId ? undefined : db.patients.get(patientId)),
-    [db, patientId, patient]
+    () => (given || !patientId ? undefined : db.patients.get(patientId)),
+    [db, patientId, given]
   )
   const row = patient ?? loaded
 
