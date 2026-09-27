@@ -2,11 +2,11 @@ export const labEn = {
   lab: {
     title: "Laboratory",
     nav: {
-      collection: "Sample collection",
+      collection: "Collection",
       reception: "Specimen intake",
       analyser: "Analyser",
       validation: "Validation",
-      signoff: "Sign-off queue",
+      signoff: "Sign-off",
     },
   },
 }

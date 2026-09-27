@@ -8,8 +8,11 @@ import { PersonaAvatar } from "@/components/shared/avatars"
 import { roleLabel, rolesList } from "@/components/shared/roles"
 import { branchLabel, personaName } from "@/components/shell/greeting"
 import { Wordmark } from "@/components/shell/app-sidebar"
+import { activeHref } from "@/components/shell/nav"
 import { Button } from "@/components/ui/button"
+import { NAV_ITEMS } from "@/core/rbac/registry"
 import { accessFor, canAccess, HOME_ROUTE } from "@/core/rbac/routes"
+import type { NavItem } from "@/core/rbac/types"
 import { setPersona } from "@/core/session/persona"
 import { PERSONAS, type PersonaSeed } from "@/core/seed/content/personas"
 import { cn } from "@/lib/utils"
@@ -54,13 +57,20 @@ function PersonaChoices({ personas }: { personas: PersonaSeed[] }) {
   )
 }
 
+/** The sidebar entry (any role) that owns a pathname, for "you are opening X". */
+function screenFor(pathname: string): NavItem | undefined {
+  const href = activeHref(NAV_ITEMS, pathname)
+  return href ? NAV_ITEMS.find((item) => item.href === href) : undefined
+}
+
 /**
  * No persona in this window yet (the URL was opened directly): a friendly
  * prompt to pick one who can open this screen, or to go to the launcher.
  */
 export function NoPersonaScreen({ pathname }: { pathname: string }) {
-  const { t } = useLocale()
+  const { t, tk } = useLocale()
   const choices = personasFor(pathname)
+  const screen = screenFor(pathname)
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-8 bg-background px-4 py-10">
       <Wordmark className="text-[1.75rem]" />
@@ -72,6 +82,20 @@ export function NoPersonaScreen({ pathname }: { pathname: string }) {
           <h1 className="text-[1.375rem] font-semibold">{t("shell.guard.noPersonaTitle")}</h1>
           <p className="text-sm leading-relaxed text-muted-foreground">
             {t("shell.guard.noPersonaBody")}
+          </p>
+        </div>
+        <div className="flex flex-col items-center gap-1">
+          {screen ? (
+            <p className="flex items-center gap-1.5 text-[0.8125rem] font-medium">
+              <span>{tk(screen.groupKey)}</span>
+              <span aria-hidden className="text-muted-foreground">
+                ·
+              </span>
+              <span>{tk(screen.labelKey)}</span>
+            </p>
+          ) : null}
+          <p lang="en" className="font-mono text-xs text-muted-foreground">
+            {pathname}
           </p>
         </div>
         {choices.length ? (
