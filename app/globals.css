@@ -11,9 +11,11 @@
  */
 
 @theme inline {
-  --font-heading: var(--font-sans);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-mono);
+  /* Every stack ends with the embedded Bangla face (HAZ-13), so Bangla text
+     inside headings, mono cells or an English window never renders as boxes. */
+  --font-heading: var(--font-sans), var(--font-bangla), system-ui, sans-serif;
+  --font-sans: var(--font-sans), var(--font-bangla), system-ui, sans-serif;
+  --font-mono: var(--font-mono), var(--font-bangla), ui-monospace, monospace;
   --font-bangla: var(--font-bangla);
 
   --color-sidebar-ring: var(--sidebar-ring);
