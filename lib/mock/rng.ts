@@ -1,7 +1,7 @@
 /**
- * Deterministic pseudo-randomness. Every dataset is generated from the tenant
- * slug, so a property always looks the same across reloads and between server
- * and client render — no hydration drift, reproducible screenshots.
+ * Deterministic pseudo-randomness. Every dataset is generated from a fixed
+ * seed, so it always looks the same across reloads and between server and
+ * client render: no hydration drift, reproducible screenshots.
  */
 
 export function hashSeed(input: string) {
@@ -22,7 +22,7 @@ export type Rng = {
   pickMany: <T>(items: readonly T[], count: number) => T[]
   weighted: <T>(entries: readonly [T, number][]) => T
   shuffle: <T>(items: readonly T[]) => T[]
-  /** Gaussian-ish value clamped to [min, max] — nicer than uniform for metrics */
+  /** Gaussian-ish value clamped to [min, max]; nicer than uniform for metrics */
   around: (center: number, spread: number, min?: number, max?: number) => number
 }
 

@@ -50,7 +50,7 @@ export function DeltaPill({
 }
 
 /**
- * dashboard.jpg — KPI cells split by vertical hairlines, not individual cards.
+ * KPI cells split by vertical hairlines, not individual cards.
  * Oversized, light-weight tabular figures; the delta rides beside the number.
  */
 export function KpiStrip({

@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils"
  *
  * NumberFlow can only tween Latin digit glyphs, so under the Bengali numbering
  * system it renders separators with no digits between them. Bangla therefore
- * gets a keyed slide-and-fade on the fully formatted string instead — still
+ * gets a keyed slide-and-fade on the fully formatted string instead, still
  * animated on change, just not per-digit.
  */
 export function NumberTicker({

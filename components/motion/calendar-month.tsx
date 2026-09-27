@@ -41,7 +41,7 @@ export function useWeekdayInitials() {
 }
 
 /**
- * One month of a range calendar. Shared by the booking trip picker and the
+ * One month of a range calendar. Shared by date-range pickers and the
  * reporting range picker so range fills, hover previews and the spring-driven
  * endpoint markers behave identically in both.
  */

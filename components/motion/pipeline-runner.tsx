@@ -69,7 +69,7 @@ export function usePipeline(steps: PipelineStep[]) {
 }
 
 /**
- * pipeline.mp4 — the staged agent runner. Steps light up one at a time, the
+ * The staged agent runner. Steps light up one at a time, the
  * active step's icon fills with the accent, and skeleton content streams in
  * beneath it. This is the visual language for every agent run in the app.
  */

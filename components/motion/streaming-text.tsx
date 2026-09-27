@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 /**
  * Scripted token streaming. The whole AI layer in this prototype is mocked, so
  * rather than a fixed typewriter tick we emit variable-length chunks with
- * jittered delays — it reads like a model streaming, not like a teletype.
+ * jittered delays, so it reads like a model streaming, not like a teletype.
  */
 export function useStreamedText(
   text: string,

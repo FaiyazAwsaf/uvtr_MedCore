@@ -5,7 +5,7 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 
 /**
- * sidebar.mp4 — a scroll region whose top and bottom edges dissolve, but only
+ * A scroll region whose top and bottom edges dissolve, but only
  * on the side there is actually more content. The fade animates in rather than
  * snapping, which is the whole trick.
  */

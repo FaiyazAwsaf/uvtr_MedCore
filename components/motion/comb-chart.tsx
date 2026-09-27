@@ -6,7 +6,7 @@ import { motion } from "motion/react"
 import { cn } from "@/lib/utils"
 
 /**
- * dashboard.jpg — the dense "comb" of 1–2px ticks. Each bar grows from the
+ * The dense "comb" of 1–2px ticks. Each bar grows from the
  * baseline on a short stagger, and the whole row bleeds a soft glow of its own
  * hue into the space beneath it.
  */
@@ -51,7 +51,7 @@ export function CombChart({
       {values.map((value, index) => {
         const ratio = (value - min) / span
         // Rounded so the server-rendered inline style and motion's client value
-        // serialise identically — raw floats produce hydration mismatches.
+        // serialise identically; raw floats produce hydration mismatches.
         const h = Math.round(Math.max(2, ratio * height) * 100) / 100
         const opacity =
           index === 0 ? 1 : Math.round((0.55 + ratio * 0.45) * 100) / 100

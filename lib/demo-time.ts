@@ -13,7 +13,7 @@ export function demoToday() {
 
 /**
  * The demo's "now": the anchor day at 10:00 UTC. Everything generated is keyed
- * to `demoToday()`, so relative times must be measured from the same clock —
+ * to `demoToday()`, so relative times must be measured from the same clock;
  * using the wall clock instead makes the server and the client disagree and
  * drifts the copy away from the data it describes.
  */

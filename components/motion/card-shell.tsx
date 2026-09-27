@@ -7,7 +7,7 @@ import { ArrowUpRight, SlidersHorizontal } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 /**
- * dashboard.jpg — every card carries a top-right action cluster: a neutral
+ * Every card carries a top-right action cluster: a neutral
  * circular secondary and an accent circular primary with an ↗ arrow.
  */
 export function Panel({

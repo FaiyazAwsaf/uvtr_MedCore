@@ -171,7 +171,7 @@ export function formatRelative(date: Date | string | number, locale: Locale) {
   return locale === "bn" ? "এইমাত্র" : "just now"
 }
 
-/** "12:04" / "১২:০৪" — for SLA timers and call durations */
+/** "12:04" / "১২:০৪", for SLA timers and call durations */
 export function formatDuration(seconds: number, locale: Locale) {
   const total = Math.max(0, Math.floor(seconds))
   const h = Math.floor(total / 3600)

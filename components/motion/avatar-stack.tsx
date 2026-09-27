@@ -14,7 +14,7 @@ function initials(name: string) {
     .toUpperCase()
 }
 
-/** calendar.jpg — overlapping avatars with a +N overflow chip. */
+/** Overlapping avatars with a +N overflow chip. */
 export function AvatarStack({
   people,
   max = 4,

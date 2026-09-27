@@ -3,10 +3,9 @@
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
-import { TAG_CLASS } from "@/lib/hue"
-import type { TagHue } from "@/lib/types"
+import { TAG_CLASS, type TagHue } from "@/lib/hue"
 
-/** crm.jpg — the hue-coded "Segment & Stage" pill. Stacks freely inside a cell. */
+/** Hue-coded pill for statuses and categories. Stacks freely inside a cell. */
 export function StatusTag({
   hue = "slate",
   dot = false,

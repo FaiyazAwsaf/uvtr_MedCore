@@ -70,7 +70,7 @@ export function DataTable<T>({
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    // Paginated rather than virtualised: a hotel's booking list runs to
+    // Paginated rather than virtualised: a busy worklist runs to
     // thousands of rows, and rendering them all stalls the first paint.
     getPaginationRowModel: getPaginationRowModel(),
     initialState: { pagination: { pageSize } },

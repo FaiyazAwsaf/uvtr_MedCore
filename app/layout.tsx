@@ -24,10 +24,10 @@ const fontBangla = Noto_Sans_Bengali({
 })
 
 export const metadata: Metadata = {
-  title: "Auberge — Hotel ERP, CRM & Omnichannel AI",
+  title: "UVTR_MedCore",
   description:
-    "A multi-property hotel operating system: front desk, revenue, CRM, omnichannel inbox and an AI that answers the phone. A product of UVTR Infotech.",
-  applicationName: "Auberge",
+    "A connected hospital operating system demo: identity, OPD, e-prescription, lab, pharmacy, billing, procurement and dashboards. A product of UVTR Infotech.",
+  applicationName: "UVTR_MedCore",
   authors: [{ name: "UVTR Infotech", url: "https://uvtrinfotech.com/" }],
   creator: "UVTR Infotech",
   publisher: "UVTR Infotech",
@@ -47,7 +47,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="bn"
+      lang="en"
       suppressHydrationWarning
       // No `font-sans` utility here: it lands in the utilities layer and would
       // override the html[lang="bn"] Bangla face. The base layer sets it.

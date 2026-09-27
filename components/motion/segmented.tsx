@@ -13,7 +13,7 @@ export type SegmentOption<T extends string> = {
 }
 
 /**
- * dashboard.jpg — the horizontal chip rail. The active pill is a single shared
+ * The horizontal chip rail. The active pill is a single shared
  * layout element that slides between chips instead of cross-fading.
  */
 export function SegmentedPills<T extends string>({
@@ -86,7 +86,7 @@ export function SegmentedPills<T extends string>({
   )
 }
 
-/** crm.jpg — page-level underline tabs with a sliding indicator. */
+/** Page-level underline tabs with a sliding indicator. */
 export function UnderlineTabs<T extends string>({
   options,
   value,
@@ -142,7 +142,7 @@ export function UnderlineTabs<T extends string>({
   )
 }
 
-/** crm.jpg — the compound `gray label │ value ⌄` toolbar pill. */
+/** The compound `gray label │ value ⌄` toolbar pill. */
 export function CompoundFilter({
   label,
   children,
