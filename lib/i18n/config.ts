@@ -20,4 +20,3 @@ export const LOCALE_META: Record<
 }
 
 export const DEFAULT_LOCALE: Locale = "en"
-export const LOCALE_STORAGE_KEY = "medcore.locale"

@@ -150,6 +150,11 @@ type WriteMeta = {
   emitted: TxImpl["pendingEvents"]
   /** Pre-built events carried over by replay (re-sequenced here) */
   carriedEvents?: EventRow[]
+  /**
+   * Origin for events emitted in this commit, when it differs from `origin`.
+   * Replay passes "central": decisions made while syncing happen centrally.
+   */
+  emittedOrigin?: Origin
   originAt?: Ms
   idempotency?: { key: string; result: unknown }
   appliedCommit?: { commitId: Id; origin: Origin }
@@ -191,8 +196,8 @@ export async function writeCommit(
       consumers: def?.consumers ?? [],
       commitId: tx.commitId,
       command: meta.command,
-      origin: meta.origin,
-      originAt: meta.originAt,
+      origin: meta.emittedOrigin ?? meta.origin,
+      originAt: meta.emittedOrigin ? undefined : meta.originAt,
     })
   }
   for (const carried of meta.carriedEvents ?? []) {

@@ -119,6 +119,7 @@ export const coreBn: typeof coreEn = {
     tryAgain: "আবার চেষ্টা করুন",
     launcherTitle: "ডেমো শুরু করতে একটি ভূমিকা বেছে নিন",
     launcherSubtitle: "প্রতিটি উইন্ডো তার নিজের পারসোনা ও ভাষা মনে রাখে।",
+    loadingData: "ডেমো ডেটা প্রস্তুত হচ্ছে…",
     comingSoon: "এই স্ক্রিনটি তৈরি হচ্ছে। এটি ধাপ {phase}-এ আসবে।",
     section: {
       reception: "অভ্যর্থনা",

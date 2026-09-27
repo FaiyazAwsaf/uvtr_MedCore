@@ -20,6 +20,12 @@ export const demoEvents: EventCatalog = {
     consumers: ["demo.consumers.allWindows", "demo.consumers.timers"],
     severity: "info",
   },
+  ClockReset: {
+    module: "demo",
+    labelKey: "demo.events.clockReset",
+    consumers: ["demo.consumers.allWindows", "demo.consumers.timers"],
+    severity: "info",
+  },
   BranchWentOffline: {
     module: "sync",
     labelKey: "demo.events.branchWentOffline",

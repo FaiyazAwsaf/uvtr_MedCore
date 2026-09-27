@@ -2,23 +2,23 @@
 
 import * as React from "react"
 
-import {
-  DEFAULT_LOCALE,
-  LOCALES,
-  LOCALE_STORAGE_KEY,
-  type Locale,
-} from "./config"
+import { updateSession, useSession } from "@/core/session/session"
+
+import { type Locale } from "./config"
 import { dictionaries, interpolate, lookup, type TranslationKey } from "./index"
 import {
   formatCompact,
   formatDate,
   formatDateTime,
   formatDecimal,
+  formatDmy,
   formatDuration,
+  formatMoney,
   formatNumber,
   formatPercent,
   formatRelative,
   formatTime,
+  formatUhid,
   localizeDigits,
 } from "./format"
 
@@ -45,59 +45,26 @@ type LocaleContextValue = {
   relative: (value: Date | string | number) => string
   duration: (seconds: number) => string
   digits: (value: string) => string
+  /** Money from integer poisha: ৳ with lakh/crore grouping */
+  money: (poisha: number) => string
+  /** DD-MM-YYYY in Dhaka */
+  dmy: (value: Date | string | number) => string
+  /** Grouped UHID, always Latin digits */
+  uhid: (value: string) => string
 }
 
 const LocaleContext = React.createContext<LocaleContextValue | null>(null)
 
-function isLocale(value: string | null): value is Locale {
-  return value !== null && (LOCALES as readonly string[]).includes(value)
-}
-
-/*
- * The chosen locale lives in browser storage, read through an external store so
- * the server render and hydration use the default and the client then switches
- * without a setState-in-effect. (Phase 1 makes this per window.)
- */
-const localeListeners = new Set<() => void>()
-/** Fallback when browser storage is unavailable (for example in private mode). */
-let memoryLocale: Locale | null = null
-
-function subscribeLocale(listener: () => void) {
-  localeListeners.add(listener)
-  return () => {
-    localeListeners.delete(listener)
-  }
-}
-
-function readStoredLocale(): Locale {
-  try {
-    const stored = window.localStorage.getItem(LOCALE_STORAGE_KEY)
-    if (isLocale(stored)) return stored
-  } catch {
-    // Fall through to the in-memory choice.
-  }
-  return memoryLocale ?? DEFAULT_LOCALE
-}
-
 export function LocaleProvider({ children }: { children: React.ReactNode }) {
-  const locale = React.useSyncExternalStore(
-    subscribeLocale,
-    readStoredLocale,
-    () => DEFAULT_LOCALE
-  )
+  // Language is per window (plan §3.9): it lives in this window's session.
+  const { lang: locale } = useSession()
 
   React.useEffect(() => {
     document.documentElement.lang = locale
   }, [locale])
 
   const setLocale = React.useCallback((next: Locale) => {
-    memoryLocale = next
-    try {
-      window.localStorage.setItem(LOCALE_STORAGE_KEY, next)
-    } catch {
-      // Storage can be unavailable; memoryLocale still carries the choice.
-    }
-    localeListeners.forEach((listener) => listener())
+    updateSession({ lang: next })
   }, [])
 
   const value = React.useMemo<LocaleContextValue>(() => {
@@ -122,6 +89,9 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
       relative: (v) => formatRelative(v, locale),
       duration: (s) => formatDuration(s, locale),
       digits: (v) => localizeDigits(v, locale),
+      money: (p) => formatMoney(p, locale),
+      dmy: (v) => formatDmy(v, locale),
+      uhid: (v) => formatUhid(v),
     }
   }, [locale, setLocale])
 

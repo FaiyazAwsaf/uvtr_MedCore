@@ -30,6 +30,8 @@ export type PersonaSeed = {
   }
   /** Patient behind the patient-app persona */
   patientId?: string
+  /** Display name for the patient persona (staff personas use staff names) */
+  patientName?: Bilingual
 }
 
 export const PERSONAS: PersonaSeed[] = [
@@ -468,6 +470,7 @@ export const PERSONAS: PersonaSeed[] = [
       bn: "রোগীর অ্যাপ অ্যাকাউন্টধারী (করিম পরিবার)",
     },
     patientId: HERO.patient.tanvirKarim,
+    patientName: { en: "Tanvir Karim", bn: "তানভীর করিম" },
   },
 ]
 

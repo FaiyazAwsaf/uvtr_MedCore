@@ -4,7 +4,8 @@ export const demoEn = {
     events: {
       ruleViolationBlocked: "Blocked: {code}",
       demoReset: "Demo data reset",
-      clockAdvanced: "Demo clock moved {direction}",
+      clockAdvanced: "Demo clock moved forward {minutes} min",
+      clockReset: "Demo clock back to real time",
       branchWentOffline: "Branch {branch} went offline",
       branchReconnected: "Branch {branch} reconnected",
       edgeEventsReplayed: "{count} offline events replayed from {branch}",

@@ -1,11 +1,15 @@
-import { demoNow } from "@/lib/demo-time"
+import { now } from "@/core/clock/clock"
+import { groupUhid } from "@/core/db/numbering"
 import type { Locale } from "./config"
 
 const INTL: Record<Locale, string> = {
-  en: "en-US",
+  // en-IN: Bangladesh uses lakh/crore grouping (1,23,456) in English too.
+  en: "en-IN",
   // -u-nu-beng switches the numbering system to Bengali numerals (১২৩৪)
   bn: "bn-BD-u-nu-beng",
 }
+
+export const TIME_ZONE = "Asia/Dhaka"
 
 export const CURRENCY_SYMBOL: Record<string, string> = { BDT: "৳", USD: "$" }
 
@@ -93,11 +97,14 @@ export function formatDate(
   locale: Locale,
   options: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" }
 ) {
-  return new Intl.DateTimeFormat(INTL[locale], options).format(new Date(date))
+  return new Intl.DateTimeFormat(INTL[locale], { timeZone: TIME_ZONE, ...options }).format(
+    new Date(date)
+  )
 }
 
 export function formatTime(date: Date | string | number, locale: Locale) {
   return new Intl.DateTimeFormat(INTL[locale], {
+    timeZone: TIME_ZONE,
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(date))
@@ -105,6 +112,7 @@ export function formatTime(date: Date | string | number, locale: Locale) {
 
 export function formatDateTime(date: Date | string | number, locale: Locale) {
   return new Intl.DateTimeFormat(INTL[locale], {
+    timeZone: TIME_ZONE,
     day: "numeric",
     month: "short",
     hour: "numeric",
@@ -152,9 +160,9 @@ function formatRelativeBangla(
 }
 
 export function formatRelative(date: Date | string | number, locale: Locale) {
-  // Measured from the demo clock, not the wall clock: keeps server and client
-  // output identical and consistent with the generated timestamps.
-  const seconds = (new Date(date).getTime() - demoNow()) / 1000
+  // Measured from the shared demo clock, so fast-forwarding moves every
+  // "5 minutes ago" in every window.
+  const seconds = (new Date(date).getTime() - now()) / 1000
 
   for (const [unit, secondsInUnit] of RELATIVE_UNITS) {
     if (Math.abs(seconds) >= secondsInUnit || unit === "second") {
@@ -196,4 +204,35 @@ const BENGALI_DIGITS = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", 
 export function localizeDigits(input: string, locale: Locale) {
   if (locale !== "bn") return input
   return input.replace(/\d/g, (d) => BENGALI_DIGITS[Number(d)])
+}
+
+/**
+ * Money from integer poisha: ৳ with lakh/crore grouping and Bengali numerals in
+ * Bangla. Whole taka show no decimals; fractional amounts show two.
+ */
+export function formatMoney(poisha: number, locale: Locale) {
+  const taka = poisha / 100
+  const fractional = poisha % 100 !== 0
+  const formatted = new Intl.NumberFormat(INTL[locale], {
+    minimumFractionDigits: fractional ? 2 : 0,
+    maximumFractionDigits: 2,
+  }).format(Math.abs(taka))
+  return `${taka < 0 ? "-" : ""}৳${formatted}`
+}
+
+/** DD-MM-YYYY in Dhaka (Bengali digits in Bangla). */
+export function formatDmy(date: Date | string | number, locale: Locale) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: TIME_ZONE,
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).formatToParts(new Date(date))
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? ""
+  return localizeDigits(`${get("day")}-${get("month")}-${get("year")}`, locale)
+}
+
+/** UHID grouped for display. Identifiers always stay in Latin digits (D13). */
+export function formatUhid(uhid: string) {
+  return groupUhid(uhid)
 }

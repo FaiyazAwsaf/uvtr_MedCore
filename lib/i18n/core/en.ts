@@ -122,6 +122,7 @@ export const coreEn = {
     tryAgain: "Try again",
     launcherTitle: "Choose a role to start the demo",
     launcherSubtitle: "Each window keeps its own persona and language.",
+    loadingData: "Preparing demo data…",
     comingSoon: "This screen is being built. It arrives in phase {phase}.",
     section: {
       reception: "Reception",
