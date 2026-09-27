@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { motion } from "motion/react"
+import { ChevronDown } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -13,8 +14,9 @@ export type SegmentOption<T extends string> = {
 }
 
 /**
- * The horizontal chip rail. The active pill is a single shared
- * layout element that slides between chips instead of cross-fading.
+ * A row of pills (the sample's date pills and filters): the selected pill is
+ * filled turquoise with dark text and slides between options; the others sit
+ * on the raised surface.
  */
 export function SegmentedPills<T extends string>({
   options,
@@ -36,7 +38,7 @@ export function SegmentedPills<T extends string>({
     <div
       data-slot="segmented-pills"
       role="tablist"
-      className={cn("flex items-center gap-1 overflow-x-auto", className)}
+      className={cn("flex items-center gap-1.5 overflow-x-auto", className)}
       id={id}
     >
       {options.map((option) => {
@@ -49,13 +51,13 @@ export function SegmentedPills<T extends string>({
             onClick={() => onChange(option.value)}
             className={cn(
               "relative shrink-0 rounded-full font-medium whitespace-nowrap transition-colors outline-none",
-              "focus-visible:ring-2 focus-visible:ring-ring/40",
+              "focus-visible:ring-[3px] focus-visible:ring-ring/40",
               size === "sm"
-                ? "h-6 px-2.5 text-[0.6875rem]"
-                : "h-7 px-3 text-xs",
+                ? "h-7 px-3 text-xs"
+                : "h-9 px-4 text-[0.8125rem]",
               active
                 ? "text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                : "bg-surface-raised text-foreground/80 hover:text-foreground"
             )}
           >
             {active ? (
@@ -65,16 +67,16 @@ export function SegmentedPills<T extends string>({
                 className="absolute inset-0 rounded-full bg-primary"
               />
             ) : null}
-            <span className="relative z-10 flex items-center gap-1.5">
+            <span className="relative z-10 flex items-center gap-1.5 [&_svg]:size-4">
               {option.icon}
               {option.label}
               {option.count !== undefined ? (
                 <span
                   className={cn(
-                    "nums rounded-full px-1 text-[0.625rem] tabular-nums",
+                    "nums rounded-full px-1.5 text-[0.6875rem] tabular-nums",
                     active
-                      ? "bg-primary-foreground/20"
-                      : "bg-muted-foreground/12 text-muted-foreground"
+                      ? "bg-primary-foreground/15"
+                      : "bg-foreground/8 text-muted-foreground"
                   )}
                 >
                   {option.count}
@@ -88,7 +90,7 @@ export function SegmentedPills<T extends string>({
   )
 }
 
-/** Page-level underline tabs with a sliding indicator. */
+/** Page-level underline tabs with a sliding turquoise indicator. */
 export function UnderlineTabs<T extends string>({
   options,
   value,
@@ -105,7 +107,10 @@ export function UnderlineTabs<T extends string>({
     <div
       data-slot="underline-tabs"
       role="tablist"
-      className={cn("flex items-center gap-4", className)}
+      className={cn(
+        "flex items-center gap-6 overflow-x-auto border-b border-hairline",
+        className
+      )}
     >
       {options.map((option) => {
         const active = option.value === value
@@ -116,8 +121,8 @@ export function UnderlineTabs<T extends string>({
             aria-selected={active}
             onClick={() => onChange(option.value)}
             className={cn(
-              "relative flex items-center gap-1.5 pb-2 text-xs font-medium transition-colors outline-none",
-              "focus-visible:text-foreground",
+              "relative flex h-10 shrink-0 items-center gap-1.5 text-sm font-medium transition-colors outline-none",
+              "focus-visible:text-foreground [&_svg]:size-4",
               active
                 ? "text-foreground"
                 : "text-muted-foreground hover:text-foreground"
@@ -126,7 +131,14 @@ export function UnderlineTabs<T extends string>({
             {option.icon}
             {option.label}
             {option.count !== undefined ? (
-              <span className="nums rounded-full bg-muted px-1.5 text-[0.625rem] text-muted-foreground">
+              <span
+                className={cn(
+                  "nums rounded-full px-1.5 text-[0.6875rem]",
+                  active
+                    ? "bg-primary-soft text-link"
+                    : "bg-surface-raised text-muted-foreground"
+                )}
+              >
                 {option.count}
               </span>
             ) : null}
@@ -134,7 +146,7 @@ export function UnderlineTabs<T extends string>({
               <motion.span
                 layoutId={layoutId}
                 transition={{ type: "spring", stiffness: 520, damping: 38 }}
-                className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-foreground"
+                className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-primary"
               />
             ) : null}
           </button>
@@ -144,7 +156,7 @@ export function UnderlineTabs<T extends string>({
   )
 }
 
-/** The compound `gray label │ value ⌄` toolbar pill. */
+/** Outlined "label | value v" filter control (the sample's "Monthly v"). */
 export function CompoundFilter({
   label,
   children,
@@ -161,16 +173,17 @@ export function CompoundFilter({
       data-slot="compound-filter"
       onClick={onClick}
       className={cn(
-        "group inline-flex h-7 shrink-0 items-center overflow-hidden rounded-full border border-border bg-card text-xs transition-colors hover:bg-muted",
-        "focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none",
+        "group inline-flex h-10 shrink-0 items-center overflow-hidden rounded-md border border-border bg-transparent text-[0.8125rem] transition-colors hover:bg-surface-raised/60",
+        "focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20 focus-visible:outline-none",
         className
       )}
     >
-      <span className="border-r border-border/70 px-2.5 text-muted-foreground">
+      <span className="border-r border-border px-3 text-muted-foreground">
         {label}
       </span>
-      <span className="flex items-center gap-1 px-2.5 font-medium">
+      <span className="flex items-center gap-1.5 px-3 font-medium">
         {children}
+        <ChevronDown className="size-4 text-muted-foreground" />
       </span>
     </button>
   )

@@ -1,6 +1,9 @@
 export const demoEn = {
   demo: {
     title: "Demo controls",
+    nav: {
+      audit: "Audit log",
+    },
     events: {
       ruleViolationBlocked: "Blocked: {code}",
       demoReset: "Demo data reset",

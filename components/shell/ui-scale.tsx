@@ -9,9 +9,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { getSession, useSession } from "@/core/session/session"
 import { cn } from "@/lib/utils"
 import { useLocale } from "@/lib/i18n/provider"
 import {
+  clampUiScale,
+  setWindowUiScale,
   UI_SCALE_MAX,
   UI_SCALE_MIN,
   UI_SCALE_PRESETS,
@@ -20,37 +23,42 @@ import {
 } from "@/lib/store"
 import type { TranslationKey } from "@/lib/i18n"
 
+/** This window's interface scale (from the window session). */
+export function useUiScale(): number {
+  return clampUiScale(useSession().uiScale)
+}
+
+/** Step this window's scale up or down by `delta` (call from event handlers). */
+export function stepUiScale(delta: number): void {
+  setWindowUiScale(clampUiScale(getSession().uiScale) + delta)
+}
+
 /**
- * Pushes the persisted scale onto the root element. Every size in the app is
+ * Pushes this window's scale onto the root element. Every size in the app is
  * expressed in rem, so this grows type, spacing, controls and icons together.
+ * The scale lives in the window session (Demo Wall panes open with
+ * `?scale=0.9`), so each pane keeps its own size.
  */
 export function UiScaleProvider() {
-  const uiScale = useUi((state) => state.uiScale)
+  const uiScale = useUiScale()
 
   React.useEffect(() => {
-    // A corrupt or out-of-range persisted value would otherwise collapse every
-    // rem in the app, so clamp on the way out rather than trusting storage.
-    const safe =
-      Number.isFinite(uiScale) && uiScale > 0
-        ? Math.min(UI_SCALE_MAX, Math.max(UI_SCALE_MIN, uiScale))
-        : 1
-    document.documentElement.style.setProperty("--ui-scale", String(safe))
-    if (safe !== uiScale) useUi.getState().setUiScale(safe)
+    document.documentElement.style.setProperty("--ui-scale", String(uiScale))
+    useUi.setState({ uiScale })
   }, [uiScale])
 
   React.useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (!(event.metaKey || event.ctrlKey) || !event.altKey) return
-      const { uiScale: current, setUiScale } = useUi.getState()
       if (event.key === "=" || event.key === "+") {
         event.preventDefault()
-        setUiScale(Number((current + UI_SCALE_STEP).toFixed(2)))
+        stepUiScale(UI_SCALE_STEP)
       } else if (event.key === "-") {
         event.preventDefault()
-        setUiScale(Number((current - UI_SCALE_STEP).toFixed(2)))
+        stepUiScale(-UI_SCALE_STEP)
       } else if (event.key === "0") {
         event.preventDefault()
-        setUiScale(1)
+        setWindowUiScale(1)
       }
     }
     window.addEventListener("keydown", onKeyDown)
@@ -60,13 +68,46 @@ export function UiScaleProvider() {
   return null
 }
 
+/** Compact "- 90% +" control, used inside menus. */
+export function UiScaleStepper({ className }: { className?: string }) {
+  const { t, num } = useLocale()
+  const uiScale = useUiScale()
+  return (
+    <div className={cn("flex items-center gap-2", className)}>
+      <span className="flex-1 truncate text-[0.8125rem] text-muted-foreground">
+        {t("shell.uiScale")}
+      </span>
+      <Button
+        variant="neutral"
+        size="icon-xs"
+        title={t("shell.decrease")}
+        aria-label={t("shell.decrease")}
+        disabled={uiScale <= UI_SCALE_MIN}
+        onClick={() => stepUiScale(-UI_SCALE_STEP)}
+      >
+        <AArrowDown />
+      </Button>
+      <span className="nums w-11 text-center text-[0.8125rem] font-medium tabular-nums">
+        {num(Math.round(uiScale * 100))}%
+      </span>
+      <Button
+        variant="neutral"
+        size="icon-xs"
+        title={t("shell.increase")}
+        aria-label={t("shell.increase")}
+        disabled={uiScale >= UI_SCALE_MAX}
+        onClick={() => stepUiScale(UI_SCALE_STEP)}
+      >
+        <AArrowUp />
+      </Button>
+    </div>
+  )
+}
+
+/** Top-bar button with a popover of presets and fine steps. */
 export function UiScaleControl() {
   const { t, num } = useLocale()
-  const uiScale = useUi((state) => state.uiScale)
-  const setUiScale = useUi((state) => state.setUiScale)
-
-  const step = (delta: number) =>
-    setUiScale(Number((uiScale + delta).toFixed(2)))
+  const uiScale = useUiScale()
 
   return (
     <Popover>
@@ -76,61 +117,39 @@ export function UiScaleControl() {
             variant="ghost"
             size="sm"
             title={t("shell.uiScale")}
-            className="gap-1"
+            className="gap-1 px-2"
           >
             <Type />
-            <span className="nums text-[0.625rem] tabular-nums">
+            <span className="nums text-xs tabular-nums">
               {num(Math.round(uiScale * 100))}%
             </span>
           </Button>
         }
       />
-      <PopoverContent align="end" className="w-[232px] gap-0 p-0">
-        <div className="px-3 py-2">
-          <div className="text-xs font-medium">{t("shell.uiScale")}</div>
-          <p className="mt-0.5 text-[0.625rem] leading-relaxed text-muted-foreground">
+      <PopoverContent align="end" className="w-64 gap-0 p-0">
+        <div className="px-4 py-3">
+          <div className="text-sm font-semibold">{t("shell.uiScale")}</div>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
             {t("shell.uiScaleHint")}
           </p>
         </div>
 
-        <div className="flex items-center gap-1.5 border-t border-[var(--hairline)] px-3 py-2">
-          <Button
-            variant="outline"
-            size="icon-sm"
-            title={t("shell.decrease")}
-            disabled={uiScale <= UI_SCALE_MIN}
-            onClick={() => step(-UI_SCALE_STEP)}
-          >
-            <AArrowDown />
-          </Button>
-          <div className="flex-1 text-center">
-            <span className="nums text-sm font-medium tabular-nums">
-              {num(Math.round(uiScale * 100))}%
-            </span>
-          </div>
-          <Button
-            variant="outline"
-            size="icon-sm"
-            title={t("shell.increase")}
-            disabled={uiScale >= UI_SCALE_MAX}
-            onClick={() => step(UI_SCALE_STEP)}
-          >
-            <AArrowUp />
-          </Button>
+        <div className="border-t border-hairline px-4 py-2.5">
+          <UiScaleStepper />
         </div>
 
-        <div className="flex flex-col border-t border-[var(--hairline)] p-1">
+        <div className="flex flex-col border-t border-hairline p-1.5">
           {UI_SCALE_PRESETS.map((preset) => {
             const activePreset = Math.abs(uiScale - preset.value) < 0.001
             return (
               <button
                 key={preset.value}
-                onClick={() => setUiScale(preset.value)}
+                onClick={() => setWindowUiScale(preset.value)}
                 className={cn(
-                  "flex h-7 items-center gap-2 rounded-md px-2 text-left transition-colors",
+                  "flex h-9 items-center gap-2 rounded-md px-2.5 text-left transition-colors",
                   activePreset
-                    ? "bg-accent text-accent-foreground"
-                    : "hover:bg-muted"
+                    ? "bg-primary-soft text-foreground"
+                    : "hover:bg-surface-raised"
                 )}
               >
                 <span
@@ -139,14 +158,14 @@ export function UiScaleControl() {
                 >
                   A
                 </span>
-                <span className="flex-1 truncate text-[0.6875rem]">
+                <span className="flex-1 truncate text-[0.8125rem]">
                   {t(preset.labelKey as TranslationKey)}
                 </span>
-                <span className="nums text-[0.625rem] text-muted-foreground">
+                <span className="nums text-xs text-muted-foreground">
                   {num(Math.round(preset.value * 100))}%
                 </span>
                 {activePreset ? (
-                  <Check className="size-3 shrink-0 text-primary" />
+                  <Check className="size-3.5 shrink-0 text-primary" />
                 ) : null}
               </button>
             )

@@ -3,6 +3,9 @@ import type { demoEn } from "./en"
 export const demoBn: typeof demoEn = {
   demo: {
     title: "ডেমো নিয়ন্ত্রণ",
+    nav: {
+      audit: "অডিট লগ",
+    },
     events: {
       ruleViolationBlocked: "আটকানো হয়েছে: {code}",
       demoReset: "ডেমো ডেটা রিসেট হয়েছে",
