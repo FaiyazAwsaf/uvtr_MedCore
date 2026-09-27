@@ -182,7 +182,8 @@ describe("branch offline and resync", () => {
     expect(isValidUhid(replayed!.uhid)).toBe(true)
     expect(replayed?.aliases).toContain("P-B1-000001")
     expect(replayed?.origin).toBe("edge:B1")
-    const reviews = await central.reviewQueue.toArray()
+    // The seed carries history from an earlier B2 outage; look at this run only.
+    const reviews = await central.reviewQueue.where("branchId").equals("B1").toArray()
     expect(reviews).toHaveLength(1)
     expect(reviews[0]).toMatchObject({ kind: "sync-duplicate", status: "open", branchId: "B1" })
 
@@ -221,7 +222,11 @@ describe("branch offline and resync", () => {
     const outcome = await reconnectBranch("B1")
     expect(outcome.conflicts).toBe(1)
     expect((await central.patients.get("p1"))?.nameEn).toBe("Salma Begum")
-    const review = await central.reviewQueue.where("kind").equals("identity-conflict").first()
+    const review = await central.reviewQueue
+      .where("kind")
+      .equals("identity-conflict")
+      .filter((r) => r.branchId === "B1")
+      .first()
     expect(review?.fields?.[0]).toMatchObject({ field: "nameEn", edgeValue: "Salma Akter", centralValue: "Salma Begum" })
   })
 
@@ -232,7 +237,11 @@ describe("branch offline and resync", () => {
     await commit(takeStock, { id: "sl1", qty: 3 }, { db: central, actor: b3 })
     await reconnectBranch("B1")
     expect((await central.stockLevels.get("sl1"))?.qty).toBe(-2)
-    const exception = await central.syncExceptions.where("kind").equals("stock-negative").first()
+    const exception = await central.syncExceptions
+      .where("kind")
+      .equals("stock-negative")
+      .filter((x) => x.rowId === "sl1")
+      .first()
     expect(exception).toMatchObject({ branchId: "B1", rowId: "sl1", status: "open" })
   })
 })

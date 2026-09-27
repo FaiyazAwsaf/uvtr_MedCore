@@ -19,7 +19,7 @@ import { onlineRow } from "@/core/sync/network"
 import { clearDatabase } from "@/core/sync/offline"
 
 /** Bump when the seed changes shape, so stale browsers re-seed on load. */
-export const SEED_VERSION = 1
+export const SEED_VERSION = 2
 const SEED_LOCK = "mc:seed"
 
 /** Empty every branch edge store that exists in this browser. */
