@@ -50,7 +50,9 @@ export function SegmentedPills<T extends string>({
             className={cn(
               "relative shrink-0 rounded-full font-medium whitespace-nowrap transition-colors outline-none",
               "focus-visible:ring-2 focus-visible:ring-ring/40",
-              size === "sm" ? "h-6 px-2.5 text-[0.6875rem]" : "h-7 px-3 text-xs",
+              size === "sm"
+                ? "h-6 px-2.5 text-[0.6875rem]"
+                : "h-7 px-3 text-xs",
               active
                 ? "text-primary-foreground"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"

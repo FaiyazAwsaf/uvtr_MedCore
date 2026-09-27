@@ -12,19 +12,19 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider defaultTheme="dark" enableSystem={false}>
       <LocaleProvider>
-          <TooltipProvider delay={200}>
-            <UiScaleProvider />
-            {children}
-            <Toaster
-              position="bottom-right"
-              toastOptions={{
-                classNames: {
-                  toast:
-                    "!rounded-lg !border-border !bg-popover !text-popover-foreground !text-xs",
-                },
-              }}
-            />
-          </TooltipProvider>
+        <TooltipProvider delay={200}>
+          <UiScaleProvider />
+          {children}
+          <Toaster
+            position="bottom-right"
+            toastOptions={{
+              classNames: {
+                toast:
+                  "!rounded-lg !border-border !bg-popover !text-popover-foreground !text-xs",
+              },
+            }}
+          />
+        </TooltipProvider>
       </LocaleProvider>
     </ThemeProvider>
   )

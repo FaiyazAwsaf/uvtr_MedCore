@@ -142,7 +142,9 @@ export function EmptyState({
       ) : null}
       <p className="text-xs font-medium">{title}</p>
       {hint ? (
-        <p className="max-w-[34ch] text-[0.6875rem] text-muted-foreground">{hint}</p>
+        <p className="max-w-[34ch] text-[0.6875rem] text-muted-foreground">
+          {hint}
+        </p>
       ) : null}
     </div>
   )

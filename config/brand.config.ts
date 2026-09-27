@@ -43,7 +43,10 @@ export const staffApp = {
 } as const
 
 export const hospital = {
-  name: { en: "City Care Hospitals", bn: "সিটি কেয়ার হসপিটালস" } satisfies Bilingual,
+  name: {
+    en: "City Care Hospitals",
+    bn: "সিটি কেয়ার হসপিটালস",
+  } satisfies Bilingual,
   shortName: { en: "City Care", bn: "সিটি কেয়ার" } satisfies Bilingual,
   /** Monogram for the generated logo mark until real assets are supplied. */
   monogram: "CC",
@@ -58,9 +61,30 @@ export const hospital = {
 } as const
 
 export const companies: Company[] = [
-  { code: "C1", name: { en: "City Care Hospitals Ltd", bn: "সিটি কেয়ার হসপিটালস লিমিটেড" }, invoicePrefix: "C1", tin: "TIN-000111222333" },
-  { code: "C2", name: { en: "City Care Diagnostics Ltd", bn: "সিটি কেয়ার ডায়াগনস্টিকস লিমিটেড" }, invoicePrefix: "C2", tin: "TIN-000444555666" },
-  { code: "C3", name: { en: "City Care Chattogram Ltd", bn: "সিটি কেয়ার চট্টগ্রাম লিমিটেড" }, invoicePrefix: "C3", tin: "TIN-000777888999" },
+  {
+    code: "C1",
+    name: { en: "City Care Hospitals Ltd", bn: "সিটি কেয়ার হসপিটালস লিমিটেড" },
+    invoicePrefix: "C1",
+    tin: "TIN-000111222333",
+  },
+  {
+    code: "C2",
+    name: {
+      en: "City Care Diagnostics Ltd",
+      bn: "সিটি কেয়ার ডায়াগনস্টিকস লিমিটেড",
+    },
+    invoicePrefix: "C2",
+    tin: "TIN-000444555666",
+  },
+  {
+    code: "C3",
+    name: {
+      en: "City Care Chattogram Ltd",
+      bn: "সিটি কেয়ার চট্টগ্রাম লিমিটেড",
+    },
+    invoicePrefix: "C3",
+    tin: "TIN-000777888999",
+  },
 ]
 
 export const branches: Branch[] = [
@@ -70,9 +94,16 @@ export const branches: Branch[] = [
     name: { en: "Dhanmondi", bn: "ধানমন্ডি" },
     kind: "hospital",
     services: ["opd", "lab", "imaging", "pharmacy", "inpatient"],
-    address: { en: "Road 7, Dhanmondi, Dhaka 1205", bn: "রোড ৭, ধানমন্ডি, ঢাকা ১২০৫" },
+    address: {
+      en: "Road 7, Dhanmondi, Dhaka 1205",
+      bn: "রোড ৭, ধানমন্ডি, ঢাকা ১২০৫",
+    },
     phone: "09610-100101",
-    offline: { uhidPrefix: "P-B1-", invoiceTag: "OFF", accessionPrefix: "B1E-" },
+    offline: {
+      uhidPrefix: "P-B1-",
+      invoiceTag: "OFF",
+      accessionPrefix: "B1E-",
+    },
   },
   {
     code: "B2",
@@ -80,9 +111,16 @@ export const branches: Branch[] = [
     name: { en: "Uttara", bn: "উত্তরা" },
     kind: "hospital",
     services: ["opd", "lab", "imaging", "pharmacy", "inpatient"],
-    address: { en: "Sector 7, Uttara, Dhaka 1230", bn: "সেক্টর ৭, উত্তরা, ঢাকা ১২৩০" },
+    address: {
+      en: "Sector 7, Uttara, Dhaka 1230",
+      bn: "সেক্টর ৭, উত্তরা, ঢাকা ১২৩০",
+    },
     phone: "09610-100102",
-    offline: { uhidPrefix: "P-B2-", invoiceTag: "OFF", accessionPrefix: "B2E-" },
+    offline: {
+      uhidPrefix: "P-B2-",
+      invoiceTag: "OFF",
+      accessionPrefix: "B2E-",
+    },
   },
   {
     code: "B3",
@@ -90,9 +128,16 @@ export const branches: Branch[] = [
     name: { en: "Mirpur", bn: "মিরপুর" },
     kind: "diagnostic",
     services: ["opd", "lab", "imaging", "pharmacy"],
-    address: { en: "Section 10, Mirpur, Dhaka 1216", bn: "সেকশন ১০, মিরপুর, ঢাকা ১২১৬" },
+    address: {
+      en: "Section 10, Mirpur, Dhaka 1216",
+      bn: "সেকশন ১০, মিরপুর, ঢাকা ১২১৬",
+    },
     phone: "09610-100103",
-    offline: { uhidPrefix: "P-B3-", invoiceTag: "OFF", accessionPrefix: "B3E-" },
+    offline: {
+      uhidPrefix: "P-B3-",
+      invoiceTag: "OFF",
+      accessionPrefix: "B3E-",
+    },
   },
   {
     code: "B4",
@@ -100,9 +145,16 @@ export const branches: Branch[] = [
     name: { en: "Motijheel", bn: "মতিঝিল" },
     kind: "diagnostic",
     services: ["lab", "imaging"],
-    address: { en: "Dilkusha C/A, Motijheel, Dhaka 1000", bn: "দিলকুশা বা/এ, মতিঝিল, ঢাকা ১০০০" },
+    address: {
+      en: "Dilkusha C/A, Motijheel, Dhaka 1000",
+      bn: "দিলকুশা বা/এ, মতিঝিল, ঢাকা ১০০০",
+    },
     phone: "09610-100104",
-    offline: { uhidPrefix: "P-B4-", invoiceTag: "OFF", accessionPrefix: "B4E-" },
+    offline: {
+      uhidPrefix: "P-B4-",
+      invoiceTag: "OFF",
+      accessionPrefix: "B4E-",
+    },
   },
   {
     code: "B5",
@@ -110,16 +162,26 @@ export const branches: Branch[] = [
     name: { en: "Chattogram", bn: "চট্টগ্রাম" },
     kind: "hospital",
     services: ["opd", "lab", "imaging", "pharmacy", "inpatient"],
-    address: { en: "O.R. Nizam Road, Chattogram 4000", bn: "ও.আর. নিজাম রোড, চট্টগ্রাম ৪০০০" },
+    address: {
+      en: "O.R. Nizam Road, Chattogram 4000",
+      bn: "ও.আর. নিজাম রোড, চট্টগ্রাম ৪০০০",
+    },
     phone: "09610-100105",
-    offline: { uhidPrefix: "P-B5-", invoiceTag: "OFF", accessionPrefix: "B5E-" },
+    offline: {
+      uhidPrefix: "P-B5-",
+      invoiceTag: "OFF",
+      accessionPrefix: "B5E-",
+    },
   },
 ]
 
 /** Network level (no branch): CEO, CFO and procurement head personas sit here. */
 export const headquarters = {
   code: "HQ",
-  name: { en: "Network headquarters", bn: "নেটওয়ার্ক প্রধান কার্যালয়" } satisfies Bilingual,
+  name: {
+    en: "Network headquarters",
+    bn: "নেটওয়ার্ক প্রধান কার্যালয়",
+  } satisfies Bilingual,
 } as const
 
 /**

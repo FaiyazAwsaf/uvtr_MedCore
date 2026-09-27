@@ -1,12 +1,5 @@
 export type TagHue =
-  | "blue"
-  | "teal"
-  | "green"
-  | "purple"
-  | "magenta"
-  | "amber"
-  | "rose"
-  | "slate"
+  "blue" | "teal" | "green" | "purple" | "magenta" | "amber" | "rose" | "slate"
 
 export const TAG_CLASS: Record<TagHue, string> = {
   blue: "tag-blue",

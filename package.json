@@ -9,7 +9,12 @@
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "playwright test",
+    "i18n:check": "bun scripts/i18n-check.ts",
+    "i18n:export": "bun scripts/i18n-export.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

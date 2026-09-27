@@ -108,7 +108,8 @@ export const coreEn = {
     keyboardShortcuts: "Keyboard shortcuts",
     demoMode: "Demo data",
     uiScale: "Display size",
-    uiScaleHint: "Scales text, spacing and controls across the whole interface.",
+    uiScaleHint:
+      "Scales text, spacing and controls across the whole interface.",
     scaleCompact: "Compact",
     scaleDefault: "Default",
     scaleLarge: "Large",

@@ -32,18 +32,19 @@
 
 ## How to run
 
-Requires bun 1.3+ and Node 20+. These commands work once plan Phase 0 (bootstrap) is done.
+Requires bun 1.3+ and Node 20.9+ (the Next 16 minimum).
 
 ```bash
 bun install
 bun run dev          # http://localhost:3000 (launcher)
 bun run typecheck    # tsc --noEmit
-bun run test         # vitest (engine and rules)
-bun run e2e          # Playwright smoke tests (hero journey, launchers, offline)
+bun run lint         # ESLint 9: 0 errors expected (1 accepted TanStack Table warning)
+bun run test         # vitest: unit, i18n and engine tests
+bun run e2e          # Playwright smoke tests; builds and serves on port 3100
 bun run build        # production build; must pass before every merge
-bun run lint         # once plan step P0.4 fixes the base ESLint conflict
 bun run format       # prettier
-bun run i18n:check   # every EN key exists in BN
+bun run i18n:check   # EN/BN key parity, no empty strings, no em dashes
+bun run i18n:export  # writes docs/bangla-strings-review.md for a fluent reviewer
 ```
 
 Useful routes:
