@@ -1,4 +1,5 @@
 import { rules } from "@/config/rules.config"
+import { canonicalJson } from "@/core/audit/chain"
 import type { BaseRow, Id } from "@/core/db/schema"
 import type { Row, TableName } from "@/core/db/tables"
 import { ageOn } from "@/core/clock/dates"
@@ -46,7 +47,8 @@ export function changedFields(before: BaseRow, after: BaseRow): string[] {
     if (ignore.has(key)) continue
     const a = (before as Record<string, unknown>)[key]
     const b = (after as Record<string, unknown>)[key]
-    if (JSON.stringify(a) !== JSON.stringify(b)) out.push(key)
+    // Canonical form: key order inside nested objects must not count as a change.
+    if (canonicalJson(a ?? null) !== canonicalJson(b ?? null)) out.push(key)
   }
   return out
 }

@@ -31,14 +31,18 @@ const DbContext = React.createContext<DbInfo | null>(null)
 export function DbProvider({ children }: { children: React.ReactNode }) {
   const persona = usePersona()
   const branch = persona?.branchId ?? null
-  const network = useLiveQuery(() => getControlDb().network.toArray(), [], [] as NetworkRow[])
+  // undefined until the first read: render nothing rather than briefly
+  // showing central data in a window whose branch is offline.
+  const network = useLiveQuery(() => getControlDb().network.toArray(), [])
   const isEdge =
-    !!branch && network.some((n) => n.branchId === branch && n.status !== "online")
+    !!branch &&
+    !!network?.some((n) => n.branchId === branch && n.status !== "online")
   const db = isEdge && branch ? getEdgeDb(branch) : getCentralDb()
   const value = React.useMemo<DbInfo>(
-    () => ({ db, isEdge, branch, network }),
+    () => ({ db, isEdge, branch, network: network ?? [] }),
     [db, isEdge, branch, network]
   )
+  if (!network) return null
   return (
     <DbContext.Provider value={value}>
       <React.Fragment key={db.name}>{children}</React.Fragment>
