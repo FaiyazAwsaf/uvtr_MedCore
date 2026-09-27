@@ -4,6 +4,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * UVTR_MedCore design tokens. Source of truth: docs/ui_guidelines.md, derived
+ * from sample_ui/ (a dark hospital dashboard). Dark is the default theme; the
+ * light theme is derived from it.
+ */
+
 @theme inline {
   --font-heading: var(--font-sans);
   --font-sans: var(--font-sans);
@@ -36,6 +42,9 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-info: var(--info);
+  --color-link: var(--link);
+  --color-tooltip: var(--tooltip);
+  --color-primary-soft: var(--primary-soft);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -63,156 +72,169 @@
 }
 
 /* ---------------------------------------------------------------- *
- * LIGHT — the primary design target. Clean, near-white, blue accent.
+ * LIGHT: derived from the dark sample. White cards on a soft grey
+ * canvas, the same turquoise accent deepened for contrast on white.
  * ---------------------------------------------------------------- */
 :root {
-  --radius: 0.625rem;
+  /* 14px cards and panels; controls use radius-md (about 11px). */
+  --radius: 0.875rem;
 
-  --background: oklch(0.987 0.002 262);
-  --foreground: oklch(0.19 0.012 262);
+  --background: #f5f4f7;
+  --foreground: #1f1d22;
 
-  --surface: oklch(0.975 0.003 262);
-  --surface-raised: oklch(0.962 0.004 262);
+  --surface: #ffffff;
+  --surface-raised: #f0eef3;
 
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.19 0.012 262);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.19 0.012 262);
+  --card: #ffffff;
+  --card-foreground: #1f1d22;
+  --popover: #ffffff;
+  --popover-foreground: #1f1d22;
+  --tooltip: #2f2d33;
 
-  --primary: oklch(0.545 0.212 262);
-  --primary-foreground: oklch(0.99 0 0);
+  --primary: #00b3ba;
+  --primary-foreground: #ffffff;
+  --primary-soft: rgb(0 179 186 / 0.12);
+  --link: #00959b;
 
-  --secondary: oklch(0.962 0.004 262);
-  --secondary-foreground: oklch(0.26 0.014 262);
+  --secondary: #f0eef3;
+  --secondary-foreground: #1f1d22;
 
-  --muted: oklch(0.966 0.003 262);
-  --muted-foreground: oklch(0.525 0.017 262);
+  --muted: #f0eef3;
+  --muted-foreground: #6d6873;
 
-  --accent: oklch(0.955 0.012 262);
-  --accent-foreground: oklch(0.36 0.09 262);
+  --accent: #ebe8ef;
+  --accent-foreground: #1f1d22;
 
-  --destructive: oklch(0.585 0.22 25);
-  --success: oklch(0.6 0.15 152);
-  --warning: oklch(0.72 0.15 75);
-  --info: oklch(0.6 0.14 232);
+  --destructive: #e0474d;
+  --success: #1f9d57;
+  --warning: #c9a400;
+  --info: #2388c4;
 
-  --border: oklch(0.2 0.02 262 / 9%);
-  --hairline: oklch(0.2 0.02 262 / 7%);
-  --input: oklch(0.2 0.02 262 / 9%);
-  --ring: oklch(0.545 0.212 262);
+  --border: #dcd8e0;
+  --hairline: #e7e4eb;
+  --input: #dcd8e0;
+  --ring: #00b3ba;
 
-  --chart-1: oklch(0.565 0.2 262);
-  --chart-2: oklch(0.66 0.125 196);
-  --chart-3: oklch(0.575 0.2 300);
-  --chart-4: oklch(0.755 0.145 75);
-  --chart-5: oklch(0.625 0.2 16);
-  --chart-6: oklch(0.645 0.155 152);
-  --chart-7: oklch(0.615 0.215 340);
-  --chart-8: oklch(0.6 0.03 262);
+  --chart-1: #0a9aa0;
+  --chart-2: #cb90fa;
+  --chart-3: #0f81b6;
+  --chart-4: #eedb6a;
+  --chart-5: #fdb0d7;
+  --chart-6: #4fd184;
+  --chart-7: #ff6b6f;
+  --chart-8: #6a636b;
 
-  --sidebar: oklch(0.975 0.003 262);
-  --sidebar-foreground: oklch(0.19 0.012 262);
-  --sidebar-primary: oklch(0.545 0.212 262);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.93 0.008 262);
-  --sidebar-accent-foreground: oklch(0.19 0.012 262);
-  --sidebar-border: oklch(0.2 0.02 262 / 8%);
-  --sidebar-ring: oklch(0.545 0.212 262);
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1f1d22;
+  --sidebar-primary: #00b3ba;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f0eef3;
+  --sidebar-accent-foreground: #1f1d22;
+  --sidebar-border: #e7e4eb;
+  --sidebar-ring: #00b3ba;
 
-  /* Categorical hue anchors — drive .tag-* and room-type swatches */
-  --hue-blue: oklch(0.55 0.2 262);
-  --hue-teal: oklch(0.6 0.12 196);
-  --hue-green: oklch(0.58 0.15 152);
-  --hue-purple: oklch(0.55 0.2 300);
-  --hue-magenta: oklch(0.58 0.21 340);
-  --hue-amber: oklch(0.66 0.15 70);
-  --hue-rose: oklch(0.58 0.2 16);
-  --hue-slate: oklch(0.5 0.025 262);
+  /* Categorical hue anchors: drive .tag-* pills and status colours. */
+  --hue-blue: #2388c4;
+  --hue-teal: #00a3a9;
+  --hue-green: #1f9d57;
+  --hue-purple: #9a5ad6;
+  --hue-magenta: #d9579a;
+  --hue-amber: #b89200;
+  --hue-rose: #e0474d;
+  --hue-slate: #6d6873;
 
-  --tag-bg-mix: 11%;
-  --tag-border-mix: 22%;
+  --tag-bg-mix: 12%;
+  --tag-border-mix: 24%;
   --tag-fg: var(--tag);
+
+  /* Count badges (the yellow circle in the sample's sidebar). */
+  --badge: #eedb6a;
+  --badge-foreground: #2a2410;
 
   /* Interface scale. Everything sizes in rem, so raising the root font size
      grows type, spacing, controls and icons together rather than only the
-     text — front-desk staff on ageing monitors need the whole UI bigger. */
+     text. Demo Wall panes and 960x600 windows run at 0.9. */
   --ui-scale: 1;
 
-  --scrubber: oklch(0.545 0.212 262);
-  --glass: oklch(1 0 0 / 72%);
+  --card-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+  --scrubber: #00b3ba;
+  --glass: rgb(255 255 255 / 0.72);
 }
 
 /* ---------------------------------------------------------------- *
- * DARK — AMOLED stepping: #0a0a0a → #121212 → #1c1c1c → #2a2a2a
+ * DARK (default): the sample. Charcoal canvas, plum-grey cards,
+ * turquoise accent with dark text on it.
  * ---------------------------------------------------------------- */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.965 0 0);
+  --background: #2a282b;
+  --foreground: #ffffff;
 
-  --surface: oklch(0.162 0 0);
-  --surface-raised: oklch(0.198 0 0);
+  --surface: #3f3c43;
+  --surface-raised: #4d4a51;
 
-  --card: oklch(0.182 0 0);
-  --card-foreground: oklch(0.965 0 0);
-  --popover: oklch(0.225 0 0);
-  --popover-foreground: oklch(0.965 0 0);
+  --card: #3f3c43;
+  --card-foreground: #ffffff;
+  --popover: #46424a;
+  --popover-foreground: #ffffff;
+  --tooltip: #5f626b;
 
-  /* Deepened slightly against the light-mode blue so white text and icons
-     stay legible on every filled surface. */
-  --primary: oklch(0.58 0.21 260);
-  --primary-foreground: oklch(0.99 0 0);
+  --primary: #06c8cf;
+  --primary-foreground: #0f2224;
+  --primary-soft: rgb(6 200 207 / 0.14);
+  --link: #2fd3d3;
 
-  --secondary: oklch(0.275 0 0);
-  --secondary-foreground: oklch(0.965 0 0);
+  --secondary: #4d4a51;
+  --secondary-foreground: #ffffff;
 
-  --muted: oklch(0.248 0 0);
-  --muted-foreground: oklch(0.655 0 0);
+  --muted: #4d4a51;
+  --muted-foreground: #a8a3ab;
 
-  --accent: oklch(0.275 0.02 259);
-  --accent-foreground: oklch(0.93 0.03 259);
+  --accent: #524e57;
+  --accent-foreground: #ffffff;
 
-  --destructive: oklch(0.68 0.19 22);
-  --success: oklch(0.72 0.16 155);
-  --warning: oklch(0.8 0.15 78);
-  --info: oklch(0.7 0.13 232);
+  --destructive: #ff6b6f;
+  --success: #4fd184;
+  --warning: #eedb6a;
+  --info: #3aa7e0;
 
-  --border: oklch(1 0 0 / 8%);
-  --hairline: oklch(1 0 0 / 6%);
-  --input: oklch(1 0 0 / 10%);
-  --ring: oklch(0.62 0.2 260);
+  --border: #57515a;
+  --hairline: #38353a;
+  --input: #57515a;
+  --ring: #06c8cf;
 
-  --chart-1: oklch(0.66 0.185 259);
-  --chart-2: oklch(0.75 0.115 196);
-  --chart-3: oklch(0.68 0.185 300);
-  --chart-4: oklch(0.82 0.14 78);
-  --chart-5: oklch(0.7 0.19 18);
-  --chart-6: oklch(0.73 0.15 155);
-  --chart-7: oklch(0.7 0.2 340);
-  --chart-8: oklch(0.68 0.028 259);
+  --chart-1: #06c8cf;
+  --chart-2: #cb90fa;
+  --chart-3: #0f81b6;
+  --chart-4: #eedb6a;
+  --chart-5: #fdb0d7;
+  --chart-6: #4fd184;
+  --chart-7: #ff6b6f;
+  --chart-8: #6a636b;
 
-  --sidebar: oklch(0.162 0 0);
-  --sidebar-foreground: oklch(0.965 0 0);
-  --sidebar-primary: oklch(0.58 0.21 260);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.255 0 0);
-  --sidebar-accent-foreground: oklch(0.965 0 0);
-  --sidebar-border: oklch(1 0 0 / 7%);
-  --sidebar-ring: oklch(0.62 0.2 260);
+  --sidebar: #29292a;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #06c8cf;
+  --sidebar-primary-foreground: #0f2224;
+  --sidebar-accent: #3a383d;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #38353a;
+  --sidebar-ring: #06c8cf;
 
-  --hue-blue: oklch(0.68 0.18 259);
-  --hue-teal: oklch(0.76 0.115 196);
-  --hue-green: oklch(0.74 0.145 155);
-  --hue-purple: oklch(0.7 0.18 300);
-  --hue-magenta: oklch(0.72 0.19 340);
-  --hue-amber: oklch(0.8 0.14 74);
-  --hue-rose: oklch(0.72 0.18 18);
-  --hue-slate: oklch(0.7 0.02 259);
+  --hue-blue: #3aa7e0;
+  --hue-teal: #06c8cf;
+  --hue-green: #4fd184;
+  --hue-purple: #cb90fa;
+  --hue-magenta: #fdb0d7;
+  --hue-amber: #eedb6a;
+  --hue-rose: #ff6b6f;
+  --hue-slate: #a8a3ab;
 
   --tag-bg-mix: 16%;
   --tag-border-mix: 28%;
 
-  --scrubber: oklch(0.66 0.19 259);
-  --glass: oklch(0.182 0 0 / 72%);
+  --card-shadow: none;
+  --scrubber: #06c8cf;
+  --glass: rgb(63 60 67 / 0.72);
 }
 
 @layer base {
@@ -251,7 +273,7 @@
 }
 
 @layer components {
-  /* Hue-coded tag pill — crm.jpg's Segment & Stage column */
+  /* Hue-coded pill for statuses and categories. */
   .tag {
     --tag: var(--hue-slate);
     display: inline-flex;
@@ -262,9 +284,9 @@
       color-mix(in oklch, var(--tag) var(--tag-border-mix), transparent);
     background: color-mix(in oklch, var(--tag) var(--tag-bg-mix), transparent);
     color: var(--tag-fg);
-    padding: 0 0.4375rem;
-    height: 1.125rem;
-    font-size: 0.625rem;
+    padding: 0 0.5rem;
+    height: 1.25rem;
+    font-size: 0.6875rem;
     font-weight: 500;
     line-height: 1;
     white-space: nowrap;
@@ -294,15 +316,66 @@
     --tag: var(--hue-slate);
   }
 
-  /* Booking bars on the room rack — pastel fill, saturated text */
-  .bar-tint {
-    background: color-mix(in oklch, var(--tag) 20%, var(--card));
-    border: 1px solid color-mix(in oklch, var(--tag) 34%, transparent);
-    color: color-mix(in oklch, var(--tag) 78%, var(--foreground));
+  /* Gradient KPI cards (the sample's top row). Light end at bottom-right. */
+  .kpi {
+    background: linear-gradient(135deg, var(--kpi-from), var(--kpi-to));
+    color: var(--kpi-fg);
+    border-radius: var(--radius-lg);
   }
-  .dark .bar-tint {
-    background: color-mix(in oklch, var(--tag) 26%, var(--card));
-    color: color-mix(in oklch, var(--tag) 30%, var(--foreground));
+  .kpi-cyan {
+    --kpi-from: #00c9cc;
+    --kpi-to: #35d8de;
+    --kpi-fg: #0f2224;
+    --kpi-well: rgb(0 0 0 / 0.12);
+  }
+  .kpi-yellow {
+    --kpi-from: #eed866;
+    --kpi-to: #f3e48c;
+    --kpi-fg: #2a2410;
+    --kpi-well: rgb(0 0 0 / 0.1);
+  }
+  .kpi-pink {
+    --kpi-from: #ffb0d6;
+    --kpi-to: #cbb2f2;
+    --kpi-fg: #2d1f2b;
+    --kpi-well: rgb(0 0 0 / 0.1);
+  }
+  .kpi-purple {
+    --kpi-from: #9f3ae4;
+    --kpi-to: #e3b8dc;
+    --kpi-fg: #ffffff;
+    --kpi-well: rgb(255 255 255 / 0.2);
+  }
+  /* Translucent delta chip and circular icon well on a KPI card. */
+  .kpi-chip {
+    background: rgb(255 255 255 / 0.4);
+    color: inherit;
+    border-radius: 9999px;
+  }
+  .kpi-well {
+    background: var(--kpi-well);
+    border-radius: 9999px;
+  }
+
+  /* Circular icon well on cards and list rows. */
+  .icon-well {
+    background: var(--surface-raised);
+    border-radius: 9999px;
+  }
+
+  /* Yellow count badge (sidebar counts). */
+  .count-badge {
+    background: var(--badge);
+    color: var(--badge-foreground);
+    border-radius: 9999px;
+  }
+
+  /* Cards: no border in dark, a faint shadow in light. */
+  .surface-card {
+    background: var(--card);
+    color: var(--card-foreground);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--card-shadow);
   }
 
   .glass {
@@ -318,7 +391,7 @@
     border-right: 1px solid var(--hairline);
   }
 
-  /* Micro-label — transaction-card.jpg's uppercase letterspaced captions */
+  /* Uppercase letter-spaced micro caption. */
   .micro {
     font-size: 0.625rem;
     line-height: 1;
@@ -332,14 +405,14 @@
     text-transform: none;
   }
 
-  /* Oversized hero figure — large and LIGHT, never bold */
+  /* Large figure (KPI values): semibold and tabular, as in the sample. */
   .figure {
-    font-weight: 300;
-    letter-spacing: -0.03em;
+    font-weight: 600;
+    letter-spacing: -0.02em;
     font-variant-numeric: tabular-nums;
   }
 
-  /* sidebar.mp4 — fade-masked scroll regions */
+  /* Fade-masked scroll regions. */
   .scroll-fade {
     mask-image: linear-gradient(
       to bottom,
@@ -380,4 +453,18 @@
 }
 .animate-pulse-ring {
   animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Sync flash: a row or card that just changed because of another window's
+   commit tints turquoise for about 1.2s (visual proof of live sync). */
+@keyframes flash-sync {
+  0% {
+    background-color: color-mix(in oklch, var(--primary) 24%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+.flash-sync {
+  animation: flash-sync 1.2s ease-out;
 }
