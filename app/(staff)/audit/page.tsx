@@ -1,5 +1,6 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { AuditViewer } from "@/modules/demo/components/audit/audit-viewer"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.audit" phase={1} />
+/** "/audit": the hash-chained audit log with chain verification (plan §3.5). */
+export default function AuditPage() {
+  return <AuditViewer />
 }
