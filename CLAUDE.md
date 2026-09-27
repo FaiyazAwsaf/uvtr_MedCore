@@ -89,3 +89,5 @@ Reset the demo data, move the demo clock and cut or restore a branch's internet 
   - Commit after each verified slice.
   - Never push without the owner's explicit go-ahead.
   - Never commit PDFs.
+  - **`docs/` is local only.** It is gitignored and must never be committed or reach GitHub. Never force-add it.
+- **Worktree agents:** `docs/` doesn't exist inside a git worktree. Read it from the main checkout by absolute path: `/home/fawsaf/projects/werk/uvtr/hospital-os/docs/` (`implementation_plan.md`, `ui_guidelines.md`, `objective.md`, `progress_log.md`).
