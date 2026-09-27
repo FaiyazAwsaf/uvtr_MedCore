@@ -215,7 +215,7 @@ export const demoEn = {
       subtitle: "Every committed change, hash-chained, newest first",
       verify: "Verify chain",
       verifying: "Verifying…",
-      intact: "Chain intact: {count} rows",
+      intact: "Chain intact · {count} checked",
       broken: "Chain broken at row {seq}",
       jump: "Show row {seq}",
       filters: {

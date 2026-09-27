@@ -15,10 +15,11 @@ import { useLocale } from "@/lib/i18n/provider"
 
 type DayPart = "morning" | "afternoon" | "evening"
 
-/** Morning 05:00 to 11:59, afternoon to 16:59, evening otherwise (Dhaka, demo clock). */
+/** Morning until 11:59, afternoon to 16:59, evening otherwise (Dhaka, demo clock). */
 export function dayPartAt(ms: number): DayPart {
   const hour = Number(dhakaTime(ms).slice(0, 2))
-  if (hour >= 5 && hour < 12) return "morning"
+  // Early-shift staff (midnight to noon) are greeted with "morning".
+  if (hour < 12) return "morning"
   if (hour >= 12 && hour < 17) return "afternoon"
   return "evening"
 }
