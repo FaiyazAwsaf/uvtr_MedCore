@@ -1,94 +1,115 @@
-import { branches, companies } from "@/config/brand.config"
-import { seedRow } from "@/core/db/base"
 import type { MedcoreDb } from "@/core/db/database"
-import type {
-  BranchRow,
-  CompanyRow,
-  PersonaRow,
-  StaffRow,
-} from "@/core/db/schema"
+import type { CounterRow } from "@/core/db/schema"
+import { hashSeed } from "@/lib/mock/rng"
 
-import { PERSONAS } from "./content/personas"
+import { createSeedCtx, type SeedBag } from "./context"
+import { seedCorporate } from "./generators/corporate"
+import { seedDailyStats } from "./generators/daily-stats"
+import { seedHistory } from "./generators/history"
+import { seedInpatient } from "./generators/inpatient"
+import { seedLabCatalogue } from "./generators/lab-catalogue"
+import { seedMedicines } from "./generators/medicines"
+import {
+  seedDoctors,
+  seedOrganisation,
+  seedStaffAndPersonas,
+} from "./generators/org"
+import { seedPatients } from "./generators/patients"
+import { seedProcurement } from "./generators/procurement"
+import { seedScheduling } from "./generators/scheduling"
+import { seedStock } from "./generators/stock"
+import { seedToday } from "./generators/today"
+import { DAY } from "./time"
 import type { SeedOptions, SeedSummary } from "./types"
 
 /**
- * Seeds the central database (plan §7). Phase 1 starting point: organisation,
- * staff and personas. WS-Seed extends this into the full dataset behind the
- * same signature.
+ * Seeds the central database with the full demo dataset (plan §7): master
+ * data, the hero story, scenario master data, PRD history records and
+ * dashboard history. Deterministic for a given `opts` (every random stream is
+ * derived from "medcore-seed-v1") and anchored to `opts.now` / `opts.today`.
+ *
+ * Contract (./types.ts): rows are built with `seedRow()` (version 1, origin
+ * central, created by "system" unless a history actor is recorded), counters
+ * continue after the seeded history, and no events or audit rows are written.
  */
 export async function seedDatabase(
   db: MedcoreDb,
   opts: SeedOptions
 ): Promise<SeedSummary> {
   const started = performance.now()
-  const at = opts.now
+  const { bag, counters } = buildSeed(opts)
+  await writeBag(db, bag, counters)
+
   const counts: Record<string, number> = {}
+  for (const name of bag.tableNames()) counts[name] = bag.count(name)
+  counts.counters = counters.length
+  return { counts, durationMs: Math.round(performance.now() - started) }
+}
 
-  const companyRows = companies.map((c) =>
-    seedRow<CompanyRow>(c.code, at, {
-      code: c.code,
-      name: c.name,
-      tin: c.tin,
-      invoicePrefix: c.invoicePrefix,
-    })
-  )
-  const branchRows = branches.map((b) =>
-    seedRow<BranchRow>(b.code, at, {
-      code: b.code,
-      companyId: b.company,
-      name: b.name,
-      kind: b.kind,
-      services: b.services,
-      address: b.address,
-      phone: b.phone,
-    })
-  )
-  const staffRows: StaffRow[] = []
-  const personaRows: PersonaRow[] = []
-  for (const p of PERSONAS) {
-    if (p.staff) {
-      staffRows.push(
-        seedRow<StaffRow>(p.staff.id, at, {
-          nameEn: p.staff.nameEn,
-          nameBn: p.staff.nameBn,
-          sex: p.staff.sex,
-          role: p.role,
-          branchId: p.branchId,
-          designation: p.staff.designation,
-          regNo: p.staff.regNo,
-          regBody: p.staff.regBody,
-          authorities: p.staff.authorities,
-          avatarSeed: p.staff.id,
-        })
-      )
-    }
-    personaRows.push(
-      seedRow<PersonaRow>(p.id, at, {
-        staffId: p.staff?.id,
-        patientId: p.patientId,
-        role: p.role,
-        branchId: p.branchId,
-        isDefault: p.isDefault,
-        blurb: p.blurb,
-        order: p.order,
-      })
-    )
-  }
+/** Builds every seed row in memory (no IndexedDB access). */
+export function buildSeed(opts: SeedOptions): {
+  bag: SeedBag
+  counters: CounterRow[]
+} {
+  const ctx = createSeedCtx(opts)
 
+  // Master data
+  seedOrganisation(ctx)
+  seedStaffAndPersonas(ctx)
+  const doctors = seedDoctors(ctx)
+  seedLabCatalogue(ctx)
+  const brands = seedMedicines(ctx)
+  const { ledger } = seedStock(ctx, brands)
+  const pools = seedPatients(ctx)
+
+  // Schedules and transactional history
+  const sched = seedScheduling(ctx, doctors, pools)
+  seedProcurement(ctx, ledger)
+  seedToday(ctx, sched, doctors, pools, ledger)
+  seedCorporate(ctx, pools, doctors)
+  seedHistory(ctx, sched, doctors, pools, ledger)
+  seedInpatient(ctx, pools, doctors, sched)
+  seedDailyStats(ctx)
+
+  // Close the books: opening stock movements, then document numbers.
+  ledger.finalize(ctx.now - 45 * DAY)
+  const counters = ctx.numbers.finalize(defaultCounterBase)
+  return { bag: ctx.bag, counters }
+}
+
+/** Where numbering starts for series without an explicit base: mid-year looking numbers. */
+function defaultCounterBase(key: string): number {
+  const jitter = hashSeed(key) % 400
+  if (
+    key.startsWith("inv-off:") ||
+    key.startsWith("uhid-off:") ||
+    key.startsWith("acc-off:")
+  )
+    return 0
+  if (key.startsWith("inv:")) return 4000 + jitter
+  if (key.startsWith("rcpt:")) return 11000 + jitter
+  if (key.startsWith("lab:")) return 5200 + jitter
+  if (key.startsWith("acc:")) return 8800 + jitter
+  if (key.startsWith("rpt:")) return 4100 + jitter
+  if (key.startsWith("rx:")) return 6100 + jitter
+  if (key.startsWith("img:")) return 900 + jitter
+  if (key.startsWith("rf:")) return 40 + (jitter % 40)
+  if (key.startsWith("cn:")) return 30 + (jitter % 30)
+  return 0
+}
+
+async function writeBag(
+  db: MedcoreDb,
+  bag: SeedBag,
+  counters: CounterRow[]
+): Promise<void> {
+  const names = bag.tableNames()
   await db.transaction(
     "rw",
-    [db.companies, db.branches, db.staff, db.personas],
+    [...names.map((n) => db.table(n)), db.counters],
     async () => {
-      await db.companies.bulkPut(companyRows)
-      await db.branches.bulkPut(branchRows)
-      await db.staff.bulkPut(staffRows)
-      await db.personas.bulkPut(personaRows)
+      await Promise.all(names.map((n) => db.table(n).bulkPut(bag.all(n))))
+      await db.counters.bulkPut(counters)
     }
   )
-  counts.companies = companyRows.length
-  counts.branches = branchRows.length
-  counts.staff = staffRows.length
-  counts.personas = personaRows.length
-
-  return { counts, durationMs: Math.round(performance.now() - started) }
 }
