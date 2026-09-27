@@ -27,26 +27,24 @@ export function useStreamedText(
     onDone?: () => void
   } = {}
 ) {
-  const [shown, setShown] = React.useState(enabled ? "" : text)
-  const doneRef = React.useRef(onDone)
-  doneRef.current = onDone
+  // Progress is stored against the text it belongs to, so a new text starts
+  // from zero by derivation rather than by resetting state inside the effect.
+  const [progress, setProgress] = React.useState({ text, index: 0 })
+  const index = progress.text === text ? progress.index : 0
+  const handleDone = React.useEffectEvent(() => onDone?.())
 
   React.useEffect(() => {
-    if (!enabled) {
-      setShown(text)
-      return
-    }
-    setShown("")
-    let index = 0
+    if (!enabled) return
+    let at = 0
     let timer: ReturnType<typeof setTimeout>
 
     const tick = () => {
       // Chunk sizes wobble, and we always break on whitespace when close to one.
       const jump = charsPerTick + Math.floor(Math.random() * charsPerTick * 2)
-      index = Math.min(text.length, index + jump)
-      setShown(text.slice(0, index))
-      if (index >= text.length) {
-        doneRef.current?.()
+      at = Math.min(text.length, at + jump)
+      setProgress({ text, index: at })
+      if (at >= text.length) {
+        handleDone()
         return
       }
       timer = setTimeout(tick, minDelay + Math.random() * (maxDelay - minDelay))
@@ -56,6 +54,7 @@ export function useStreamedText(
     return () => clearTimeout(timer)
   }, [text, enabled, charsPerTick, minDelay, maxDelay, startDelay])
 
+  const shown = enabled ? text.slice(0, index) : text
   return { shown, done: shown.length >= text.length }
 }
 

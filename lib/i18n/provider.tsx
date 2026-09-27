@@ -53,25 +53,51 @@ function isLocale(value: string | null): value is Locale {
   return value !== null && (LOCALES as readonly string[]).includes(value)
 }
 
-export function LocaleProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = React.useState<Locale>(DEFAULT_LOCALE)
+/*
+ * The chosen locale lives in browser storage, read through an external store so
+ * the server render and hydration use the default and the client then switches
+ * without a setState-in-effect. (Phase 1 makes this per window.)
+ */
+const localeListeners = new Set<() => void>()
+/** Fallback when browser storage is unavailable (for example in private mode). */
+let memoryLocale: Locale | null = null
 
-  // Read the persisted choice after mount so the server and the first client
-  // render agree on the default.
-  React.useEffect(() => {
+function subscribeLocale(listener: () => void) {
+  localeListeners.add(listener)
+  return () => {
+    localeListeners.delete(listener)
+  }
+}
+
+function readStoredLocale(): Locale {
+  try {
     const stored = window.localStorage.getItem(LOCALE_STORAGE_KEY)
-    if (isLocale(stored)) setLocaleState(stored)
-  }, [])
+    if (isLocale(stored)) return stored
+  } catch {
+    // Fall through to the in-memory choice.
+  }
+  return memoryLocale ?? DEFAULT_LOCALE
+}
+
+export function LocaleProvider({ children }: { children: React.ReactNode }) {
+  const locale = React.useSyncExternalStore(
+    subscribeLocale,
+    readStoredLocale,
+    () => DEFAULT_LOCALE
+  )
 
   React.useEffect(() => {
     document.documentElement.lang = locale
   }, [locale])
 
-  // Persisting on explicit change rather than in an effect keeps StrictMode's
-  // double-mount from writing the default back over the stored value.
   const setLocale = React.useCallback((next: Locale) => {
-    window.localStorage.setItem(LOCALE_STORAGE_KEY, next)
-    setLocaleState(next)
+    memoryLocale = next
+    try {
+      window.localStorage.setItem(LOCALE_STORAGE_KEY, next)
+    } catch {
+      // Storage can be unavailable; memoryLocale still carries the choice.
+    }
+    localeListeners.forEach((listener) => listener())
   }, [])
 
   const value = React.useMemo<LocaleContextValue>(() => {
