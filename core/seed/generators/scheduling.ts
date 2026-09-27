@@ -8,7 +8,6 @@
  */
 
 import type { BranchCode } from "@/config/brand.config"
-import { rules } from "@/config/rules.config"
 import type {
   AppointmentRow,
   HHMM,
@@ -30,6 +29,7 @@ import { BRANCH_ACTORS } from "../content/staff"
 import { DAY, dhakaAt, hhmmToMin, isoWeekday, minToHHMM, MINUTE } from "../time"
 import type { DoctorInfo } from "./org"
 import type { PatientPools } from "./patients"
+import { interleavePositions } from "@/modules/queue/interleave"
 
 type Band = "AM" | "PM" | "EVE"
 
@@ -79,21 +79,7 @@ export function slotGrid(start: HHMM, end: HHMM, slotMin: number): HHMM[] {
   return out
 }
 
-/** Queue order for tokens in issue order: 2 booked, then 1 walk-in (PRD §10.2). */
-export function interleavePositions(kinds: QueueTokenRow["kind"][]): number[] {
-  const booked: number[] = []
-  const walkIn: number[] = []
-  kinds.forEach((k, i) => (k === "booked" ? booked : walkIn).push(i))
-  const order: number[] = []
-  const { booked: nb, walkIn: nw } = rules.walkInInterleave
-  while (booked.length || walkIn.length) {
-    for (let i = 0; i < nb && booked.length; i++) order.push(booked.shift()!)
-    for (let i = 0; i < nw && walkIn.length; i++) order.push(walkIn.shift()!)
-  }
-  const positions = new Array<number>(kinds.length)
-  order.forEach((tokenIndex, pos) => (positions[tokenIndex] = pos + 1))
-  return positions
-}
+export { interleavePositions }
 
 function buildSchedules(doctors: DoctorInfo[], rng: Rng): Schedule[] {
   // A room is booked per branch, band and weekday, so rooms are shared across days.
