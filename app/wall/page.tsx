@@ -1,5 +1,6 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { DemoWall } from "@/modules/demo/components/wall/demo-wall"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.wall" phase={1} />
+/** "/wall": four personas in a 2x2 grid of panes in one tab (plan §9). */
+export default function WallPage() {
+  return <DemoWall />
 }
