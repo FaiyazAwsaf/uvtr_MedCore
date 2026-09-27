@@ -102,12 +102,12 @@ export function PipelineRunner({
     <div
       data-slot="pipeline-runner"
       className={cn(
-        "flex flex-col overflow-hidden rounded-xl bg-surface ring-1 ring-foreground/10",
+        "flex flex-col overflow-hidden rounded-lg bg-card shadow-(--card-shadow)",
         className
       )}
     >
       <div className="flex items-center justify-between gap-2 px-3.5 py-2.5">
-        <span className="text-xs font-medium">{title}</span>
+        <span className="text-sm font-semibold">{title}</span>
         <AnimatePresence mode="popLayout">
           {elapsed > 0 ? (
             <motion.span
@@ -123,7 +123,7 @@ export function PipelineRunner({
         </AnimatePresence>
       </div>
 
-      <div className="mx-2 flex-1 overflow-y-auto rounded-lg bg-card p-3 ring-1 ring-foreground/[0.07]">
+      <div className="mx-2 flex-1 overflow-y-auto rounded-md bg-surface-raised/40 p-3">
         <ol className="relative">
           {steps.map((step, index) => {
             const status =
