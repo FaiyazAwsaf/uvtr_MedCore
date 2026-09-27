@@ -46,3 +46,6 @@ next-env.d.ts
 /blob-report/
 
 docs/
+
+# parallel agent worktrees
+/.claude/worktrees/
