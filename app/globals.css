@@ -38,6 +38,7 @@
 
   --color-ring: var(--ring);
   --color-input: var(--input);
+  --color-input-fill: var(--input-fill);
   --color-border: var(--border);
   --color-hairline: var(--hairline);
   --color-destructive: var(--destructive);
@@ -115,6 +116,8 @@
   --border: #dcd8e0;
   --hairline: #e7e4eb;
   --input: #dcd8e0;
+  /* Filled input background (the sample's search field) */
+  --input-fill: #f3f2f5;
   --ring: #00b3ba;
 
   --chart-1: #0a9aa0;
@@ -202,6 +205,7 @@
   --border: #57515a;
   --hairline: #38353a;
   --input: #57515a;
+  --input-fill: #3e3c41;
   --ring: #06c8cf;
 
   --chart-1: #06c8cf;

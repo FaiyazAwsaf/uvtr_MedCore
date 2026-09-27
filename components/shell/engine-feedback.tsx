@@ -55,9 +55,8 @@ export function EngineFeedbackHost() {
       return (
         <DeniedDialog
           open
-          // The engine's PermissionDenied carries the command's roles once
-          // core adds them; until then the dialog says the role cannot do it.
-          roles={(current.error as unknown as { roles?: readonly string[] | "any" }).roles}
+          // The engine's PermissionDenied carries the command's allowed roles.
+          roles={current.error.roles}
           actorRole={current.error.role}
           onClose={clear}
         />

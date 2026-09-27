@@ -445,7 +445,7 @@ export async function commit<S extends z.ZodType, O>(
 
   if (!mayRun(def.roles as CommandDef<z.ZodType, unknown>["roles"], actor)) {
     await recordBlocked(db, actor, def.name, "PERMISSION_DENIED", { role: actor.role })
-    throw new PermissionDenied(def.name, actor.role)
+    throw new PermissionDenied(def.name, actor.role, def.roles)
   }
 
   const key = idempotencyKeyOf(data)

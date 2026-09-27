@@ -94,6 +94,14 @@ test("a phone edit in one window shows live in the other, and a stale save confl
   await expect(b.getByTestId("engine-phone")).toHaveText("01812-000111")
   await expect(a.getByTestId("engine-phone")).toHaveText("01812-000111")
 
+  // Every screen also gets the global conflict dialog; Reload dismisses it.
+  const dialog = b.getByRole("dialog", { name: "This record was changed" })
+  await expect(dialog).toBeVisible()
+  await expect(dialog).toContainText("Record changed by Farhana Akter")
+  await expect(dialog).toContainText(`v${version} to v${version + 1}`)
+  await dialog.getByRole("button", { name: "Reload" }).click()
+  await expect(dialog).toHaveCount(0)
+
   // Load latest, then B's save goes through.
   await b.getByRole("button", { name: "Load latest" }).click()
   await expect(b.getByTestId("engine-editing-version")).toContainText(

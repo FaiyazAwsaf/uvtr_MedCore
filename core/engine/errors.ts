@@ -41,7 +41,9 @@ export class PermissionDenied extends Error {
   readonly kind = "denied" as const
   constructor(
     readonly command: string,
-    readonly role: string
+    readonly role: string,
+    /** Roles that may run the command, for "This action is for <roles>" */
+    readonly roles: readonly string[] | "any" = []
   ) {
     super(`Role ${role} may not run ${command}`)
   }

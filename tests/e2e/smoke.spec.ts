@@ -6,12 +6,21 @@ test("launcher renders the product and prompt", async ({ page }) => {
   await expect(page.getByText("Choose a role to start the demo")).toBeVisible()
 })
 
-test("every stub route resolves, e.g. the pharmacy dispense screen", async ({
+test("every stub route resolves inside the staff shell, e.g. the pharmacy dispense screen", async ({
   page,
 }) => {
-  await page.goto("/pharmacy/dispense/RX-TEST")
-  await expect(page.getByText("Pharmacy", { exact: true })).toBeVisible()
+  await page.goto("/pharmacy/dispense/RX-TEST?persona=per_pharmacist_shirin")
   await expect(page.getByText("/pharmacy/dispense/RX-TEST")).toBeVisible()
+  await expect(page.getByText("It arrives in phase 2.")).toBeVisible()
+})
+
+test("a staff route without a persona asks for one, and an off-role route is denied", async ({
+  page,
+}) => {
+  await page.goto("/pharmacy")
+  await expect(page.getByText("/pharmacy/dispense")).toHaveCount(0)
+  await page.goto("/pharmacy?persona=per_cashier_rafiq")
+  await expect(page.getByText(/This screen is for/)).toBeVisible()
 })
 
 test("Bangla renders when this window's language is Bangla", async ({
