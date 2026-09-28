@@ -1,5 +1,12 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { Suspense } from "react"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.reception" phase={2} />
+import { QueueScreen } from "@/modules/queue/components/queue-screen"
+
+/** "/reception/queue": check-in (desk and simulated QR), walk-ins and tokens. */
+export default function QueuePage() {
+  return (
+    <Suspense fallback={null}>
+      <QueueScreen />
+    </Suspense>
+  )
 }
