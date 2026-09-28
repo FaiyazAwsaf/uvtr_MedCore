@@ -1,5 +1,12 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { Suspense } from "react"
 
+import { BillsScreen } from "@/modules/patient-app/components/bills-screen"
+
+/** Reads `?focus=` (or `?doctor=`) from the address, so it renders under Suspense. */
 export default function Page() {
-  return <StubPage sectionKey="shell.section.patientApp" phase={2} />
+  return (
+    <Suspense>
+      <BillsScreen />
+    </Suspense>
+  )
 }
