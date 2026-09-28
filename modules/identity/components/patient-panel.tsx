@@ -24,6 +24,7 @@ import { StatusPill, type Tone } from "@/components/shared/status"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { branches } from "@/config/brand.config"
+import { now } from "@/core/clock/clock"
 import { dhakaDate } from "@/core/clock/dates"
 import { useNow } from "@/core/clock/useNow"
 import { useDb } from "@/core/db/DbProvider"
@@ -73,7 +74,7 @@ export function PatientPanel({
   const persona = usePersona()
   const branch = persona?.branchId ?? null
   const nowMs = useNow(60_000)
-  const today = dhakaDate(nowMs || Date.now())
+  const today = dhakaDate(nowMs || now())
 
   const data = useLiveQuery(async () => {
     const patient = await db.patients.get(patientId)

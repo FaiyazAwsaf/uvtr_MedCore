@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { CircleAlert, ShieldAlert } from "lucide-react"
+import { ChevronDown, CircleAlert, ShieldAlert } from "lucide-react"
 
 import { PatientAvatar } from "@/components/shared/avatars"
 import { ageOf, nameIn, otherName } from "@/components/shared/person"
@@ -96,6 +96,119 @@ export function PersonLine({
         </span>
       </span>
     </span>
+  )
+}
+
+/** A labelled form control with an optional hint and error line. */
+export function FormField({
+  label,
+  htmlFor,
+  hint,
+  error,
+  optional,
+  className,
+  children,
+}: {
+  label: React.ReactNode
+  htmlFor?: string
+  hint?: React.ReactNode
+  error?: React.ReactNode
+  optional?: boolean
+  className?: string
+  children: React.ReactNode
+}) {
+  const { t } = useLocale()
+  return (
+    <div className={cn("flex min-w-0 flex-col gap-1.5", className)}>
+      <label htmlFor={htmlFor} className="flex items-baseline gap-1.5 text-[0.8125rem] font-medium">
+        {label}
+        {optional ? (
+          <span className="text-xs font-normal text-muted-foreground">({t("common.optional")})</span>
+        ) : null}
+      </label>
+      {children}
+      {error ? (
+        <p className="text-xs text-destructive">{error}</p>
+      ) : hint ? (
+        <p className="text-xs text-muted-foreground">{hint}</p>
+      ) : null}
+    </div>
+  )
+}
+
+/**
+ * Outlined native select with a chevron (docs/ui_guidelines.md §4 "Select").
+ * Native so it works with a keyboard, a scanner wedge and Playwright alike.
+ */
+export function NativeSelect({ className, children, ...props }: React.ComponentProps<"select">) {
+  return (
+    <div className="relative min-w-0">
+      <select
+        className={cn(
+          "h-10 w-full min-w-0 appearance-none rounded-md border border-border bg-transparent pr-9 pl-3 text-sm text-foreground outline-none [color-scheme:light] focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20 disabled:opacity-50 aria-invalid:border-destructive dark:[color-scheme:dark] [&>option]:bg-popover",
+          className
+        )}
+        {...props}
+      >
+        {children}
+      </select>
+      <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted-foreground" />
+    </div>
+  )
+}
+
+/** A row of pill-shaped radio options (native radios, so they are keyboard and test friendly). */
+export function ChoicePills<T extends string>({
+  name,
+  value,
+  options,
+  onChange,
+  invalid,
+  className,
+  ...props
+}: {
+  name: string
+  value: T | ""
+  options: { value: T; label: React.ReactNode }[]
+  onChange: (value: T) => void
+  invalid?: boolean
+  className?: string
+} & Omit<React.ComponentProps<"div">, "onChange">) {
+  return (
+    <div
+      role="radiogroup"
+      aria-invalid={invalid || undefined}
+      className={cn("flex flex-wrap gap-1.5", className)}
+      {...props}
+    >
+      {options.map((option) => {
+        const checked = option.value === value
+        return (
+          <label
+            key={option.value}
+            data-value={option.value}
+            className={cn(
+              "inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full border px-3.5 text-[0.8125rem] font-medium transition-colors has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring/40",
+              checked
+                ? "border-primary bg-primary text-primary-foreground"
+                : invalid
+                  ? "border-destructive/60 bg-surface-raised text-foreground/85"
+                  : "border-transparent bg-surface-raised text-foreground/85 hover:text-foreground"
+            )}
+          >
+            <input
+              type="radio"
+              name={name}
+              value={option.value}
+              checked={checked}
+              onChange={() => onChange(option.value)}
+              className="sr-only"
+            />
+            {option.label}
+          </label>
+        )
+      })}
+    </div>
   )
 }
 
