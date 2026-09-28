@@ -1,5 +1,5 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { NotificationsScreen } from "@/modules/patient-app/components/notifications-screen"
 
 export default function Page() {
-  return <StubPage sectionKey="shell.section.patientApp" phase={2} />
+  return <NotificationsScreen />
 }

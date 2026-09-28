@@ -33,7 +33,7 @@ export function LaunchScreen() {
   }
 
   return (
-    <div className="flex min-h-full flex-1 flex-col bg-primary text-primary-foreground">
+    <div className="flex flex-1 flex-col bg-primary text-primary-foreground">
       <div className="flex flex-1 flex-col items-center justify-center gap-5 px-8 py-10 text-center">
         <span className="rounded-[1.6rem] bg-white p-3 shadow-[0_18px_40px_-14px_rgb(0_0_0/0.45)]">
           <HospitalLogo size={76} />
@@ -80,7 +80,9 @@ export function LaunchScreen() {
                 <span
                   className={cn(
                     "flex size-7 items-center justify-center rounded-full",
-                    current ? "bg-primary text-primary-foreground" : "border border-border"
+                    current
+                      ? "bg-primary text-primary-foreground"
+                      : "border border-border"
                   )}
                 >
                   {current ? <Check className="size-4" /> : null}

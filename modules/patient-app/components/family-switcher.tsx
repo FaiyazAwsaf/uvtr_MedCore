@@ -19,7 +19,11 @@ type SheetState = { open: boolean; setOpen: (open: boolean) => void }
 const SheetContext = React.createContext<SheetState | null>(null)
 
 /** Holds the switcher sheet's open state so any screen can open it ("Change"). */
-export function FamilySheetProvider({ children }: { children: React.ReactNode }) {
+export function FamilySheetProvider({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   const [open, setOpen] = React.useState(false)
   const value = React.useMemo(() => ({ open, setOpen }), [open])
   return <SheetContext.Provider value={value}>{children}</SheetContext.Provider>
@@ -48,7 +52,8 @@ function useUnreadByMember(ids: string[]): Map<string, number> {
   return React.useMemo(() => {
     const counts = new Map<string, number>()
     for (const row of rows ?? []) {
-      if (!row.read && !row.held) counts.set(row.patientId, (counts.get(row.patientId) ?? 0) + 1)
+      if (!row.read && !row.held)
+        counts.set(row.patientId, (counts.get(row.patientId) ?? 0) + 1)
     }
     return counts
   }, [rows])
@@ -69,7 +74,8 @@ export function FamilySwitcher() {
   const kindLabel = useMemberKindLabel()
   const unread = useUnreadByMember(members.map((m) => m.patient.id))
   const otherUnread = members.some(
-    (m) => m.patient.id !== member.patient.id && (unread.get(m.patient.id) ?? 0) > 0
+    (m) =>
+      m.patient.id !== member.patient.id && (unread.get(m.patient.id) ?? 0) > 0
   )
 
   return (
@@ -79,7 +85,9 @@ export function FamilySwitcher() {
         data-testid="app-family-switch"
         data-patient-id={member.patient.id}
         onClick={() => setOpen(true)}
-        aria-label={t("patientApp.header.viewing", { name: patientName(member.patient, locale) })}
+        aria-label={t("patientApp.header.viewing", {
+          name: patientName(member.patient, locale),
+        })}
         className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-full bg-surface-raised py-1 pr-3 pl-1 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
       >
         <span className="relative shrink-0">
@@ -93,7 +101,9 @@ export function FamilySwitcher() {
             {patientName(member.patient, locale)}
           </span>
           <span className="block truncate text-[0.6875rem] leading-tight text-muted-foreground">
-            {member.kind === "self" ? t("patientApp.family.you") : kindLabel(member)}
+            {member.kind === "self"
+              ? t("patientApp.family.you")
+              : t(`patientApp.family.short.${member.kind}`)}
           </span>
         </span>
         <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
@@ -141,27 +151,33 @@ export function FamilySwitcher() {
                       ) : null}
                     </span>
                     <span className="mt-0.5 block text-xs text-muted-foreground">
-                      {t("patientApp.common.years", { count: num(ageOn(m.patient.dob, today)) })}
+                      {t("patientApp.common.years", {
+                        count: num(ageOn(m.patient.dob, today)),
+                      })}
                       {" · "}
                       {t(`common.sexLong.${m.patient.sex}`)}
                       {" · "}
                       <UhidText uhid={m.patient.uhid} />
                     </span>
-                    <span className="mt-1 flex items-center gap-1.5 text-xs font-medium text-link">
-                      <ShieldCheck className="size-3.5 shrink-0" />
-                      <span className="truncate">
-                        {kindLabel(m)}
-                        {m.link?.grantedAt
-                          ? `, ${t("patientApp.family.since", { date: dmy(m.link.grantedAt) })}`
-                          : ""}
-                      </span>
+                    <span className="mt-1 flex items-start gap-1.5 text-xs font-medium text-link">
+                      <ShieldCheck className="mt-px size-3.5 shrink-0" />
+                      <span className="leading-snug">{kindLabel(m)}</span>
                     </span>
+                    {m.link?.grantedAt ? (
+                      <span className="mt-0.5 block pl-5 text-[0.6875rem] text-muted-foreground">
+                        {t("patientApp.family.since", {
+                          date: dmy(m.link.grantedAt),
+                        })}
+                      </span>
+                    ) : null}
                   </span>
                   <span className="flex shrink-0 flex-col items-end gap-1.5">
                     {selected ? (
                       <span className="flex size-7 items-center justify-center rounded-full bg-primary text-primary-foreground">
                         <Check className="size-4" />
-                        <span className="sr-only">{t("patientApp.family.selected")}</span>
+                        <span className="sr-only">
+                          {t("patientApp.family.selected")}
+                        </span>
                       </span>
                     ) : null}
                     {count > 0 ? (

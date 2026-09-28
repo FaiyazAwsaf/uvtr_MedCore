@@ -26,7 +26,9 @@ export function ScreenTitle({
       <div className="min-w-0">
         <h1 className="text-[1.375rem] leading-tight font-semibold">{title}</h1>
         {subtitle ? (
-          <p className="mt-1 text-[0.8125rem] leading-snug text-muted-foreground">{subtitle}</p>
+          <p className="mt-1 text-[0.8125rem] leading-snug text-muted-foreground">
+            {subtitle}
+          </p>
         ) : null}
       </div>
       {action ? <div className="shrink-0">{action}</div> : null}
@@ -93,7 +95,9 @@ export function DoctorAvatar({
   staff,
   size = 44,
 }: {
-  staff: Pick<StaffRow, "id" | "avatarSeed" | "sex" | "nameEn" | "nameBn"> | undefined
+  staff:
+    | Pick<StaffRow, "id" | "avatarSeed" | "sex" | "nameEn" | "nameBn">
+    | undefined
   size?: number
 }) {
   const { locale } = useLocale()
@@ -103,7 +107,9 @@ export function DoctorAvatar({
       sex={staff?.sex ?? "M"}
       role="doctor"
       size={size}
-      title={staff ? (locale === "bn" ? staff.nameBn : staff.nameEn) : undefined}
+      title={
+        staff ? (locale === "bn" ? staff.nameBn : staff.nameEn) : undefined
+      }
     />
   )
 }
@@ -173,7 +179,10 @@ export function Segmented<T extends string>({
     <div
       role="radiogroup"
       aria-label={label}
-      className={cn("grid auto-cols-fr grid-flow-col gap-1 rounded-full bg-surface-raised p-1", className)}
+      className={cn(
+        "grid auto-cols-fr grid-flow-col gap-1 rounded-full bg-surface-raised p-1",
+        className
+      )}
     >
       {options.map((option) => {
         const active = option.value === value

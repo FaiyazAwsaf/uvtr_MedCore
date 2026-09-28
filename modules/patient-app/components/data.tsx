@@ -26,17 +26,26 @@ import { updateAppState, useAppState } from "../state/app-state"
  * Labels
  * ================================================================== */
 
-export function patientName(patient: Pick<PatientRow, "nameEn" | "nameBn">, locale: Locale) {
+export function patientName(
+  patient: Pick<PatientRow, "nameEn" | "nameBn">,
+  locale: Locale
+) {
   return locale === "bn" ? patient.nameBn : patient.nameEn
 }
 
 /** First name for greetings ("Tanvir"), skipping honorifics like "Md.". */
-export function firstName(patient: Pick<PatientRow, "nameEn" | "nameBn">, locale: Locale) {
+export function firstName(
+  patient: Pick<PatientRow, "nameEn" | "nameBn">,
+  locale: Locale
+) {
   const parts = patientName(patient, locale).split(/\s+/)
   return parts.find((p) => !/^(md\.?|mohammad|মোঃ|মো\.)$/i.test(p)) ?? parts[0]
 }
 
-export function staffName(staff: Pick<StaffRow, "nameEn" | "nameBn"> | undefined, locale: Locale) {
+export function staffName(
+  staff: Pick<StaffRow, "nameEn" | "nameBn"> | undefined,
+  locale: Locale
+) {
   if (!staff) return ""
   return locale === "bn" ? staff.nameBn : staff.nameEn
 }
@@ -79,14 +88,26 @@ export function FamilyProvider({
   const { memberId } = useAppState()
   const data = useLiveQuery(async () => {
     const account = await db.patients.get(accountId)
-    const links = await db.familyLinks.where("ownerPatientId").equals(accountId).toArray()
+    const links = await db.familyLinks
+      .where("ownerPatientId")
+      .equals(accountId)
+      .toArray()
     const found = await db.patients.bulkGet(links.map((l) => l.memberPatientId))
-    return { account, links, patients: found.filter((p): p is PatientRow => !!p) }
+    return {
+      account,
+      links,
+      patients: found.filter((p): p is PatientRow => !!p),
+    }
   }, [db, accountId])
 
   const value = React.useMemo<FamilyValue | null>(() => {
     if (!data?.account) return null
-    const members = familyMembers(data.account, data.links, data.patients, today)
+    const members = familyMembers(
+      data.account,
+      data.links,
+      data.patients,
+      today
+    )
     const member = resolveMember(members, memberId) ?? members[0]
     return {
       account: data.account,
@@ -97,7 +118,9 @@ export function FamilyProvider({
   }, [data, today, memberId])
 
   if (!value) return <>{loading}</>
-  return <FamilyContext.Provider value={value}>{children}</FamilyContext.Provider>
+  return (
+    <FamilyContext.Provider value={value}>{children}</FamilyContext.Provider>
+  )
 }
 
 export function useFamily(): FamilyValue {
@@ -124,7 +147,8 @@ type DirectoryValue = {
 
 const DirectoryContext = React.createContext<DirectoryValue | null>(null)
 
-const byId = <T extends { id: Id }>(rows: T[]) => new Map(rows.map((r) => [r.id, r]))
+const byId = <T extends { id: Id }>(rows: T[]) =>
+  new Map(rows.map((r) => [r.id, r]))
 
 export function DirectoryProvider({
   loading,
@@ -149,12 +173,17 @@ export function DirectoryProvider({
     }
   }, [db])
   if (!value) return <>{loading}</>
-  return <DirectoryContext.Provider value={value}>{children}</DirectoryContext.Provider>
+  return (
+    <DirectoryContext.Provider value={value}>
+      {children}
+    </DirectoryContext.Provider>
+  )
 }
 
 export function useDirectory(): DirectoryValue {
   const value = React.useContext(DirectoryContext)
-  if (!value) throw new Error("useDirectory must be used inside <DirectoryProvider>")
+  if (!value)
+    throw new Error("useDirectory must be used inside <DirectoryProvider>")
   return value
 }
 

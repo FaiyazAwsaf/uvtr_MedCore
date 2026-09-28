@@ -2,14 +2,20 @@
 
 import * as React from "react"
 import { useLiveQuery } from "dexie-react-hooks"
-import { Clock, Hourglass, MapPin, MapPinCheck, TriangleAlert, WifiOff } from "lucide-react"
+import {
+  Clock,
+  Hourglass,
+  MapPin,
+  MapPinCheck,
+  TriangleAlert,
+  WifiOff,
+} from "lucide-react"
 
 import { StatusPill, type Tone } from "@/components/shared/status"
 import { Button } from "@/components/ui/button"
 import { atDhaka } from "@/core/clock/dates"
 import { useDb, useDbInfo } from "@/core/db/DbProvider"
 import type { AppointmentRow, SessionRow } from "@/core/db/schema"
-import { useCommand } from "@/core/engine/useCommand"
 import { useFlashOnChange } from "@/hooks/use-flash-on-change"
 import { cn } from "@/lib/utils"
 import { useLocale } from "@/lib/i18n/provider"
@@ -18,6 +24,7 @@ import { checkIn } from "@/modules/queue/commands"
 import { checkInState } from "../lib/appointments"
 import { myQueue, nowServing, waitingCount } from "../lib/queue"
 import { branchName, useRoomName, useToday } from "./data"
+import { useAppCommand, useProblemText } from "./use-app-command"
 
 /** Status pill tones for appointment states. */
 export const APPOINTMENT_TONE: Record<AppointmentRow["status"], Tone> = {
@@ -30,7 +37,11 @@ export const APPOINTMENT_TONE: Record<AppointmentRow["status"], Tone> = {
   rebooked: "muted",
 }
 
-export function AppointmentStatus({ status }: { status: AppointmentRow["status"] }) {
+export function AppointmentStatus({
+  status,
+}: {
+  status: AppointmentRow["status"]
+}) {
   const { t } = useLocale()
   return (
     <StatusPill tone={APPOINTMENT_TONE[status]} dot>
@@ -52,7 +63,13 @@ export function useBranchOffline(branchId: string): boolean {
 }
 
 /** Day tile: weekday, day and month of an ISO date. */
-export function DateTile({ date, className }: { date: string; className?: string }) {
+export function DateTile({
+  date,
+  className,
+}: {
+  date: string
+  className?: string
+}) {
   const { date: fmt } = useLocale()
   const ms = atDhaka(date, "12:00")
   return (
@@ -62,9 +79,15 @@ export function DateTile({ date, className }: { date: string; className?: string
         className
       )}
     >
-      <span className="text-[0.6875rem] font-medium">{fmt(ms, { weekday: "short" })}</span>
-      <span className="text-xl leading-tight font-semibold">{fmt(ms, { day: "numeric" })}</span>
-      <span className="text-[0.6875rem] font-medium">{fmt(ms, { month: "short" })}</span>
+      <span className="text-[0.6875rem] font-medium">
+        {fmt(ms, { weekday: "short" })}
+      </span>
+      <span className="text-xl leading-tight font-semibold">
+        {fmt(ms, { day: "numeric" })}
+      </span>
+      <span className="text-[0.6875rem] font-medium">
+        {fmt(ms, { month: "short" })}
+      </span>
     </span>
   )
 }
@@ -132,13 +155,16 @@ export function QueuePanel({
   const roomName = useRoomName()
   const offline = useBranchOffline(appointment.branchId)
   const tokens = useLiveQuery(
-    () => db.queueTokens.where("sessionId").equals(appointment.sessionId).toArray(),
+    () =>
+      db.queueTokens.where("sessionId").equals(appointment.sessionId).toArray(),
     [db, appointment.sessionId]
   )
   const serving = tokens ? nowServing(tokens) : null
   const mine = tokens ? myQueue(tokens, appointment.tokenId) : null
   const servingFlash = useFlashOnChange(serving?.token.id)
-  const aheadFlash = useFlashOnChange(mine ? `${mine.state}:${"ahead" in mine ? mine.ahead : ""}` : "")
+  const aheadFlash = useFlashOnChange(
+    mine ? `${mine.state}:${"ahead" in mine ? mine.ahead : ""}` : ""
+  )
 
   if (offline) {
     return (
@@ -156,9 +182,13 @@ export function QueuePanel({
   let message: string | null = null
   if (mine?.state === "waiting") {
     message =
-      mine.ahead === 0 ? t("patientApp.queue.next") : t("patientApp.queue.ahead", { count: num(mine.ahead) })
+      mine.ahead === 0
+        ? t("patientApp.queue.next")
+        : t("patientApp.queue.ahead", { count: num(mine.ahead) })
   } else if (mine?.state === "called") {
-    message = t("patientApp.queue.yourTurn", { room: roomName(session?.roomId) })
+    message = t("patientApp.queue.yourTurn", {
+      room: roomName(session?.roomId),
+    })
   } else if (mine?.state === "skipped") {
     message = t("patientApp.queue.skipped")
   } else if (mine?.state === "done") {
@@ -180,7 +210,9 @@ export function QueuePanel({
             lang={serving ? "en" : undefined}
             className={cn(
               "mt-1 truncate font-semibold",
-              serving ? "font-mono text-[1.625rem] leading-none" : "text-base leading-[1.625rem]"
+              serving
+                ? "font-mono text-[1.625rem] leading-none"
+                : "text-base leading-[1.625rem]"
             )}
           >
             {serving ? serving.token.label : t("patientApp.queue.notStarted")}
@@ -188,7 +220,9 @@ export function QueuePanel({
         </div>
         {mine ? (
           <div className="rounded-2xl bg-primary p-3 text-primary-foreground">
-            <p className="text-xs font-medium opacity-90">{t("patientApp.queue.yourToken")}</p>
+            <p className="text-xs font-medium opacity-90">
+              {t("patientApp.queue.yourToken")}
+            </p>
             <p
               data-testid="app-token-label"
               lang="en"
@@ -200,9 +234,13 @@ export function QueuePanel({
         ) : (
           <div className="rounded-2xl bg-surface-raised p-3">
             <p className="text-xs font-medium text-muted-foreground">
-              {t("patientApp.queue.waiting", { count: num(waitingCount(tokens)) })}
+              {t("patientApp.queue.waiting", {
+                count: num(waitingCount(tokens)),
+              })}
             </p>
-            <p className="mt-1 text-xs leading-snug">{t("patientApp.queue.waitingNoToken")}</p>
+            <p className="mt-1 text-xs leading-snug">
+              {t("patientApp.queue.waitingNoToken")}
+            </p>
           </div>
         )}
       </div>
@@ -241,7 +279,8 @@ export function CheckInButton({
   const { t } = useLocale()
   const today = useToday()
   const offline = useBranchOffline(appointment.branchId)
-  const command = useCommand(checkIn)
+  const command = useAppCommand(checkIn)
+  const problemText = useProblemText()
   const state = checkInState(appointment, session, today, offline)
 
   if (state === "checked-in") return null
@@ -277,11 +316,22 @@ export function CheckInButton({
         }
       >
         <MapPinCheck />
-        {command.pending ? t("patientApp.appointments.checkingIn") : t("patientApp.appointments.checkIn")}
+        {command.pending
+          ? t("patientApp.appointments.checkingIn")
+          : t("patientApp.appointments.checkIn")}
       </Button>
-      <p className="text-center text-xs text-muted-foreground">
-        {t("patientApp.appointments.checkInHint")}
-      </p>
+      {command.problem ? (
+        <p
+          role="alert"
+          className="text-center text-[0.8125rem] font-medium text-destructive"
+        >
+          {problemText(command.problem)}
+        </p>
+      ) : (
+        <p className="text-center text-xs text-muted-foreground">
+          {t("patientApp.appointments.checkInHint")}
+        </p>
+      )}
     </div>
   )
 }

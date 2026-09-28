@@ -2,7 +2,12 @@
 
 import * as React from "react"
 import { useLiveQuery } from "dexie-react-hooks"
-import { MessageSquareText, PhoneCall, ShieldCheck, Smartphone } from "lucide-react"
+import {
+  MessageSquareText,
+  PhoneCall,
+  ShieldCheck,
+  Smartphone,
+} from "lucide-react"
 
 import { HospitalWordmark } from "@/components/shared/hospital-brand"
 import { SimulatedBadge } from "@/components/shared/simulated-badge"
@@ -29,7 +34,10 @@ const OTP = rules.simulated.otp
 export function OtpLogin({ accountId }: { accountId: Id }) {
   const { t, locale } = useLocale()
   const db = useDb()
-  const account = useLiveQuery(() => db.patients.get(accountId), [db, accountId])
+  const account = useLiveQuery(
+    () => db.patients.get(accountId),
+    [db, accountId]
+  )
 
   const [typed, setTyped] = React.useState<string | null>(null)
   const [step, setStep] = React.useState<"phone" | "code">("phone")
@@ -45,7 +53,9 @@ export function OtpLogin({ accountId }: { accountId: Id }) {
   const send = () => {
     if (!isBdMobile(phone)) return setError(t("patientApp.login.invalidPhone"))
     if (!samePhone(phone, account?.phone)) {
-      return setError(t("patientApp.login.unknownPhone", { hospital: hospitalName }))
+      return setError(
+        t("patientApp.login.unknownPhone", { hospital: hospitalName })
+      )
     }
     setError(null)
     setCode("")
@@ -64,7 +74,7 @@ export function OtpLogin({ accountId }: { accountId: Id }) {
   const closeSms = React.useCallback(() => setSmsOpen(false), [])
 
   return (
-    <div className="flex min-h-full flex-1 flex-col px-6 pt-6 pb-8">
+    <div className="flex flex-1 flex-col px-6 pt-6 pb-8">
       <HospitalWordmark short size={36} />
 
       <div className="mt-9">
@@ -85,7 +95,9 @@ export function OtpLogin({ accountId }: { accountId: Id }) {
         }}
       >
         <label className="flex flex-col gap-2">
-          <span className="text-[0.8125rem] font-medium">{t("patientApp.login.phoneLabel")}</span>
+          <span className="text-[0.8125rem] font-medium">
+            {t("patientApp.login.phoneLabel")}
+          </span>
           <span className="relative">
             <Smartphone className="pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -106,7 +118,12 @@ export function OtpLogin({ accountId }: { accountId: Id }) {
         </label>
 
         {step === "phone" ? (
-          <Button data-testid="app-otp-send" type="submit" size="lg" className="h-12 w-full text-base">
+          <Button
+            data-testid="app-otp-send"
+            type="submit"
+            size="lg"
+            className="h-12 w-full text-base"
+          >
             <MessageSquareText />
             {t("patientApp.login.sendCode")}
           </Button>
@@ -153,7 +170,11 @@ export function OtpLogin({ accountId }: { accountId: Id }) {
               {t("patientApp.login.verify")}
             </Button>
             <div className="flex items-center justify-between text-[0.8125rem]">
-              <button type="button" onClick={send} className="min-h-10 font-medium text-link">
+              <button
+                type="button"
+                onClick={send}
+                className="min-h-10 font-medium text-link"
+              >
                 {t("patientApp.login.resend")}
               </button>
               <button
@@ -172,7 +193,10 @@ export function OtpLogin({ accountId }: { accountId: Id }) {
         )}
 
         {error ? (
-          <p role="alert" className="text-[0.8125rem] font-medium text-destructive">
+          <p
+            role="alert"
+            className="text-[0.8125rem] font-medium text-destructive"
+          >
             {error}
           </p>
         ) : null}

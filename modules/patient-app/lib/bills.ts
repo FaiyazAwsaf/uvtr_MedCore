@@ -1,7 +1,14 @@
-import type { BasketLineRow, BranchCode, InvoiceRow, Poisha } from "@/core/db/schema"
+import type {
+  BasketLineRow,
+  BranchCode,
+  InvoiceRow,
+  Poisha,
+} from "@/core/db/schema"
 
 /** A basket line's amount: quantity times unit price, in poisha. */
-export function lineAmount(line: Pick<BasketLineRow, "qty" | "unitPriceP">): Poisha {
+export function lineAmount(
+  line: Pick<BasketLineRow, "qty" | "unitPriceP">
+): Poisha {
   return line.qty * line.unitPriceP
 }
 
@@ -36,4 +43,37 @@ export function invoiceDue(invoice: InvoiceRow): Poisha {
 /** Invoices newest first. */
 export function sortInvoices(invoices: InvoiceRow[]): InvoiceRow[] {
   return [...invoices].sort((a, b) => b.createdAt - a.createdAt)
+}
+
+type PaymentLike = {
+  status: string
+  tender: string
+  invoiceId: string
+  requestedAt: number
+}
+
+const isMfsTender = (tender: string) => tender === "bkash" || tender === "nagad"
+
+/** bKash or Nagad pushes still waiting for the customer's approval, oldest first. */
+export function pendingOnlinePayments<P extends PaymentLike>(
+  payments: P[]
+): P[] {
+  return payments
+    .filter((p) => p.status === "pending" && isMfsTender(p.tender))
+    .sort((a, b) => a.requestedAt - b.requestedAt)
+}
+
+/** The latest bKash or Nagad push on an invoice that expired unapproved, if any. */
+export function lastTimedOut<P extends PaymentLike>(
+  payments: P[],
+  invoiceId: string
+): P | undefined {
+  return payments
+    .filter(
+      (p) =>
+        p.invoiceId === invoiceId &&
+        p.status === "timeout" &&
+        isMfsTender(p.tender)
+    )
+    .sort((a, b) => b.requestedAt - a.requestedAt)[0]
 }

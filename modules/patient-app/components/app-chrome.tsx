@@ -49,7 +49,9 @@ function LangSwitch() {
             onClick={() => setLocale(code)}
             className={cn(
               "flex h-8 min-w-9 items-center justify-center rounded-full px-2 text-xs font-semibold transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40",
-              active ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+              active
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground"
             )}
           >
             {LOCALE_META[code].short}
@@ -67,9 +69,12 @@ function useFamilyNotifications(): NotificationRow[] | undefined {
   const key = members.map((m) => m.patient.id).join(",")
   return useLiveQuery(
     async () =>
-      (await db.notifications.where("patientId").anyOf(key.split(",")).toArray()).sort(
-        (a, b) => b.at - a.at
-      ),
+      (
+        await db.notifications
+          .where("patientId")
+          .anyOf(key.split(","))
+          .toArray()
+      ).sort((a, b) => b.at - a.at),
     [db, key]
   )
 }
@@ -158,7 +163,12 @@ function TabBar() {
   const { t } = useLocale()
   const pathname = usePathname()
   const tabs: Tab[] = [
-    { href: "/app", label: t("patientApp.tabs.home"), icon: House, match: ["/app"] },
+    {
+      href: "/app",
+      label: t("patientApp.tabs.home"),
+      icon: House,
+      match: ["/app"],
+    },
     {
       href: "/app/doctors",
       label: t("patientApp.tabs.book"),
@@ -177,7 +187,12 @@ function TabBar() {
       icon: FileText,
       match: ["/app/reports", "/app/prescriptions"],
     },
-    { href: "/app/bills", label: t("patientApp.tabs.bills"), icon: ReceiptText, match: ["/app/bills"] },
+    {
+      href: "/app/bills",
+      label: t("patientApp.tabs.bills"),
+      icon: ReceiptText,
+      match: ["/app/bills"],
+    },
   ]
   return (
     <nav
@@ -195,7 +210,9 @@ function TabBar() {
             aria-current={active ? "page" : undefined}
             className={cn(
               "flex min-h-14 flex-col items-center justify-center gap-1 rounded-2xl text-[0.6875rem] leading-none font-medium transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40",
-              active ? "text-link" : "text-muted-foreground hover:text-foreground"
+              active
+                ? "text-link"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             <span
@@ -230,23 +247,23 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
 
   return (
     <FamilySheetProvider>
-    <div ref={ref} className="flex min-h-full flex-1 flex-col">
-      <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-hairline bg-background/95 px-3 py-2 backdrop-blur">
-        <Link
-          href="/app"
-          aria-label={t("patientApp.header.home")}
-          className="shrink-0 rounded-[0.7rem] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
-        >
-          <HospitalLogo size={34} />
-        </Link>
-        <FamilySwitcher />
-        <LangSwitch />
-        <NotificationBell />
-      </header>
-      <main className="flex flex-1 flex-col px-4 pt-3 pb-6">{children}</main>
-      <TabBar />
-      <PushBanners />
-    </div>
+      <div ref={ref} className="flex flex-1 flex-col">
+        <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-hairline bg-background/95 px-3 py-2 backdrop-blur">
+          <Link
+            href="/app"
+            aria-label={t("patientApp.header.home")}
+            className="shrink-0 rounded-[0.7rem] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
+          >
+            <HospitalLogo size={34} />
+          </Link>
+          <FamilySwitcher />
+          <LangSwitch />
+          <NotificationBell />
+        </header>
+        <main className="flex flex-1 flex-col px-4 pt-3 pb-6">{children}</main>
+        <TabBar />
+        <PushBanners />
+      </div>
     </FamilySheetProvider>
   )
 }

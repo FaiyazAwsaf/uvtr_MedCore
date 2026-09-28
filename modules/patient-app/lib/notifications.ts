@@ -15,6 +15,7 @@ export const NOTIFICATION_KINDS = [
   "appointmentBooked",
   "tokenCalled",
   "paymentReceived",
+  "sampleRecollection",
 ] as const
 
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number]
@@ -22,15 +23,21 @@ export type NotificationKind = (typeof NOTIFICATION_KINDS)[number]
 const PREFIX = "patientApp.notifications."
 
 /** The i18n key for a notification's title, or null when it is not one of ours. */
-export function notificationTitleKey(notification: Pick<NotificationRow, "titleKey" | "kind">): string | null {
+export function notificationTitleKey(
+  notification: Pick<NotificationRow, "titleKey" | "kind">
+): string | null {
   const kind = notification.titleKey.startsWith(PREFIX)
     ? notification.titleKey.slice(PREFIX.length)
     : notification.kind
-  return (NOTIFICATION_KINDS as readonly string[]).includes(kind) ? `${PREFIX}${kind}` : null
+  return (NOTIFICATION_KINDS as readonly string[]).includes(kind)
+    ? `${PREFIX}${kind}`
+    : null
 }
 
 /** The screen a notification opens, with the record to bring into view. */
-export function notificationHref(notification: Pick<NotificationRow, "refs">): string {
+export function notificationHref(
+  notification: Pick<NotificationRow, "refs">
+): string {
   const { refs } = notification
   if (refs.reportId) return `/app/reports?focus=${refs.reportId}`
   if (refs.imagingOrderId) return `/app/reports?focus=${refs.imagingOrderId}`
@@ -47,5 +54,7 @@ export function unseenNotifications(
   seen: ReadonlySet<Id>,
   current: NotificationRow[]
 ): NotificationRow[] {
-  return current.filter((n) => !seen.has(n.id) && !n.held).sort((a, b) => b.at - a.at)
+  return current
+    .filter((n) => !seen.has(n.id) && !n.held)
+    .sort((a, b) => b.at - a.at)
 }

@@ -23,14 +23,16 @@ export const markNotificationsRead = defineCommand({
     if (input.patientId !== accountId) {
       const member = await tx.find("patients", input.patientId)
       const links = await tx.list("familyLinks", "ownerPatientId", accountId)
-      if (!links.some((link) => linkAllows(link, accountId, member, tx.today()))) {
+      if (
+        !links.some((link) => linkAllows(link, accountId, member, tx.today()))
+      ) {
         tx.reject("FAMILY_ACCESS_DENIED", { patientId: input.patientId })
       }
     }
     const wanted = input.ids ? new Set(input.ids) : null
-    const unread = (await tx.list("notifications", "patientId", input.patientId)).filter(
-      (n) => !n.read && (!wanted || wanted.has(n.id))
-    )
+    const unread = (
+      await tx.list("notifications", "patientId", input.patientId)
+    ).filter((n) => !n.read && (!wanted || wanted.has(n.id)))
     for (const notification of unread) {
       await tx.update("notifications", notification.id, { read: true })
     }

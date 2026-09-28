@@ -18,7 +18,9 @@ export type NowServing = {
 function latestCalled(tokens: QueueTokenRow[]): QueueTokenRow | undefined {
   return [...tokens]
     .filter((t) => t.calledAt !== undefined)
-    .sort((a, b) => (b.calledAt ?? 0) - (a.calledAt ?? 0) || b.position - a.position)[0]
+    .sort(
+      (a, b) => (b.calledAt ?? 0) - (a.calledAt ?? 0) || b.position - a.position
+    )[0]
 }
 
 /** The token on the display board for a session, or null before anyone is called. */
@@ -43,7 +45,10 @@ export type MyQueue =
   | { state: "done"; token: QueueTokenRow }
 
 /** The patient's own place in the queue, or null without a token. */
-export function myQueue(tokens: QueueTokenRow[], tokenId: Id | undefined): MyQueue | null {
+export function myQueue(
+  tokens: QueueTokenRow[],
+  tokenId: Id | undefined
+): MyQueue | null {
   const token = tokenId ? tokens.find((t) => t.id === tokenId) : undefined
   if (!token) return null
   switch (token.status) {
@@ -56,7 +61,10 @@ export function myQueue(tokens: QueueTokenRow[], tokenId: Id | undefined): MyQue
       return { state: "done", token }
     default: {
       const ahead = tokens.filter(
-        (t) => t.id !== token.id && IN_LINE.includes(t.status) && t.position < token.position
+        (t) =>
+          t.id !== token.id &&
+          IN_LINE.includes(t.status) &&
+          t.position < token.position
       ).length
       return { state: "waiting", token, ahead }
     }

@@ -15,7 +15,15 @@ import { cn } from "@/lib/utils"
 import { useLocale } from "@/lib/i18n/provider"
 
 import { splitAppointments } from "../lib/appointments"
-import { AppCard, AppLoading, DoctorAvatar, ScreenTitle, Segmented, useFocusId, useFocusRing } from "./bits"
+import {
+  AppCard,
+  AppLoading,
+  DoctorAvatar,
+  ScreenTitle,
+  Segmented,
+  useFocusId,
+  useFocusRing,
+} from "./bits"
 import { useDoctorInfo, useMember, useToday } from "./data"
 import {
   AppointmentStatus,
@@ -42,21 +50,40 @@ function FeeLine({ appointment }: { appointment: AppointmentRow }) {
   const db = useDb()
   const line = useLiveQuery(
     async () =>
-      appointment.feeBasketLineId ? await db.basketLines.get(appointment.feeBasketLineId) : undefined,
+      appointment.feeBasketLineId
+        ? await db.basketLines.get(appointment.feeBasketLineId)
+        : undefined,
     [db, appointment.feeBasketLineId]
   )
   if (!line || line.status === "removed") return null
   const paid = line.status === "invoiced"
   return (
-    <p className="flex items-center justify-between gap-3 text-[0.8125rem]">
-      <span className="text-muted-foreground">{t("patientApp.appointments.fee")}</span>
-      <span className="flex items-center gap-2">
-        <MoneyText poisha={line.qty * line.unitPriceP} className="font-semibold" />
-        <span className={cn("text-xs font-medium", paid ? "text-success" : "text-muted-foreground")}>
-          {paid ? t("patientApp.appointments.feePaid") : t("patientApp.appointments.feeDue")}
+    <Link
+      href="/app/bills"
+      data-testid="app-appointment-fee"
+      data-paid={paid}
+      className="flex items-center justify-between gap-3 text-[0.8125rem]"
+    >
+      <span className="min-w-0">
+        <span className="block text-muted-foreground">
+          {t("patientApp.appointments.fee")}
+        </span>
+        <span
+          className={cn(
+            "block text-xs font-medium",
+            paid ? "text-success" : "text-link"
+          )}
+        >
+          {paid
+            ? t("patientApp.appointments.feePaid")
+            : t("patientApp.appointments.feeDue")}
         </span>
       </span>
-    </p>
+      <MoneyText
+        poisha={line.qty * line.unitPriceP}
+        className="text-[0.9375rem] font-semibold"
+      />
+    </Link>
   )
 }
 
@@ -65,8 +92,16 @@ export function CheckInQr({ appointment }: { appointment: AppointmentRow }) {
   const { t } = useLocale()
   return (
     <div className="mt-3 flex items-center gap-3 rounded-2xl border border-dashed border-border p-3">
-      <span data-testid="app-qr" data-value={appointment.qrCode} className="shrink-0">
-        <QrCode value={appointment.qrCode} size={92} title={t("patientApp.appointments.passTitle")} />
+      <span
+        data-testid="app-qr"
+        data-value={appointment.qrCode}
+        className="shrink-0"
+      >
+        <QrCode
+          value={appointment.qrCode}
+          size={92}
+          title={t("patientApp.appointments.passTitle")}
+        />
       </span>
       <span className="min-w-0">
         <span className="flex items-center gap-1.5 text-[0.8125rem] font-semibold">
@@ -76,7 +111,10 @@ export function CheckInQr({ appointment }: { appointment: AppointmentRow }) {
         <span className="mt-1 block text-xs leading-snug text-muted-foreground">
           {t("patientApp.appointments.passHint")}
         </span>
-        <span lang="en" className="mt-1.5 block truncate font-mono text-[0.625rem] text-muted-foreground">
+        <span
+          lang="en"
+          className="mt-1.5 block truncate font-mono text-[0.625rem] text-muted-foreground"
+        >
           {appointment.qrCode}
         </span>
       </span>
@@ -85,7 +123,13 @@ export function CheckInQr({ appointment }: { appointment: AppointmentRow }) {
 }
 
 /** One upcoming appointment: doctor, time, place, live queue, check-in and QR pass. */
-function AppointmentPass({ appointment, focused }: { appointment: AppointmentRow; focused: boolean }) {
+function AppointmentPass({
+  appointment,
+  focused,
+}: {
+  appointment: AppointmentRow
+  focused: boolean
+}) {
   const { t } = useLocale()
   const doctorInfo = useDoctorInfo()
   const session = useSession(appointment.sessionId)
@@ -109,8 +153,12 @@ function AppointmentPass({ appointment, focused }: { appointment: AppointmentRow
             <div className="flex min-w-0 items-center gap-2">
               <DoctorAvatar staff={info?.staff} size={36} />
               <div className="min-w-0">
-                <p className="truncate text-[0.9375rem] leading-tight font-semibold">{info?.name}</p>
-                <p className="truncate text-xs text-muted-foreground">{info?.specialtyName}</p>
+                <p className="truncate text-[0.9375rem] leading-tight font-semibold">
+                  {info?.name}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {info?.specialtyName}
+                </p>
               </div>
             </div>
           </div>
@@ -131,7 +179,9 @@ function AppointmentPass({ appointment, focused }: { appointment: AppointmentRow
         <QueuePanel appointment={appointment} session={session} />
       ) : null}
       <CheckInButton appointment={appointment} session={session} />
-      {appointment.status === "booked" ? <CheckInQr appointment={appointment} /> : null}
+      {appointment.status === "booked" ? (
+        <CheckInQr appointment={appointment} />
+      ) : null}
       <div className="mt-3 border-t border-hairline pt-3">
         <FeeLine appointment={appointment} />
       </div>
@@ -179,7 +229,12 @@ export function AppointmentsScreen() {
       <ScreenTitle
         title={t("patientApp.appointments.title")}
         action={
-          <Button nativeButton={false} render={<Link href="/app/doctors" />} size="sm" className="h-10 rounded-full px-4">
+          <Button
+            nativeButton={false}
+            render={<Link href="/app/doctors" />}
+            size="sm"
+            className="h-10 rounded-full px-4"
+          >
             <CalendarPlus />
             {t("patientApp.appointments.book")}
           </Button>
@@ -203,7 +258,11 @@ export function AppointmentsScreen() {
         ) : shown === "upcoming" ? (
           split.upcoming.length ? (
             split.upcoming.map((a) => (
-              <AppointmentPass key={a.id} appointment={a} focused={a.id === focusId} />
+              <AppointmentPass
+                key={a.id}
+                appointment={a}
+                focused={a.id === focusId}
+              />
             ))
           ) : (
             <EmptyAppointments />
@@ -227,15 +286,21 @@ function EmptyAppointments() {
       <span className="flex size-12 items-center justify-center rounded-full bg-surface-raised text-muted-foreground">
         <CalendarX2 className="size-5" />
       </span>
-      <p className="text-[0.9375rem] font-semibold">{t("patientApp.appointments.emptyUpcoming")}</p>
+      <p className="text-[0.9375rem] font-semibold">
+        {t("patientApp.appointments.emptyUpcoming")}
+      </p>
       <p className="max-w-[30ch] text-[0.8125rem] text-muted-foreground">
         {t("patientApp.appointments.emptyUpcomingHint")}
       </p>
-      <Button nativeButton={false} render={<Link href="/app/doctors" />} size="lg" className="mt-1 h-12 rounded-full px-6">
+      <Button
+        nativeButton={false}
+        render={<Link href="/app/doctors" />}
+        size="lg"
+        className="mt-1 h-12 rounded-full px-6"
+      >
         <CalendarPlus />
         {t("patientApp.home.bookDoctor")}
       </Button>
     </AppCard>
   )
 }
-

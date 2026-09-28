@@ -49,7 +49,9 @@ export function rxSummary(lines: RxLineRow[], nowMs: Ms): RxSummary {
 }
 
 /** Signed prescriptions and their earlier versions (never drafts), newest first. */
-export function visiblePrescriptions(prescriptions: PrescriptionRow[]): PrescriptionRow[] {
+export function visiblePrescriptions(
+  prescriptions: PrescriptionRow[]
+): PrescriptionRow[] {
   return prescriptions
     .filter((rx) => rx.status !== "draft" && rx.signedAt !== undefined)
     .sort((a, b) => (b.signedAt ?? 0) - (a.signedAt ?? 0))
@@ -61,5 +63,7 @@ export function newerPrescription(
   all: PrescriptionRow[]
 ): PrescriptionRow | undefined {
   if (rx.status !== "superseded" && rx.status !== "replaced") return undefined
-  return all.find((other) => other.supersedesId === rx.id || other.replacesId === rx.id)
+  return all.find(
+    (other) => other.supersedesId === rx.id || other.replacesId === rx.id
+  )
 }

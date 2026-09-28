@@ -104,7 +104,9 @@ export function BmdcBadge({ doctor }: { doctor: DoctorRow }) {
       <span lang="en" className="font-mono">
         {t("patientApp.doctors.bmdc", { number: doctor.bmdcNo })}
       </span>
-      {doctor.bmdcVerified ? <span>· {t("patientApp.doctors.verified")}</span> : null}
+      {doctor.bmdcVerified ? (
+        <span>· {t("patientApp.doctors.verified")}</span>
+      ) : null}
     </span>
   )
 }
@@ -126,7 +128,8 @@ export function DoctorsScreen() {
   const nextSession = React.useMemo(() => {
     const next = new Map<string, SessionRow>()
     for (const s of bookableSessions(sessions ?? [], today, nowMs)) {
-      if (s.status !== "blocked" && !next.has(s.doctorId)) next.set(s.doctorId, s)
+      if (s.status !== "blocked" && !next.has(s.doctorId))
+        next.set(s.doctorId, s)
     }
     return next
   }, [sessions, today, nowMs])
@@ -145,19 +148,29 @@ export function DoctorsScreen() {
       if (!needle) return true
       const person = staff.get(d.staffId)
       const specialty = specialties.get(d.specialtyId)
-      return [person?.nameEn, person?.nameBn, specialty?.name.en, specialty?.name.bn, d.qualifications]
+      return [
+        person?.nameEn,
+        person?.nameBn,
+        specialty?.name.en,
+        specialty?.name.bn,
+        d.qualifications,
+      ]
         .filter(Boolean)
         .some((text) => text!.toLowerCase().includes(needle))
     })
     .sort((a, b) =>
-      (staff.get(a.staffId)?.nameEn ?? "").localeCompare(staff.get(b.staffId)?.nameEn ?? "")
+      (staff.get(a.staffId)?.nameEn ?? "").localeCompare(
+        staff.get(b.staffId)?.nameEn ?? ""
+      )
     )
 
   return (
     <>
       <ScreenTitle
         title={t("patientApp.doctors.title")}
-        subtitle={t("patientApp.doctors.subtitle", { hospital: hospital.shortName[locale] })}
+        subtitle={t("patientApp.doctors.subtitle", {
+          hospital: hospital.shortName[locale],
+        })}
       />
       <label className="relative block">
         <Search className="pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2 text-muted-foreground" />
@@ -172,32 +185,37 @@ export function DoctorsScreen() {
         />
       </label>
 
-      <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
-        {[{ id: "all", label: t("patientApp.doctors.all"), icon: LayoutGrid }, ...specialtyList.map((s) => ({ id: s.id, label: s.name[locale], icon: specialtyIcon(s.icon) }))].map(
-          (chip) => {
-            const active = chip.id === specialtyId
-            const Icon = chip.icon
-            return (
-              <button
-                key={chip.id}
-                type="button"
-                aria-pressed={active}
-                data-testid="app-specialty"
-                data-specialty-id={chip.id}
-                onClick={() => setSpecialtyId(chip.id)}
-                className={cn(
-                  "flex min-h-10 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-[0.8125rem] font-medium whitespace-nowrap transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40",
-                  active
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-card hover:border-primary/60"
-                )}
-              >
-                <Icon className="size-4" />
-                {chip.label}
-              </button>
-            )
-          }
-        )}
+      <div className="-mx-4 mt-3 flex [scrollbar-width:none] gap-2 overflow-x-auto px-4 pb-1">
+        {[
+          { id: "all", label: t("patientApp.doctors.all"), icon: LayoutGrid },
+          ...specialtyList.map((s) => ({
+            id: s.id,
+            label: s.name[locale],
+            icon: specialtyIcon(s.icon),
+          })),
+        ].map((chip) => {
+          const active = chip.id === specialtyId
+          const Icon = chip.icon
+          return (
+            <button
+              key={chip.id}
+              type="button"
+              aria-pressed={active}
+              data-testid="app-specialty"
+              data-specialty-id={chip.id}
+              onClick={() => setSpecialtyId(chip.id)}
+              className={cn(
+                "flex min-h-10 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-[0.8125rem] font-medium whitespace-nowrap transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40",
+                active
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-card hover:border-primary/60"
+              )}
+            >
+              <Icon className="size-4" />
+              {chip.label}
+            </button>
+          )
+        })}
       </div>
 
       <p className="mt-3 mb-2 px-1 text-xs text-muted-foreground">
@@ -225,7 +243,10 @@ export function DoctorsScreen() {
                     <span className="block truncate text-[0.9375rem] font-semibold">
                       {staffName(person, locale)}
                     </span>
-                    <span className="block truncate text-xs text-muted-foreground" lang="en">
+                    <span
+                      className="block truncate text-xs text-muted-foreground"
+                      lang="en"
+                    >
                       {doctor.qualifications}
                     </span>
                     <span className="mt-0.5 block truncate text-xs font-medium text-link">
@@ -240,7 +261,9 @@ export function DoctorsScreen() {
                     <span className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
                       <MapPin className="size-3.5 shrink-0" />
                       <span className="truncate">
-                        {doctor.branchIds.map((b) => branchName(b, locale)).join(", ")}
+                        {doctor.branchIds
+                          .map((b) => branchName(b, locale))
+                          .join(", ")}
                       </span>
                     </span>
                     <span className="mt-1 flex items-center gap-1.5 text-xs">
@@ -248,11 +271,16 @@ export function DoctorsScreen() {
                       {next ? (
                         <span className="font-medium">
                           {t("patientApp.doctors.nextAvailable", {
-                            date: next.date === today ? t("common.today") : dmy(atDhaka(next.date, "12:00")),
+                            date:
+                              next.date === today
+                                ? t("common.today")
+                                : dmy(atDhaka(next.date, "12:00")),
                           })}
                         </span>
                       ) : (
-                        <span className="text-muted-foreground">{t("patientApp.doctors.noSessions")}</span>
+                        <span className="text-muted-foreground">
+                          {t("patientApp.doctors.noSessions")}
+                        </span>
                       )}
                     </span>
                   </span>
@@ -264,7 +292,9 @@ export function DoctorsScreen() {
         </ul>
       ) : (
         <AppCard className="py-8 text-center">
-          <p className="text-[0.9375rem] font-semibold">{t("patientApp.doctors.empty")}</p>
+          <p className="text-[0.9375rem] font-semibold">
+            {t("patientApp.doctors.empty")}
+          </p>
           <p className="mt-1 text-[0.8125rem] text-muted-foreground">
             {t("patientApp.doctors.emptyHint")}
           </p>

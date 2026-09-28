@@ -37,5 +37,9 @@ export function PatientApp({ children }: { children: React.ReactNode }) {
       </FamilyProvider>
     )
 
-  return <PhoneRoot className="flex min-h-full flex-1 flex-col">{screen}</PhoneRoot>
+  return (
+    <PhoneRoot className="flex min-h-full flex-none flex-col">
+      {screen}
+    </PhoneRoot>
+  )
 }

@@ -27,10 +27,15 @@ export function linkAllows(
   member: PatientRow | undefined,
   today: ISODate
 ): member is PatientRow {
-  if (!member || link.ownerPatientId !== ownerId || link.status !== "granted") return false
+  if (!member || link.ownerPatientId !== ownerId || link.status !== "granted")
+    return false
   if (link.memberPatientId !== member.id || member.id === ownerId) return false
   if (member.identityStatus === "merged") return false
-  if (link.kind === "guardian" && ageOn(member.dob, today) >= GUARDIAN_AGE_LIMIT) return false
+  if (
+    link.kind === "guardian" &&
+    ageOn(member.dob, today) >= GUARDIAN_AGE_LIMIT
+  )
+    return false
   return true
 }
 
@@ -46,7 +51,11 @@ export function familyMembers(
   const members: FamilyMember[] = []
   for (const link of links) {
     const member = byId.get(link.memberPatientId)
-    if (seen.has(link.memberPatientId) || !linkAllows(link, account.id, member, today)) continue
+    if (
+      seen.has(link.memberPatientId) ||
+      !linkAllows(link, account.id, member, today)
+    )
+      continue
     seen.add(member.id)
     members.push({ patient: member, kind: link.kind, link })
   }

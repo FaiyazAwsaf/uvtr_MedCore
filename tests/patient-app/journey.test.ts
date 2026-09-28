@@ -9,12 +9,24 @@ import { commit } from "@/core/engine/commit"
 import type { Actor } from "@/core/engine/types"
 import { seedDatabase } from "@/core/seed"
 import { HERO, SEED_REFS } from "@/core/seed/content"
+import { confirmMfs, payOnline } from "@/modules/billing/commands"
 import { markNotificationsRead } from "@/modules/patient-app/commands"
-import { checkInState, nextAppointment } from "@/modules/patient-app/lib/appointments"
-import { openChargesByBranch } from "@/modules/patient-app/lib/bills"
+import {
+  checkInState,
+  nextAppointment,
+} from "@/modules/patient-app/lib/appointments"
+import {
+  invoiceDue,
+  openChargesByBranch,
+  pendingOnlinePayments,
+} from "@/modules/patient-app/lib/bills"
 import { familyMembers } from "@/modules/patient-app/lib/family"
+import { notificationTitleKey } from "@/modules/patient-app/lib/notifications"
 import { myQueue, nowServing } from "@/modules/patient-app/lib/queue"
-import { groupLabReports, replacementOf } from "@/modules/patient-app/lib/reports"
+import {
+  groupLabReports,
+  replacementOf,
+} from "@/modules/patient-app/lib/reports"
 import { rxSummary, visiblePrescriptions } from "@/modules/patient-app/lib/rx"
 import { sessionAvailability } from "@/modules/patient-app/lib/slots"
 import { callToken, checkIn } from "@/modules/queue/commands"
@@ -59,41 +71,79 @@ afterAll(async () => {
 describe("the Karim family in the patient app", () => {
   it("lets Tanvir see himself, Nusrat (guardian) and Abdul (proxy), never Rokeya", async () => {
     const account = (await db.patients.get(HERO.patient.tanvirKarim))!
-    const links = await db.familyLinks.where("ownerPatientId").equals(account.id).toArray()
-    const patients = await db.patients.bulkGet(links.map((l) => l.memberPatientId))
-    const members = familyMembers(account, links, patients.filter((p) => !!p), today)
+    const links = await db.familyLinks
+      .where("ownerPatientId")
+      .equals(account.id)
+      .toArray()
+    const patients = await db.patients.bulkGet(
+      links.map((l) => l.memberPatientId)
+    )
+    const members = familyMembers(
+      account,
+      links,
+      patients.filter((p) => !!p),
+      today
+    )
     expect(members.map((m) => [m.patient.id, m.kind])).toEqual([
       [HERO.patient.tanvirKarim, "self"],
       [HERO.patient.abdulKarim, "proxy"],
       [HERO.patient.nusratKarim, "guardian"],
     ])
-    expect(members.some((m) => m.patient.id === HERO.patient.rokeyaBegum)).toBe(false)
+    expect(members.some((m) => m.patient.id === HERO.patient.rokeyaBegum)).toBe(
+      false
+    )
   })
 
   it("offers Dr. Kamal's free slots and books Abdul from the app", async () => {
     const session = (await db.sessions.get(SESSION))!
-    const before = await db.appointments.where("sessionId").equals(SESSION).toArray()
+    const before = await db.appointments
+      .where("sessionId")
+      .equals(SESSION)
+      .toArray()
     const { free } = sessionAvailability(session, before, now())
     expect(free.length).toBeGreaterThan(0)
     const slot = free[0]
 
     const { result } = await commit(
       bookAppointment,
-      { sessionId: SESSION, patientId: HERO.patient.abdulKarim, source: "app", slotStart: slot },
+      {
+        sessionId: SESSION,
+        patientId: HERO.patient.abdulKarim,
+        source: "app",
+        slotStart: slot,
+      },
       { db, actor: tanvir }
     )
     appointmentId = result.appointmentId
     const booked = (await db.appointments.get(appointmentId))!
-    expect(booked).toMatchObject({ source: "app", status: "booked", slotStart: slot, bookedBy: tanvir.staffId })
+    expect(booked).toMatchObject({
+      source: "app",
+      status: "booked",
+      slotStart: slot,
+      bookedBy: tanvir.staffId,
+    })
 
-    const after = await db.appointments.where("sessionId").equals(SESSION).toArray()
+    const after = await db.appointments
+      .where("sessionId")
+      .equals(SESSION)
+      .toArray()
     expect(sessionAvailability(session, after, now()).free).not.toContain(slot)
-    const abdul = await db.appointments.where("patientId").equals(HERO.patient.abdulKarim).toArray()
+    const abdul = await db.appointments
+      .where("patientId")
+      .equals(HERO.patient.abdulKarim)
+      .toArray()
     expect(nextAppointment(abdul, today)?.id).toBe(appointmentId)
 
-    const basket = await db.basketLines.where("patientId").equals(HERO.patient.abdulKarim).toArray()
+    const basket = await db.basketLines
+      .where("patientId")
+      .equals(HERO.patient.abdulKarim)
+      .toArray()
     const b1 = openChargesByBranch(basket).find((g) => g.branchId === "B1")
-    expect(b1?.lines.some((l) => l.sourceId === appointmentId && l.unitPriceP === session.feeP)).toBe(true)
+    expect(
+      b1?.lines.some(
+        (l) => l.sourceId === appointmentId && l.unitPriceP === session.feeP
+      )
+    ).toBe(true)
   })
 
   it("checks Abdul in with I'm here, then shows his token and how many are ahead", async () => {
@@ -101,11 +151,21 @@ describe("the Karim family in the patient app", () => {
     const session = (await db.sessions.get(SESSION))!
     expect(checkInState(appointment, session, today, false)).toBe("ready")
 
-    const { result } = await commit(checkIn, { appointmentId }, { db, actor: tanvir })
+    const { result } = await commit(
+      checkIn,
+      { appointmentId },
+      { db, actor: tanvir }
+    )
     tokenId = result.tokenId
-    const tokens = await db.queueTokens.where("sessionId").equals(SESSION).toArray()
+    const tokens = await db.queueTokens
+      .where("sessionId")
+      .equals(SESSION)
+      .toArray()
     const waitingBefore = tokens.filter(
-      (t) => t.id !== tokenId && t.status === "waiting" && t.position < result.position
+      (t) =>
+        t.id !== tokenId &&
+        t.status === "waiting" &&
+        t.position < result.position
     ).length
     expect(myQueue(tokens, tokenId)).toMatchObject({
       state: "waiting",
@@ -120,19 +180,94 @@ describe("the Karim family in the patient app", () => {
       .filter((t) => t.status === "waiting" && t.id !== tokenId)
       .sort((a, b) => a.position - b.position)[0]
     await commit(callToken, { tokenId: first.id }, { db, actor: doctor })
-    const live = await db.queueTokens.where("sessionId").equals(SESSION).toArray()
-    expect(nowServing(live)).toMatchObject({ state: "serving", token: { id: first.id } })
+    const live = await db.queueTokens
+      .where("sessionId")
+      .equals(SESSION)
+      .toArray()
+    expect(nowServing(live)).toMatchObject({
+      state: "serving",
+      token: { id: first.id },
+    })
     expect(myQueue(live, tokenId)).toMatchObject({ ahead: waitingBefore - 1 })
   })
 
+  it("pays Abdul's consultation fee from the app with bKash, then approves the push", async () => {
+    const abdul = HERO.patient.abdulKarim
+    const open = await db.basketLines
+      .where("[patientId+status]")
+      .equals([abdul, "open"])
+      .toArray()
+    const fee = open.find((l) => l.sourceId === appointmentId)!
+    expect(fee).toBeDefined()
+
+    const { result } = await commit(
+      payOnline,
+      {
+        patientId: abdul,
+        basketLineIds: [fee.id],
+        tender: "bkash",
+        idempotencyKey: "test-app-pay-1",
+      },
+      { db, actor: tanvir }
+    )
+    expect(result.paymentId).toBeDefined()
+    const payments = await db.payments
+      .where("patientId")
+      .equals(abdul)
+      .toArray()
+    expect(pendingOnlinePayments(payments).map((p) => p.id)).toContain(
+      result.paymentId
+    )
+    expect(invoiceDue((await db.invoices.get(result.invoiceId))!)).toBe(
+      fee.unitPriceP
+    )
+
+    const paymentId = result.paymentId!
+    const { result: approved } = await commit(
+      confirmMfs,
+      { paymentId, idempotencyKey: "mfs-confirm:" + paymentId },
+      { db, actor: tanvir }
+    )
+    expect(approved.invoiceStatus).toBe("paid")
+    const invoice = (await db.invoices.get(result.invoiceId))!
+    expect(invoiceDue(invoice)).toBe(0)
+    const receipt = (
+      await db.notifications.where("patientId").equals(abdul).toArray()
+    ).find((n) => n.kind === "paymentReceived")!
+    expect(notificationTitleKey(receipt)).toBe(
+      "patientApp.notifications.paymentReceived"
+    )
+    expect(receipt.params).toMatchObject({ invoiceNo: invoice.invoiceNo })
+
+    // Rokeya is not linked to Tanvir's account, so he may not pay for her.
+    await expect(
+      commit(
+        payOnline,
+        {
+          patientId: HERO.patient.rokeyaBegum,
+          invoiceId: invoice.id,
+          tender: "bkash",
+          idempotencyKey: "test-app-pay-2",
+        },
+        { db, actor: tanvir }
+      )
+    ).rejects.toMatchObject({ code: "NOT_YOUR_PATIENT" })
+  })
+
   it("lists Abdul's released reports and his prescription with what he collected", async () => {
-    const reports = await db.labReports.where("patientId").equals(HERO.patient.abdulKarim).toArray()
+    const reports = await db.labReports
+      .where("patientId")
+      .equals(HERO.patient.abdulKarim)
+      .toArray()
     const groups = groupLabReports(reports)
     expect(groups.length).toBeGreaterThan(0)
     expect(groups.every((g) => g.current.status === "released")).toBe(true)
 
     const rxs = visiblePrescriptions(
-      await db.prescriptions.where("patientId").equals(HERO.patient.abdulKarim).toArray()
+      await db.prescriptions
+        .where("patientId")
+        .equals(HERO.patient.abdulKarim)
+        .toArray()
     )
     expect(rxs.length).toBeGreaterThan(0)
     const lines = await db.rxLines.where("rxId").equals(rxs[0].id).toArray()
@@ -141,10 +276,17 @@ describe("the Karim family in the patient app", () => {
   })
 
   it("keeps a corrected report's first version, pointing to the current one", async () => {
-    const superseded = (await db.labReports.where("status").equals("superseded").toArray())[0]
+    const superseded = (
+      await db.labReports.where("status").equals("superseded").toArray()
+    )[0]
     expect(superseded).toBeDefined()
-    const reports = await db.labReports.where("patientId").equals(superseded.patientId).toArray()
-    const group = groupLabReports(reports).find((g) => g.key === superseded.reportNo)!
+    const reports = await db.labReports
+      .where("patientId")
+      .equals(superseded.patientId)
+      .toArray()
+    const group = groupLabReports(reports).find(
+      (g) => g.key === superseded.reportNo
+    )!
     expect(group.current.reportVersion).toBe(2)
     expect(group.earlier.map((r) => r.id)).toEqual([superseded.id])
     expect(replacementOf(superseded, group).id).toBe(group.current.id)
@@ -170,11 +312,20 @@ describe("the Karim family in the patient app", () => {
       { patientId: HERO.patient.abdulKarim },
       { db, actor: tanvir }
     )
-    expect(result.count).toBe(1)
+    expect(result.count).toBeGreaterThanOrEqual(1)
     expect((await db.notifications.get("ntf_test_abdul"))?.read).toBe(true)
+    const abdulNotes = await db.notifications
+      .where("patientId")
+      .equals(HERO.patient.abdulKarim)
+      .toArray()
+    expect(abdulNotes.every((n) => n.read)).toBe(true)
 
     await expect(
-      commit(markNotificationsRead, { patientId: HERO.patient.rokeyaBegum }, { db, actor: tanvir })
+      commit(
+        markNotificationsRead,
+        { patientId: HERO.patient.rokeyaBegum },
+        { db, actor: tanvir }
+      )
     ).rejects.toMatchObject({ code: "FAMILY_ACCESS_DENIED" })
     expect((await db.notifications.get("ntf_test_rokeya"))?.read).toBe(false)
   })

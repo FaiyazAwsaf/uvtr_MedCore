@@ -17,8 +17,13 @@ import { rangeFor } from "@/core/seed/content"
  */
 
 /** A version the patient may see: released now, or released before a correction. */
-export function isVisibleReport(report: Pick<LabReportRow, "status" | "releasedAt">): boolean {
-  return (report.status === "released" || report.status === "superseded") && !!report.releasedAt
+export function isVisibleReport(
+  report: Pick<LabReportRow, "status" | "releasedAt">
+): boolean {
+  return (
+    (report.status === "released" || report.status === "superseded") &&
+    !!report.releasedAt
+  )
 }
 
 export type ReportGroup<R> = {
@@ -43,7 +48,8 @@ function group<R extends Versioned>(
 ): ReportGroup<R>[] {
   const groups = new Map<string, R[]>()
   for (const report of reports) {
-    if (!isVisibleReport(report as Pick<LabReportRow, "status" | "releasedAt">)) continue
+    if (!isVisibleReport(report as Pick<LabReportRow, "status" | "releasedAt">))
+      continue
     const key = keyOf(report)
     groups.set(key, [...(groups.get(key) ?? []), report])
   }
@@ -57,19 +63,32 @@ function group<R extends Versioned>(
 }
 
 /** Lab reports grouped by report number, newest release first. */
-export function groupLabReports(reports: LabReportRow[]): ReportGroup<LabReportRow>[] {
-  return group(reports, (r) => r.reportNo || r.id, (r) => r.reportVersion)
+export function groupLabReports(
+  reports: LabReportRow[]
+): ReportGroup<LabReportRow>[] {
+  return group(
+    reports,
+    (r) => r.reportNo || r.id,
+    (r) => r.reportVersion
+  )
 }
 
 /** Imaging reports grouped by order, newest release first. */
 export function groupImagingReports(
   reports: ImagingReportRow[]
 ): ReportGroup<ImagingReportRow>[] {
-  return group(reports, (r) => r.imagingOrderId, (r) => r.reportVersion)
+  return group(
+    reports,
+    (r) => r.imagingOrderId,
+    (r) => r.reportVersion
+  )
 }
 
 /** The version that replaced `version` (its direct successor, else the current one). */
-export function replacementOf<R extends Versioned>(version: R, group: ReportGroup<R>): R {
+export function replacementOf<R extends Versioned>(
+  version: R,
+  group: ReportGroup<R>
+): R {
   const all = [group.current, ...group.earlier]
   return all.find((r) => r.supersedesId === version.id) ?? group.current
 }

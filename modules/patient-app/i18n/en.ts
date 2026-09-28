@@ -13,6 +13,21 @@ export const patientAppEn = {
       appointmentBooked: "Your appointment is booked",
       tokenCalled: "Your token has been called",
       paymentReceived: "Payment received",
+      sampleRecollection: "Please give a new sample",
+    },
+    /** In-app wording for refusals the app can meet (see use-app-command). */
+    rules: {
+      SLOT_TAKEN: "The {slot} slot was just taken. Pick another time.",
+      ALREADY_BOOKED: "This person already has an appointment in this session.",
+      SESSION_FULL: "This session is fully booked. Try another day.",
+      SESSION_UNAVAILABLE: "This session is not taking bookings now.",
+      NOT_CHECKABLE: "This appointment can't be checked in any more.",
+      NOT_TODAY: "Check-in opens on the day of the appointment ({date}).",
+      FAMILY_ACCESS_DENIED: "This person is not linked to your account.",
+      PATIENT_MERGED:
+        "This record was merged into UHID {uhid}. Please ask at the front desk.",
+      unknown:
+        "This could not be done ({code}). Try again or ask at the front desk.",
     },
     push: {
       generic: "You have a new notification",
@@ -26,7 +41,8 @@ export const patientAppEn = {
     },
     login: {
       title: "Sign in",
-      subtitle: "Enter your mobile number and we will send you a one-time code by SMS.",
+      subtitle:
+        "Enter your mobile number and we will send you a one-time code by SMS.",
       phoneLabel: "Mobile number",
       sendCode: "Send code",
       codeLabel: "One-time code",
@@ -43,7 +59,6 @@ export const patientAppEn = {
       smsBody: "Your {hospital} sign-in code is {code}. Never share this code.",
       privacyTitle: "Your privacy",
       helpline: "Helpline",
-      welcome: "Signed in. Welcome, {name}.",
     },
     header: {
       home: "Home",
@@ -70,11 +85,12 @@ export const patientAppEn = {
         guardian: "Guardian of a child under 18",
         proxy: "Adult proxy, consent given",
       },
-      since: "Since {date}",
+      /** Short form under the name in the header switcher */
+      short: { guardian: "Guardian access", proxy: "Proxy access" },
+      since: "Consent since {date}",
       newCount: "{count} new",
       consentNote:
         "Only family members who gave consent appear here. To add someone, ask at the front desk.",
-      switched: "Now showing records for {name}",
       selected: "Selected",
     },
     home: {
@@ -141,17 +157,18 @@ export const patientAppEn = {
         report: "Report review",
       },
       passTitle: "Check-in pass",
-      passHint: "Show this code at the front desk, or tap I'm here when you arrive.",
+      passHint:
+        "Show this code at the front desk, or tap I'm here when you arrive.",
       checkIn: "I'm here",
       checkingIn: "Checking in…",
       checkInHint: "Tap when you reach the hospital to get your token.",
       checkInLater: "Check-in opens on the day of the appointment.",
       checkInOffline:
         "App check-in is paused while this branch is offline. Please check in at the front desk.",
-      checkInClosed: "This session is not running. Please ask at the front desk.",
-      checkedIn: "Checked in. Your token is {token}.",
+      checkInClosed:
+        "This session is not running. Please ask at the front desk.",
       fee: "Consultation fee",
-      feeDue: "Due, pay at the counter",
+      feeDue: "Due, see Bills",
       feePaid: "Paid",
       delayed: "Running {minutes} min late",
       blocked: "The doctor is not available for this session",
@@ -166,7 +183,8 @@ export const patientAppEn = {
       yourTurn: "It's your turn. Please go to {room}.",
       waiting: "{count} waiting",
       waitingNoToken: "Check in when you arrive to join the queue.",
-      skipped: "Your token was called while you were away. Please tell the front desk.",
+      skipped:
+        "Your token was called while you were away. Please tell the front desk.",
       finished: "Consultation finished",
       offline: "Live queue unavailable: branch offline",
     },
@@ -178,15 +196,12 @@ export const patientAppEn = {
       count: "{count} doctors",
       bmdc: "BMDC {number}",
       verified: "Verified",
-      fee: "Fee {fee}",
-      experience: "{years} years",
       nextAvailable: "Next: {date}",
       noSessions: "No sessions in the next 2 weeks",
       empty: "No doctor matches this search",
       emptyHint: "Try another name or pick a different specialty.",
     },
     book: {
-      title: "Book an appointment",
       back: "All doctors",
       notFound: "This doctor could not be found",
       bookingFor: "Booking for",
@@ -213,9 +228,10 @@ export const patientAppEn = {
       booking: "Booking…",
       pickSlot: "Pick a time to continue",
       successTitle: "Appointment booked",
-      successBody: "{name} is booked with {doctor} on {date} at {time}.",
+      successBody: "{name} is booked with {doctor}: {date}, {time}.",
       smsSent: "A confirmation SMS is on its way.",
-      feeNote: "The consultation fee of {fee} is added to Bills. Pay at the counter when you arrive.",
+      feeNote:
+        "The consultation fee of {fee} is added to Bills. Pay in the app or at the counter.",
       viewPass: "Show the check-in pass",
       bookAnother: "Book another",
     },
@@ -241,9 +257,6 @@ export const patientAppEn = {
       outOfRange: "{count} outside the reference range",
       allNormal: "All results within the reference range",
       range: "Ref. {range}",
-      rangeBetween: "{low} to {high}",
-      rangeBelow: "up to {high}",
-      rangeAbove: "{low} or more",
       flag: {
         N: "Normal",
         L: "Low",
@@ -269,9 +282,10 @@ export const patientAppEn = {
       days: "{count} days",
       prescribed: "Prescribed",
       collected: "Collected",
-      outstanding: "Still to collect",
+      outstanding: "To collect",
       balanceBy: "Collect the remaining {count} by {date}",
-      balanceExpired: "The balance closed on {date}. Ask your doctor if you still need it.",
+      balanceExpired:
+        "The balance closed on {date}. Ask your doctor if you still need it.",
       dose: "How to take",
       line: {
         open: "Not collected yet",
@@ -298,7 +312,6 @@ export const patientAppEn = {
       title: "Bills",
       subtitle: "Charges and payments at every {hospital} branch",
       dueNow: "Due now",
-      dueHint: "Charges waiting for payment",
       nothingDue: "Nothing due right now",
       invoices: "Invoices",
       total: "Total",
@@ -312,11 +325,24 @@ export const patientAppEn = {
         void: "Void",
         refunded: "Refunded",
       },
-      items: "{count} items",
       showItems: "Show items",
       hideItems: "Hide items",
-      payBkash: "Pay with bKash",
-      paySoon: "Online payment is not open yet. Pay at any {hospital} counter.",
+      method: { bkash: "bKash", nagad: "Nagad" },
+      payWith: "Pay with",
+      pay: "Pay {amount}",
+      payBalance: "Pay the balance {amount}",
+      paying: "Sending the request…",
+      choose: "Tick what you want to pay now",
+      waitingTitle: "Waiting for your approval",
+      waitingBody: "{method} request for {amount} on invoice {invoiceNo}.",
+      expires: "Expires at {time}. Nothing is charged until you approve.",
+      approve: "Approve in {method}",
+      approving: "Approving…",
+      paidNow: "Paid. Receipt {receiptNo}.",
+      timedOut:
+        "The {method} request for {amount} expired. Nothing was charged.",
+      receipt: "Receipt",
+      counterNote: "You can also pay at any {hospital} counter.",
       empty: "No bills yet",
       emptyHint: "Charges appear here after a booking or a visit.",
     },
@@ -324,15 +350,28 @@ export const patientAppEn = {
       title: "Notifications",
       subtitle: "For {name}",
       empty: "No notifications yet",
-      emptyHint: "We will let you know when a report, prescription or token is ready.",
+      emptyHint:
+        "We will let you know when a report, prescription or token is ready.",
       new: "New",
+      detail: {
+        reportReady: "Open it in Reports.",
+        reportUpdated:
+          "The lab corrected a report. The new version is in Reports.",
+        rxReady: "See it in Prescriptions.",
+        appointmentBooked: "Your check-in pass is in Visits.",
+        tokenCalled: "Please go to the doctor's room.",
+        paymentReceived: "Receipt {receiptNo} for invoice {invoiceNo}.",
+        paymentPlain: "See it in Bills.",
+        sampleRecollection:
+          "Visit the sample collection point at your branch. There is no charge.",
+        generic: "Open the app section it belongs to.",
+      },
       pushNote:
-        "Alerts on your lock screen only say \"You have a new notification\". The details stay inside the app.",
+        'Alerts on your lock screen only say "You have a new notification". The details stay inside the app.',
     },
     common: {
       loading: "Loading…",
       years: "{count} y",
-      back: "Back",
     },
   },
 }

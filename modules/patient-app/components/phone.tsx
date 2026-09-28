@@ -29,7 +29,10 @@ export function PhoneRoot({
   const ref = React.useRef<HTMLDivElement>(null)
   const [frame, setFrame] = React.useState<HTMLElement | null>(null)
   React.useEffect(() => {
-    setFrame(ref.current?.closest<HTMLElement>('[data-slot="phone-frame"]') ?? document.body)
+    setFrame(
+      ref.current?.closest<HTMLElement>('[data-slot="phone-frame"]') ??
+        document.body
+    )
   }, [])
   return (
     <PhoneContext.Provider value={frame}>
@@ -92,12 +95,18 @@ export function PhoneBanner({
       </span>
       <span className="min-w-0 flex-1 text-left">
         <span className="flex items-center gap-2">
-          <span className="truncate text-[0.8125rem] font-semibold">{title}</span>
+          <span className="truncate text-[0.8125rem] font-semibold">
+            {title}
+          </span>
           {meta ? (
-            <span className="ml-auto shrink-0 text-xs text-muted-foreground">{meta}</span>
+            <span className="ml-auto shrink-0 text-xs text-muted-foreground">
+              {meta}
+            </span>
           ) : null}
         </span>
-        <span className="mt-0.5 block text-[0.8125rem] leading-snug">{children}</span>
+        <span className="mt-0.5 block text-[0.8125rem] leading-snug">
+          {children}
+        </span>
       </span>
     </>
   )
@@ -119,7 +128,10 @@ export function PhoneBanner({
               onOpen()
               onClose()
             }}
-            className={cn(surface, "outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40")}
+            className={cn(
+              surface,
+              "outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
+            )}
           >
             {body}
           </button>
@@ -157,7 +169,10 @@ export function PhoneSheet({
           data-testid={testId}
           className="absolute inset-x-0 bottom-0 z-50 flex max-h-[88%] flex-col rounded-t-[1.75rem] bg-popover text-popover-foreground shadow-2xl transition duration-200 ease-out outline-none data-ending-style:translate-y-10 data-ending-style:opacity-0 data-starting-style:translate-y-10 data-starting-style:opacity-0"
         >
-          <span aria-hidden className="mx-auto mt-2.5 h-1.5 w-10 shrink-0 rounded-full bg-foreground/20" />
+          <span
+            aria-hidden
+            className="mx-auto mt-2.5 h-1.5 w-10 shrink-0 rounded-full bg-foreground/20"
+          />
           <div className="flex items-start gap-3 px-5 pt-3 pb-2">
             <div className="min-w-0 flex-1">
               <Dialog.Title className="text-[1.0625rem] leading-snug font-semibold">
@@ -176,7 +191,9 @@ export function PhoneSheet({
               <XIcon className="size-5" />
             </Dialog.Close>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-2 pb-8">{children}</div>
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-2 pb-8">
+            {children}
+          </div>
         </Dialog.Popup>
       </Dialog.Portal>
     </Dialog.Root>

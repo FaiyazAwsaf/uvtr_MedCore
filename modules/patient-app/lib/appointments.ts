@@ -7,8 +7,13 @@ export const UPCOMING_STATUSES: readonly AppointmentRow["status"][] = [
   "in-consult",
 ]
 
-export function isUpcoming(appointment: AppointmentRow, today: ISODate): boolean {
-  return UPCOMING_STATUSES.includes(appointment.status) && appointment.date >= today
+export function isUpcoming(
+  appointment: AppointmentRow,
+  today: ISODate
+): boolean {
+  return (
+    UPCOMING_STATUSES.includes(appointment.status) && appointment.date >= today
+  )
 }
 
 const byTime = (a: AppointmentRow, b: AppointmentRow) =>
@@ -34,7 +39,8 @@ export function nextAppointment(
   return splitAppointments(appointments, today).upcoming[0]
 }
 
-export type CheckInState = "ready" | "checked-in" | "not-today" | "closed" | "offline"
+export type CheckInState =
+  "ready" | "checked-in" | "not-today" | "closed" | "offline"
 
 /**
  * Whether "I'm here" (queue.checkIn, patient role) can run: only for a booked
@@ -50,7 +56,8 @@ export function checkInState(
 ): CheckInState {
   if (appointment.status !== "booked") return "checked-in"
   if (appointment.date !== today) return "not-today"
-  if (!session || session.status === "blocked" || session.status === "closed") return "closed"
+  if (!session || session.status === "blocked" || session.status === "closed")
+    return "closed"
   if (branchOffline) return "offline"
   return "ready"
 }

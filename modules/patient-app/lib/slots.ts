@@ -41,7 +41,10 @@ export type SessionAvailability = {
   closedReason?: "blocked" | "closed" | "full" | "ended"
 }
 
-function activeIn(sessionId: Id, appointments: AppointmentRow[]): AppointmentRow[] {
+function activeIn(
+  sessionId: Id,
+  appointments: AppointmentRow[]
+): AppointmentRow[] {
   return appointments.filter(
     (a) => a.sessionId === sessionId && ACTIVE_STATUSES.includes(a.status)
   )
@@ -53,25 +56,33 @@ export function sessionAvailability(
   appointments: AppointmentRow[],
   nowMs: Ms
 ): SessionAvailability {
-  const booked = activeIn(session.id, appointments).filter((a) => a.source !== "walk-in")
+  const booked = activeIn(session.id, appointments).filter(
+    (a) => a.source !== "walk-in"
+  )
   const taken = new Set(booked.map((a) => a.slotStart))
-  const slots = slotTimes(session.start, session.end, session.slotMin).map((time) => {
-    const state: SlotState = taken.has(time)
-      ? "taken"
-      : atDhaka(session.date, time) + session.slotMin * MINUTE > nowMs
-        ? "free"
-        : "past"
-    return { time, state }
-  })
+  const slots = slotTimes(session.start, session.end, session.slotMin).map(
+    (time) => {
+      const state: SlotState = taken.has(time)
+        ? "taken"
+        : atDhaka(session.date, time) + session.slotMin * MINUTE > nowMs
+          ? "free"
+          : "past"
+      return { time, state }
+    }
+  )
 
   let closedReason: SessionAvailability["closedReason"]
   if (session.status === "blocked") closedReason = "blocked"
   else if (session.status === "closed") closedReason = "closed"
-  else if (booked.length >= session.capacity - session.walkInQuota) closedReason = "full"
+  else if (booked.length >= session.capacity - session.walkInQuota)
+    closedReason = "full"
   else if (!slots.some((s) => s.state === "free")) {
-    closedReason = atDhaka(session.date, session.end) <= nowMs ? "ended" : "full"
+    closedReason =
+      atDhaka(session.date, session.end) <= nowMs ? "ended" : "full"
   }
-  const free = closedReason ? [] : slots.filter((s) => s.state === "free").map((s) => s.time)
+  const free = closedReason
+    ? []
+    : slots.filter((s) => s.state === "free").map((s) => s.time)
   return { slots, free, closedReason }
 }
 
@@ -81,7 +92,9 @@ export function hasActiveBooking(
   sessionId: Id,
   patientId: Id
 ): boolean {
-  return activeIn(sessionId, appointments).some((a) => a.patientId === patientId)
+  return activeIn(sessionId, appointments).some(
+    (a) => a.patientId === patientId
+  )
 }
 
 /** Sessions a patient can still book, from today onwards, in date and start order. */
@@ -97,5 +110,7 @@ export function bookableSessions(
         s.status !== "closed" &&
         atDhaka(s.date, s.end) > nowMs
     )
-    .sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start))
+    .sort(
+      (a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start)
+    )
 }

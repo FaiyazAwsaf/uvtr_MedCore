@@ -14,7 +14,10 @@ export function isBdMobile(input: string): boolean {
   return /^01[3-9]\d{8}$/.test(localMobile(input))
 }
 
-export function samePhone(a: string | undefined, b: string | undefined): boolean {
+export function samePhone(
+  a: string | undefined,
+  b: string | undefined
+): boolean {
   if (!a || !b) return false
   return isBdMobile(a) && localMobile(a) === localMobile(b)
 }

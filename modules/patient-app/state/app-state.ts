@@ -33,7 +33,11 @@ const storageKey = () => `mc:app:${windowKey()}`
 function read(): AppWindowState {
   try {
     const raw = window.sessionStorage.getItem(storageKey())
-    if (raw) return { ...DEFAULT_APP_STATE, ...(JSON.parse(raw) as Partial<AppWindowState>) }
+    if (raw)
+      return {
+        ...DEFAULT_APP_STATE,
+        ...(JSON.parse(raw) as Partial<AppWindowState>),
+      }
   } catch {
     // Storage unavailable or corrupt: start from the first launch.
   }
@@ -64,5 +68,9 @@ function subscribe(listener: () => void): () => void {
 }
 
 export function useAppState(): AppWindowState {
-  return React.useSyncExternalStore(subscribe, getAppState, () => DEFAULT_APP_STATE)
+  return React.useSyncExternalStore(
+    subscribe,
+    getAppState,
+    () => DEFAULT_APP_STATE
+  )
 }
