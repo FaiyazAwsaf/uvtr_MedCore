@@ -102,7 +102,7 @@ export function EncounterScreen({
 
       <nav
         aria-label={t("consultation.title")}
-        className="sticky top-0 z-20 -mx-1 flex gap-1 overflow-x-auto rounded-full bg-background/85 px-1 py-1 backdrop-blur"
+        className="sticky -top-2 z-20 -mx-1 -mt-2 flex gap-1 overflow-x-auto bg-background px-1 pt-3 pb-2"
       >
         {SECTIONS.map((section) => (
           <button
