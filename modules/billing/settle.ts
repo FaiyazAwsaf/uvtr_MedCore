@@ -71,6 +71,13 @@ export async function openShiftOf(
   return open.find((shift) => shift.cashierId === cashierId)
 }
 
+/** The acting cashier's open shift, or a rejection (payments need one). */
+export async function requireShift(tx: Tx, branch: BranchCode): Promise<ShiftRow> {
+  const shift = await openShiftOf(tx, tx.actor.staffId, branch)
+  if (!shift) tx.reject("NO_OPEN_SHIFT", {})
+  return shift
+}
+
 /** The actor's branch, or a rejection for network-level personas. */
 export function actorBranch(tx: Tx): BranchCode {
   const branch = tx.actor.branchId

@@ -11,6 +11,7 @@ import { MoneyText } from "@/components/shared/money-text"
 import { PatientPicker } from "@/components/shared/patient-picker"
 import { nameIn } from "@/components/shared/person"
 import { SectionCard } from "@/components/shared/section-card"
+import { StatusText } from "@/components/shared/status"
 import { UhidText } from "@/components/shared/uhid-text"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { BranchCode } from "@/config/brand.config"
@@ -140,7 +141,7 @@ function OpenBillRow({
   locale: "en" | "bn"
   onSelect: () => void
 }) {
-  const { t, num } = useLocale()
+  const { tk, num } = useLocale()
   return (
     <button
       type="button"
@@ -166,7 +167,7 @@ function OpenBillRow({
             return (
               <span
                 key={source}
-                title={t(`billing.source.${SOURCE_KEY[source]}` as never)}
+                title={tk(`billing.source.${SOURCE_KEY[source]}`)}
                 className="inline-flex items-center gap-1"
               >
                 <Icon className="size-3.5" />
@@ -225,7 +226,7 @@ function DueRow({
   locale: "en" | "bn"
   onSelect: (patientId: Id, invoiceId?: Id) => void
 }) {
-  const { t } = useLocale()
+  const { t, tk } = useLocale()
   const pending = row.pending[0]
   return (
     <button
@@ -246,10 +247,12 @@ function DueRow({
       </span>
       {pending ? (
         <span className={cn("tag", TENDER_TAG[pending.tender])}>
-          {t("billing.cashier.due.waiting", { tender: t(`billing.tender.${pending.tender}`) })}
+          {t("billing.cashier.due.waiting", { tender: tk(`billing.tender.${pending.tender}`) })}
         </span>
       ) : (
-        <span className="text-xs font-medium text-warning">{t("billing.cashier.due.partial")}</span>
+        <StatusText tone="warning" className="text-xs">
+          {t("billing.cashier.due.partial")}
+        </StatusText>
       )}
       <MoneyText poisha={row.dueP} className="text-[0.8125rem] font-semibold" />
       <ChevronRight className="size-4 shrink-0 text-muted-foreground" />

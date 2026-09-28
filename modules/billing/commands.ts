@@ -17,6 +17,7 @@ import {
   openShiftOf,
   patientMayActFor,
   refreshInvoice,
+  requireShift,
   tenderParams,
   type TenderInput,
 } from "./settle"
@@ -81,8 +82,7 @@ export const checkout = defineCommand({
   async run(tx, input): Promise<CheckoutResult> {
     const branch = actorBranch(tx)
     const patient = await billablePatient(tx, input.patientId)
-    const shift = await openShiftOf(tx, tx.actor.staffId, branch)
-    if (!shift) tx.reject("NO_OPEN_SHIFT", {})
+    const shift = await requireShift(tx, branch)
     const { lines } = await loadBillLines(tx, {
       patientId: patient.id,
       lineIds: input.basketLineIds,
@@ -288,8 +288,7 @@ export const collectBalance = defineCommand({
   }),
   async run(tx, input): Promise<CheckoutResult> {
     const branch = actorBranch(tx)
-    const shift = await openShiftOf(tx, tx.actor.staffId, branch)
-    if (!shift) tx.reject("NO_OPEN_SHIFT", {})
+    const shift = await requireShift(tx, branch)
     const { invoice, dueP } = await balanceOf(tx, input.invoiceId)
     if (invoice.branchId !== branch) tx.reject("PAYMENT_WRONG_BRANCH", {})
     const { changeDueP } = await checkTenders(tx, input.tenders, dueP, branch)

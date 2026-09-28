@@ -176,10 +176,14 @@ export type InvoiceDetail = {
   payments: PaymentRow[]
   receipt?: ReceiptRow
   approval?: ApprovalRow
+  /** Who approved a discount above the cashier's authority */
+  approver?: { en: string; bn: string }
   patient?: PatientRow
   /** Staff name of the cashier, when the invoice was taken at a counter */
   cashier?: { en: string; bn: string }
   corporateClient?: { en: string; bn: string }
+  /** Bangla text of each line, from its basket line (invoice lines keep English only) */
+  descriptionBn: Record<Id, string | undefined>
   unlocked: { tests: number; specimens: number; imaging: number; medicines: number }
 }
 
@@ -196,6 +200,7 @@ export async function invoiceDetail(db: MedcoreDb, invoiceId: Id): Promise<Invoi
   const approval = invoice.discountApprovalId
     ? await db.approvals.get(invoice.discountApprovalId)
     : undefined
+  const approverStaff = approval?.approverId ? await db.staff.get(approval.approverId) : undefined
   const client = invoice.corporateClientId
     ? await db.corporateClients.get(invoice.corporateClientId)
     : undefined
@@ -219,12 +224,19 @@ export async function invoiceDetail(db: MedcoreDb, invoiceId: Id): Promise<Invoi
   }
   unlocked.specimens = specimenIds.size
   payments.sort((a, b) => a.requestedAt - b.requestedAt || a.id.localeCompare(b.id))
+  const baskets = await db.basketLines.bulkGet(lines.map((line) => line.basketLineId ?? ""))
+  const descriptionBn: Record<Id, string | undefined> = {}
+  lines.forEach((line, index) => {
+    descriptionBn[line.id] = baskets[index]?.descriptionBn
+  })
   return {
+    descriptionBn,
     invoice,
     lines,
     payments,
     receipt: receipts.sort((a, b) => b.at - a.at)[0],
     approval,
+    approver: approverStaff ? { en: approverStaff.nameEn, bn: approverStaff.nameBn } : undefined,
     patient,
     cashier: staff ? { en: staff.nameEn, bn: staff.nameBn } : undefined,
     corporateClient: client ? client.name : undefined,
