@@ -1,5 +1,12 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { Suspense } from "react"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.reception" phase={2} />
+import { BookingScreen } from "@/modules/scheduling/components/booking-screen"
+
+/** "/reception/book": doctor directory, sessions and slots (the one scheduler). */
+export default function BookPage() {
+  return (
+    <Suspense fallback={null}>
+      <BookingScreen />
+    </Suspense>
+  )
 }

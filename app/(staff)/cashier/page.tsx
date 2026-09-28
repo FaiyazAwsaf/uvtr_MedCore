@@ -1,5 +1,13 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { Suspense } from "react"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.cashier" phase={2} />
+import { CashierScreen } from "@/modules/billing/components/cashier-screen"
+
+/** "/cashier": patient bill, tenders and receipt (plan §9). */
+export default function CashierPage() {
+  return (
+    // The screen reads `?patient=` (useSearchParams), which needs a Suspense boundary.
+    <Suspense fallback={null}>
+      <CashierScreen />
+    </Suspense>
+  )
 }
