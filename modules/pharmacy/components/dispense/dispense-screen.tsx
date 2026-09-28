@@ -25,9 +25,9 @@ import { useLocale } from "@/lib/i18n/provider"
 import { cn } from "@/lib/utils"
 import { requestTransfer } from "@/modules/inventory/commands"
 
-import { dispense } from "../../commands"
+import { dispense, sendToCashier } from "../../commands"
 import type { LabelInput } from "../../label"
-import type { IdentityMatch } from "../../rules"
+import { shownQueueStatus, type IdentityMatch } from "../../rules"
 import {
   branchName,
   PageBody,
@@ -157,6 +157,7 @@ function DispenseView({
   const [key, renewKey] = useActionKey()
   const dispenseCommand = useModuleCommand(dispense)
   const transferCommand = useModuleCommand(requestTransfer)
+  const cashierCommand = useModuleCommand(sendToCashier)
   const { rx, patient } = data
   const doctorName = data.doctor ? nameIn(data.doctor, locale) : ""
 
@@ -205,6 +206,18 @@ function DispenseView({
         t("pharmacy.dispense.transfer.done", {
           transferNo: result.transferNo,
           branch: branchName(from, locale),
+        })
+      )
+    }
+  }
+
+  const toCashier = async (lineData: LineData) => {
+    const result = await cashierCommand.run({ rxLineId: lineData.line.id })
+    if (result) {
+      toast.success(
+        t("pharmacy.dispense.line.sentToCashier", {
+          qty: num(result.qty),
+          brand: lineData.brand ? `${lineData.brand.name} ${lineData.brand.strength}` : "",
         })
       )
     }
@@ -286,7 +299,7 @@ function DispenseView({
         }
         actions={
           <>
-            {data.queue ? <QueueStatusPill status={data.queue.status} /> : null}
+            {data.queue ? <QueueStatusPill status={shownQueueStatus(data.queue.status, data.lines.map((l) => l.line))} /> : null}
             <ReportSafetyConcernButton context={rx.rxNo} />
           </>
         }
@@ -327,6 +340,8 @@ function DispenseView({
               onSubstitute={() => setSubFor(row.lineData)}
               onRequestTransfer={(from, qty) => void requestFrom(row.lineData, from, qty)}
               transferPending={transferCommand.pending}
+              onSendToCashier={() => void toCashier(row.lineData)}
+              cashierPending={cashierCommand.pending}
               offline={isEdge}
             />
           ))}

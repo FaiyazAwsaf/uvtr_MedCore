@@ -12,6 +12,7 @@ import {
   packBreakdown,
   queueStatusFor,
   roundToStrips,
+  shownQueueStatus,
   stripSizeOf,
 } from "@/modules/pharmacy/rules"
 
@@ -81,6 +82,19 @@ describe("dispensing gates", () => {
         { status: "bought-elsewhere", dispensedQty: 0 },
       ])
     ).toBe("done")
+    // Lines taken off the draft stay as cancelled rows and do not count.
+    expect(
+      queueStatusFor([
+        { status: "cancelled", dispensedQty: 0 },
+        { status: "open", dispensedQty: 0 },
+      ])
+    ).toBe("waiting")
+    expect(
+      shownQueueStatus("in-progress", [{ status: "open", dispensedQty: 0 }])
+    ).toBe("waiting")
+    expect(shownQueueStatus("cancelled", [{ status: "open", dispensedQty: 0 }])).toBe(
+      "cancelled"
+    )
   })
 
   it("warns when a batch expires before the course ends", () => {

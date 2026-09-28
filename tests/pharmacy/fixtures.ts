@@ -51,6 +51,7 @@ const signedRxFixture = defineCommand({
         days: z.number().int(),
         qty: z.number().int().optional(),
         paid: z.boolean(),
+        billed: z.boolean(),
       })
     ),
   }),
@@ -96,7 +97,8 @@ const signedRxFixture = defineCommand({
         status: "open",
       })
       lineIds.push(line.id)
-      tx.insert("basketLines", {
+      // rx.sign bills only what is on the shelf: an out-of-stock line has no basket line.
+      if (spec.billed) tx.insert("basketLines", {
         patientId: input.patientId,
         branchId: branch,
         sourceType: "rx-line",
@@ -129,6 +131,8 @@ export type FixtureLine = {
   days: number
   qty?: number
   paid?: boolean
+  /** false: nothing on the bill (out of stock when signed) */
+  billed?: boolean
 }
 
 /** A signed prescription at B1 by Dr. Kamal for Abdul Karim; lines paid unless `paid: false`. */
@@ -150,6 +154,7 @@ export async function signedRx(
         days: l.days,
         qty: l.qty,
         paid: l.paid ?? true,
+        billed: l.billed ?? true,
       })),
     },
     { db, actor: SYSTEM_ACTOR }

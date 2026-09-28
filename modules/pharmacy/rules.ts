@@ -88,10 +88,30 @@ export function dispenseBlock(
 export function queueStatusFor(
   lines: Pick<RxLineRow, "status" | "dispensedQty">[]
 ): PharmacyQueueRow["status"] {
-  if (lines.length && lines.every(isFinalLine)) return "done"
-  if (lines.some((l) => l.dispensedQty > 0)) return "partial"
-  if (lines.some((l) => l.status !== "open")) return "in-progress"
+  // Lines taken off a draft stay as cancelled rows; they are not part of the Rx.
+  const live = liveLines(lines)
+  if (live.every(isFinalLine)) return "done"
+  if (live.some((l) => l.dispensedQty > 0)) return "partial"
+  if (live.some((l) => l.status !== "open")) return "in-progress"
   return "waiting"
+}
+
+/** The lines that are part of a signed Rx (cancelled rows are drafts taken off). */
+export function liveLines<T extends Pick<RxLineRow, "status">>(lines: T[]): T[] {
+  return lines.filter((l) => l.status !== "cancelled")
+}
+
+/**
+ * The queue status to show: a closed or cancelled entry as stored, an open one
+ * derived from its lines, so a decision made elsewhere (the doctor rejecting
+ * a substitution) shows at once.
+ */
+export function shownQueueStatus(
+  stored: PharmacyQueueRow["status"],
+  lines: Pick<RxLineRow, "status" | "dispensedQty">[]
+): PharmacyQueueRow["status"] {
+  if (stored === "done" || stored === "cancelled" || !lines.length) return stored
+  return queueStatusFor(lines)
 }
 
 /* ---------------- Pack rounding ---------------- */

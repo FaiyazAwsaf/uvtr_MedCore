@@ -32,7 +32,7 @@ import { useMediaQuery } from "@/hooks/use-media-query"
 import { useLocale } from "@/lib/i18n/provider"
 import { cn } from "@/lib/utils"
 
-import { isFinalLine } from "../rules"
+import { isFinalLine, liveLines, shownQueueStatus } from "../rules"
 import {
   LiveChip,
   PageBody,
@@ -44,6 +44,7 @@ import {
 
 type QueueItem = {
   entry: PharmacyQueueRow
+  status: PharmacyQueueRow["status"]
   patient?: PatientRow
   doctor?: { nameEn: string; nameBn: string }
   signedAt: number
@@ -74,10 +75,11 @@ function useQueue(branch: string | null): QueueItem[] | undefined {
     )
     return entries.map((entry, index) => {
       const rx = rxs[index]
-      const own = lines.filter((l) => l.rxId === entry.rxId)
+      const own = liveLines(lines.filter((l) => l.rxId === entry.rxId))
       const doctor = rx ? staffByDoctor.get(rx.doctorId) : undefined
       return {
         entry,
+        status: shownQueueStatus(entry.status, own),
         patient: patientById.get(entry.patientId),
         doctor: doctor ? { nameEn: doctor.nameEn, nameBn: doctor.nameBn } : undefined,
         signedAt: rx?.signedAt ?? entry.receivedAt,
@@ -144,12 +146,12 @@ export function PharmacyQueueScreen() {
   const visible = React.useMemo(() => {
     const q = query.trim().toLowerCase()
     return sorted.filter((item) => {
-      if (
-        tab === "current" &&
-        !OPEN.includes(item.entry.status) &&
-        dhakaDate(item.entry.receivedAt) !== today
-      ) {
-        return false
+      if (tab === "current") {
+        // Open entries, plus today's finished ones; a replaced Rx's cancelled entry never.
+        if (item.status === "cancelled") return false
+        if (!OPEN.includes(item.status) && dhakaDate(item.entry.receivedAt) !== today) {
+          return false
+        }
       }
       if (!q) return true
       const p = item.patient
@@ -165,14 +167,13 @@ export function PharmacyQueueScreen() {
   const stats = React.useMemo(() => {
     const list = items ?? []
     return {
-      waiting: list.filter((i) => i.entry.status === "waiting").length,
-      partial: list.filter((i) => i.entry.status === "partial" || i.entry.status === "in-progress")
-        .length,
+      waiting: list.filter((i) => i.status === "waiting").length,
+      partial: list.filter((i) => i.status === "partial" || i.status === "in-progress").length,
       done: list.filter(
-        (i) => i.entry.status === "done" && dhakaDate(i.entry.updatedAt) === today
+        (i) => i.status === "done" && dhakaDate(i.entry.updatedAt) === today
       ).length,
       unpaid: list
-        .filter((i) => OPEN.includes(i.entry.status))
+        .filter((i) => OPEN.includes(i.status))
         .reduce((sum, i) => sum + i.unpaidOpen, 0),
     }
   }, [items, today])
@@ -265,13 +266,13 @@ export function PharmacyQueueScreen() {
             <TableBody>
               {visible.map((item) => {
                 const href = `/pharmacy/dispense/${item.entry.rxId}`
-                const open = OPEN.includes(item.entry.status)
+                const open = OPEN.includes(item.status)
                 return (
                   <TableRow
                     key={item.entry.id}
                     data-testid="pharmacy-queue-row"
                     data-rx-id={item.entry.rxId}
-                    data-status={item.entry.status}
+                    data-status={item.status}
                     onClick={() => router.push(href)}
                     className={cn("cursor-pointer", fresh.has(item.entry.id) && "flash-sync")}
                   >
@@ -311,7 +312,7 @@ export function PharmacyQueueScreen() {
                       <PaidMeter paid={item.paid} total={item.total} />
                     </TableCell>
                     <TableCell>
-                      <QueueStatusPill status={item.entry.status} />
+                      <QueueStatusPill status={item.status} />
                     </TableCell>
                     <TableCell className="text-right">
                       <Link

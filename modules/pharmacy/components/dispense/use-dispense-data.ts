@@ -57,7 +57,11 @@ export function useDispenseData(
     if (!rx) return null
     const [patient, lines, dispenses, queue, subs, doctorRow] = await Promise.all([
       db.patients.get(rx.patientId),
-      db.rxLines.where("rxId").equals(rx.id).sortBy("lineNo"),
+      db.rxLines
+        .where("rxId")
+        .equals(rx.id)
+        .sortBy("lineNo")
+        .then((rows) => rows.filter((l) => l.status !== "cancelled")),
       db.dispenses.where("rxId").equals(rx.id).toArray(),
       db.pharmacyQueue.where("rxId").equals(rx.id).first(),
       db.substitutionRequests.where("rxId").equals(rx.id).toArray(),

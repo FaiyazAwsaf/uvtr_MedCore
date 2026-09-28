@@ -3,6 +3,7 @@
 import * as React from "react"
 import {
   ArrowLeftRight,
+  ReceiptText,
   ChevronDown,
   CircleAlert,
   Hourglass,
@@ -84,6 +85,8 @@ export function LineCard({
   onBoughtElsewhere,
   onSubstitute,
   onRequestTransfer,
+  onSendToCashier,
+  cashierPending = false,
   transferPending,
   offline = false,
 }: {
@@ -97,6 +100,9 @@ export function LineCard({
   onBoughtElsewhere: () => void
   onSubstitute: () => void
   onRequestTransfer: (from: BranchCode, qty: number) => void
+  /** Bill a line that had nothing billed when it was signed */
+  onSendToCashier: () => void
+  cashierPending?: boolean
   transferPending: boolean
   /** Branch offline: other branches' stock is unknown (HAZ-15) */
   offline?: boolean
@@ -230,7 +236,23 @@ export function LineCard({
         </p>
       ) : null}
 
-      {block === "unpaid" ? (
+      {block === "unpaid" && !data.basket && usable > 0 ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <Notice tone="warning" icon={CircleAlert}>
+            {t("pharmacy.dispense.line.unbilled")}
+          </Notice>
+          <Button
+            data-testid="send-to-cashier"
+            variant="outline"
+            size="sm"
+            disabled={cashierPending}
+            onClick={onSendToCashier}
+          >
+            <ReceiptText />
+            {t("pharmacy.dispense.line.sendToCashier")}
+          </Button>
+        </div>
+      ) : block === "unpaid" && data.basket ? (
         <Notice tone="warning" icon={CircleAlert}>
           {t("pharmacy.dispense.line.unpaidHint")}
         </Notice>

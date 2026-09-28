@@ -17,6 +17,7 @@ import {
   brandStockAt,
   levelFor,
   moveStock,
+  usableUnits,
   watchReorder,
 } from "@/modules/inventory/stock"
 
@@ -263,6 +264,63 @@ export const dispense = defineCommand({
       })
     }
     return { rxId: rx.id, status, lines: done }
+  },
+})
+
+/* ================================================================== *
+ * pharmacy.sendToCashier
+ * ================================================================== */
+
+/**
+ * `rx.sign` bills only what is on the shelf when the doctor signs, so a line
+ * that was out of stock then has nothing on the patient's bill. Once stock is
+ * here (a transfer arrived), the pharmacist sends it to the cashier: one open
+ * basket line for what can be given now, priced never above MRP. Paying it at
+ * the cashier clears the line for dispensing (INV-10).
+ */
+export const sendToCashier = defineCommand({
+  name: "pharmacy.sendToCashier",
+  roles: ["pharmacist"],
+  input: z.object({ rxLineId: z.string(), idempotencyKey }),
+  async run(tx, input) {
+    const branch = actorBranch(tx)
+    const line = await tx.get("rxLines", input.rxLineId)
+    if (line.status !== "open" && line.status !== "partial") {
+      tx.reject("LINE_NOT_OPEN", { status: line.status })
+    }
+    if (line.paymentCleared) tx.reject("LINE_ALREADY_PAID", {})
+    const billed = (await tx.list("basketLines", "sourceId", line.id)).some(
+      (b) => b.sourceType === "rx-line" && b.status !== "removed"
+    )
+    if (billed) tx.reject("LINE_ALREADY_BILLED", {})
+    const rx = await tx.get("prescriptions", line.rxId)
+    if (rx.status !== "signed") tx.reject("RX_NOT_SIGNED", { rxNo: rx.rxNo })
+    const brandId = line.brandId
+    if (!brandId) return tx.reject("LINE_NOT_DISPENSABLE", { status: line.status })
+    const brand = await tx.get("brands", brandId)
+    const stock = await brandStockAt(tx, branch, brand.id)
+    const qty = Math.min(outstandingOf(line), usableUnits(stock.levels, stock.batches, tx.today()))
+    if (qty <= 0) tx.reject("STOCK_NEGATIVE", { brandId: brand.id, branch })
+    const basket = tx.insert("basketLines", {
+      patientId: rx.patientId,
+      branchId: branch,
+      sourceType: "rx-line",
+      sourceId: line.id,
+      serviceType: "medicine",
+      description: brandLabel(brand),
+      doctorId: rx.doctorId,
+      qty,
+      unitPriceP: Math.min(brand.unitPriceP, brand.mrpP),
+      mrpP: brand.mrpP,
+      status: "open",
+      payerType: "self",
+    })
+    tx.emit("MedicineSentToCashier", {
+      branchId: branch,
+      refs: { rxId: rx.id, rxLineId: line.id, patientId: rx.patientId },
+      params: { rxNo: rx.rxNo, item: brandLabel(brand), qty },
+    })
+    return { basketLineId: basket.id, qty }
   },
 })
 

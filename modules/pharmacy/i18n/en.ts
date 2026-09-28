@@ -142,6 +142,10 @@ export const pharmacyEn = {
         balanceUntil: "Balance open until {date}",
         balanceExpired: "Balance expired on {date}",
         controlledNote: "Controlled drug: a register entry is written with this dispense.",
+        unbilled:
+          "Nothing was billed for this line when it was prescribed (it was out of stock). Send it to the cashier now that stock is here.",
+        sendToCashier: "Send to cashier",
+        sentToCashier: "{qty} × {brand} added to the patient's bill",
       },
       summary: {
         title: "To hand over",
@@ -327,6 +331,8 @@ export const pharmacyEn = {
       RETURN_OTHER_BRANCH: "This was dispensed at {branch}. Return it there.",
       RETURN_ABOVE_DISPENSED: "Only {qty} units can still be returned from this dispense.",
       NOTHING_IN_QUARANTINE: "Nothing from this dispense is waiting in quarantine.",
+      LINE_ALREADY_PAID: "This line is already paid, so nothing new was billed.",
+      LINE_ALREADY_BILLED: "This line is already on the patient's bill. Take payment at the cashier.",
     },
     events: {
       dispenseCompleted: "Medicines dispensed for {rxNo} ({units} units)",
@@ -334,6 +340,7 @@ export const pharmacyEn = {
       boughtElsewhere: "{item} on {rxNo} bought elsewhere",
       substitutionRequested: "Substitute requested on {rxNo}: {from} to {to}",
       counterSale: "Counter sale: {items} items, {units} units",
+      sentToCashier: "{item} on {rxNo} sent to the cashier ({qty})",
       returnQuarantined: "{qty} × {item} returned to quarantine",
       returnAccepted: "{qty} × {item} accepted back to stock",
       returnDiscarded: "{qty} × {item} discarded",

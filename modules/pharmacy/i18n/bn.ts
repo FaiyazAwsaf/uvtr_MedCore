@@ -144,6 +144,10 @@ export const pharmacyBn: typeof pharmacyEn = {
         balanceUntil: "{date} পর্যন্ত বাকি খোলা",
         balanceExpired: "বাকির মেয়াদ {date} তারিখে শেষ",
         controlledNote: "নিয়ন্ত্রিত ওষুধ: এই প্রদানের সাথেই রেজিস্টারে লেখা হবে।",
+        unbilled:
+          "লেখার সময় এই লাইনের কোনো বিল হয়নি (তখন মজুদ ছিল না)। এখন মজুদ আছে, তাই ক্যাশিয়ারের কাছে পাঠান।",
+        sendToCashier: "ক্যাশিয়ারের কাছে পাঠান",
+        sentToCashier: "{qty} × {brand} রোগীর বিলে যোগ হয়েছে",
       },
       summary: {
         title: "হাতে দেওয়া হবে",
@@ -328,6 +332,8 @@ export const pharmacyBn: typeof pharmacyEn = {
       RETURN_OTHER_BRANCH: "এটি {branch}-এ দেওয়া হয়েছিল। সেখানেই ফেরত দিন।",
       RETURN_ABOVE_DISPENSED: "এই প্রদান থেকে আর মাত্র {qty} ইউনিট ফেরত নেওয়া যাবে।",
       NOTHING_IN_QUARANTINE: "এই প্রদানের কিছুই কোয়ারেন্টাইনে অপেক্ষায় নেই।",
+      LINE_ALREADY_PAID: "এই লাইনের টাকা আগেই দেওয়া, তাই নতুন কোনো বিল হয়নি।",
+      LINE_ALREADY_BILLED: "এই লাইন আগেই রোগীর বিলে আছে। ক্যাশিয়ারে টাকা নিন।",
     },
     events: {
       dispenseCompleted: "{rxNo}-এর ওষুধ দেওয়া হয়েছে ({units} ইউনিট)",
@@ -335,6 +341,7 @@ export const pharmacyBn: typeof pharmacyEn = {
       boughtElsewhere: "{rxNo}-এর {item} বাইরে থেকে কেনা",
       substitutionRequested: "{rxNo}-এ বিকল্পের অনুরোধ: {from} থেকে {to}",
       counterSale: "কাউন্টার বিক্রি: {items}টি আইটেম, {units} ইউনিট",
+      sentToCashier: "{rxNo}-এর {item} ক্যাশিয়ারের কাছে পাঠানো হয়েছে ({qty})",
       returnQuarantined: "{qty} × {item} ফেরত এসে কোয়ারেন্টাইনে",
       returnAccepted: "{qty} × {item} আবার মজুদে",
       returnDiscarded: "{qty} × {item} বাতিল",

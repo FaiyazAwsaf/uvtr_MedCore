@@ -5,7 +5,7 @@ import { commit } from "@/core/engine/commit"
 import type { Actor } from "@/core/engine/types"
 import { HERO, SEED_REFS } from "@/core/seed/content"
 import { checkout } from "@/modules/billing/commands"
-import { dispense } from "@/modules/pharmacy/commands"
+import { dispense, sendToCashier } from "@/modules/pharmacy/commands"
 
 import { dropDb, seededDb, shirin, signedRx } from "./fixtures"
 
@@ -64,5 +64,49 @@ describe("payment gate across billing and pharmacy", () => {
     const invoiceLines = await db.invoiceLines.where("sourceId").equals(lineIds[0]).toArray()
     expect(rows[0].invoiceLineId).toBe(invoiceLines[0]?.id)
     expect((await db.pharmacyQueue.where("rxId").equals(rxId).first())?.status).toBe("done")
+  })
+
+  it("sends a line that was out of stock at signing to the cashier once stock is here", async () => {
+    const { rxId, lineIds } = await signedRx(db, [
+      {
+        brandId: SEED_REFS.brand.fexo120,
+        dosePattern: "0+0+1",
+        days: 10,
+        paid: false,
+        billed: false,
+      },
+    ])
+    expect(await db.basketLines.where("sourceId").equals(lineIds[0]).count()).toBe(0)
+
+    const { result, events } = await commit(
+      sendToCashier,
+      { rxLineId: lineIds[0] },
+      { db, actor: shirin }
+    )
+    expect(result.qty).toBe(10)
+    expect(events.map((e) => e.type)).toEqual(["MedicineSentToCashier"])
+    const basket = await db.basketLines.get(result.basketLineId)
+    expect(basket).toMatchObject({ sourceType: "rx-line", sourceId: lineIds[0], qty: 10, status: "open" })
+    expect(basket!.unitPriceP).toBeLessThanOrEqual(basket!.mrpP!)
+    await expect(
+      commit(sendToCashier, { rxLineId: lineIds[0] }, { db, actor: shirin })
+    ).rejects.toMatchObject({ code: "LINE_ALREADY_BILLED" })
+
+    await commit(
+      checkout,
+      {
+        patientId: HERO.patient.abdulKarim,
+        basketLineIds: [result.basketLineId],
+        tenders: [{ tender: "cash", amountP: basket!.qty * basket!.unitPriceP }],
+        idempotencyKey: "pharmacy-gate-0002",
+      },
+      { db, actor: RAFIQ }
+    )
+    await commit(
+      dispense,
+      { rxId, lines: [{ rxLineId: lineIds[0], qty: 10 }], verifiedBy: "phone" },
+      { db, actor: shirin }
+    )
+    expect((await db.rxLines.get(lineIds[0]))?.status).toBe("dispensed")
   })
 })

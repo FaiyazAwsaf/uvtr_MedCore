@@ -28,6 +28,12 @@ export const pharmacyEvents: EventCatalog = {
     consumers: [c("doctorInbox"), c("pharmacyQueue"), c("audit")],
     severity: "warning",
   },
+  MedicineSentToCashier: {
+    module: "pharmacy",
+    labelKey: "pharmacy.events.sentToCashier",
+    consumers: [c("billing"), c("audit")],
+    severity: "info",
+  },
   CounterSaleCompleted: {
     module: "pharmacy",
     labelKey: "pharmacy.events.counterSale",
