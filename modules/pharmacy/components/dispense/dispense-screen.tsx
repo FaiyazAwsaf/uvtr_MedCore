@@ -47,7 +47,7 @@ export function DispenseScreen() {
   const params = useParams<{ rxId: string }>()
   const rxId = decodeURIComponent(params.rxId ?? "")
   const { t, locale } = useLocale()
-  const { branch } = usePharmacyContext()
+  const { branch, isEdge } = usePharmacyContext()
   const data = useDispenseData(rxId, branch)
 
   if (!branch) {
@@ -81,7 +81,9 @@ export function DispenseScreen() {
       </PageBody>
     )
   }
-  return <DispenseView key={data.rx.id} data={data} branch={branch} locale={locale} />
+  return (
+    <DispenseView key={data.rx.id} data={data} branch={branch} locale={locale} isEdge={isEdge} />
+  )
 }
 
 type LabelGroup = { key: string; input: LabelInput; ids: string[] }
@@ -126,17 +128,21 @@ function labelGroups(data: DispenseData): LabelGroup[] {
       },
     })
   }
-  return out.sort((a, b) => b.input.at - a.input.at)
+  const lineNo = (group: LabelGroup) =>
+    data.lines.find((l) => l.line.id === group.key.split(":")[0])?.line.lineNo ?? 0
+  return out.sort((a, b) => b.input.at - a.input.at || lineNo(a) - lineNo(b))
 }
 
 function DispenseView({
   data,
   branch,
   locale,
+  isEdge,
 }: {
   data: DispenseData
   branch: BranchCode
   locale: Locale
+  isEdge: boolean
 }) {
   const { t, num } = useLocale()
   const nowMs = useNow(30_000) || now()
@@ -321,14 +327,15 @@ function DispenseView({
               onSubstitute={() => setSubFor(row.lineData)}
               onRequestTransfer={(from, qty) => void requestFrom(row.lineData, from, qty)}
               transferPending={transferCommand.pending}
+              offline={isEdge}
             />
           ))}
           {!wide ? summary : null}
           {!wide ? labelPanel : null}
         </div>
         {wide ? (
-          <aside className="sticky top-2 flex flex-col gap-4">
-            {summary}
+          <aside className="flex flex-col gap-4 self-stretch">
+            <div className="sticky top-2 z-30">{summary}</div>
             {labelPanel}
           </aside>
         ) : null}

@@ -228,9 +228,15 @@ export function ReturnsScreen() {
                       <span className="block font-medium" lang="en">
                         {brandText(item.brand)}
                       </span>
-                      <span className="font-mono text-[0.6875rem] text-muted-foreground" lang="en">
-                        {item.rx?.rxNo ?? t("pharmacy.common.counterSale")}
-                      </span>
+                      {item.rx ? (
+                        <span className="font-mono text-[0.6875rem] text-muted-foreground" lang="en">
+                          {item.rx.rxNo}
+                        </span>
+                      ) : (
+                        <span className="text-[0.6875rem] text-muted-foreground">
+                          {t("pharmacy.common.counterSale")}
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell className="hidden font-mono text-xs @min-[40rem]/r:table-cell" lang="en">
                       {item.batch?.batchNo}

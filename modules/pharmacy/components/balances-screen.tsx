@@ -161,7 +161,7 @@ export function BalancesScreen() {
                         >
                           {expired
                             ? t("pharmacy.balances.expired")
-                            : days <= 1
+                            : days <= 0
                               ? t("pharmacy.balances.lastDay")
                               : t("pharmacy.balances.daysLeft", { count: num(days) })}
                         </StatusText>

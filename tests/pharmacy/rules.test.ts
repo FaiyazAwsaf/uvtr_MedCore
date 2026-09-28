@@ -60,6 +60,8 @@ describe("dispensing gates", () => {
     const until = now + 7 * DAY
     expect(balanceDaysLeft(until, now)).toBe(7)
     expect(balanceDaysLeft(until, now + 6.5 * DAY)).toBe(1)
+    expect(balanceDaysLeft(until, now + 7 * DAY)).toBe(0)
+    expect(balanceDaysLeft(until + 50_000, now)).toBe(7)
     expect(balanceExpired({ status: "partial", balanceUntil: until }, now + 7 * DAY + 1)).toBe(true)
     expect(balanceExpired({ status: "partial", balanceUntil: until }, now)).toBe(false)
   })

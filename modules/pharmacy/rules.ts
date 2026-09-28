@@ -5,7 +5,7 @@
  */
 
 import { rules } from "@/config/rules.config"
-import { addDaysISO, DAY } from "@/core/clock/dates"
+import { addDaysISO, DAY, dhakaDate, startOfDhakaDay } from "@/core/clock/dates"
 import type {
   ISODate,
   Ms,
@@ -39,9 +39,11 @@ export function balanceExpired(
   return line.status === "partial" && line.balanceUntil !== undefined && now > line.balanceUntil
 }
 
-/** Days left on an open balance, rounded up (0 or less once it has expired). */
+/** Calendar days (Dhaka) from today to a balance's last day: 0 on the last day. */
 export function balanceDaysLeft(balanceUntil: Ms, now: Ms): number {
-  return Math.ceil((balanceUntil - now) / DAY)
+  return Math.round(
+    (startOfDhakaDay(dhakaDate(balanceUntil)) - startOfDhakaDay(dhakaDate(now))) / DAY
+  )
 }
 
 /** When a partial dispense made now keeps its balance open until (rules.dispenseBalanceDays). */

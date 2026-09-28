@@ -3,6 +3,7 @@
 import * as React from "react"
 import {
   ArrowLeftRight,
+  ChevronDown,
   CircleAlert,
   Hourglass,
   Minus,
@@ -19,7 +20,13 @@ import type { BranchCode } from "@/config/brand.config"
 import { MoneyText } from "@/components/shared/money-text"
 import { StatusPill } from "@/components/shared/status"
 import { StockBadge } from "@/components/shared/stock-badge"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { addDaysISO } from "@/core/clock/dates"
@@ -78,6 +85,7 @@ export function LineCard({
   onSubstitute,
   onRequestTransfer,
   transferPending,
+  offline = false,
 }: {
   data: LineData
   branch: BranchCode
@@ -90,8 +98,10 @@ export function LineCard({
   onSubstitute: () => void
   onRequestTransfer: (from: BranchCode, qty: number) => void
   transferPending: boolean
+  /** Branch offline: other branches' stock is unknown (HAZ-15) */
+  offline?: boolean
 }) {
-  const { t, tk, num, dmy, locale } = useLocale()
+  const { t, num, dmy, locale } = useLocale()
   const { line, brand, generic } = data
   const facts = lineFacts(data, branch, batches, today, nowMs)
   const { block, outstanding, here, batchList, usable, max } = facts
@@ -119,7 +129,7 @@ export function LineCard({
   const dose = doseInstruction(line.dosePattern, line.mealTiming, line.durationDays)
 
   const otherBranches = unique(data.levels.map((l) => l.branchId))
-    .filter((code) => code !== branch)
+    .filter((code) => code !== branch && !offline)
     .map((code) => {
       const levels = data.levels.filter((l) => l.branchId === code)
       const list = levels.map((l) => batches.get(l.batchId)).filter((b): b is BatchRow => !!b)
@@ -190,9 +200,14 @@ export function LineCard({
         </div>
       </header>
 
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-[0.8125rem] @min-[34rem]/line:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-[0.8125rem] @min-[40rem]/line:grid-cols-6">
         <Fact label={t("pharmacy.dispense.line.dose")} wide>
           <span className="font-medium">{dose[locale]}</span>
+        </Fact>
+        <Fact label={t("pharmacy.dispense.line.duration")}>
+          {line.durationDays > 0
+            ? t("pharmacy.dispense.line.days", { count: num(line.durationDays) })
+            : t("pharmacy.dispense.line.continue")}
         </Fact>
         <Fact label={t("pharmacy.dispense.line.prescribed")}>
           <span className="nums">{num(line.qtyPrescribed)}</span>
@@ -204,11 +219,6 @@ export function LineCard({
           <span className={cn("nums font-semibold", outstanding > 0 && !final && "text-warning")}>
             {num(final ? 0 : outstanding)}
           </span>
-        </Fact>
-        <Fact label={t("pharmacy.dispense.line.duration")}>
-          {line.durationDays > 0
-            ? t("pharmacy.dispense.line.days", { count: num(line.durationDays) })
-            : t("pharmacy.dispense.line.continue")}
         </Fact>
       </dl>
 
@@ -406,7 +416,8 @@ export function LineCard({
         <footer className="flex flex-wrap items-center gap-2">
           {taking && data.basket ? (
             <span className="text-xs text-muted-foreground">
-              <MoneyText poisha={qty * data.basket.unitPriceP} />
+              {t("pharmacy.dispense.summary.amount")}{" "}
+              <MoneyText poisha={qty * data.basket.unitPriceP} className="font-medium text-foreground" />
             </span>
           ) : null}
           <span className="ml-auto flex flex-wrap items-center justify-end gap-2">
@@ -414,27 +425,43 @@ export function LineCard({
               data.transfers.length ? (
                 <StatusPill tone="info" className="h-7">
                   <ArrowLeftRight />
-                  {tk("pharmacy.dispense.line.transferRequested", {
+                  {t("pharmacy.dispense.line.transferRequested", {
                     transferNo: data.transfers[0].transferNo,
                   })}
                 </StatusPill>
               ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={transferPending}
-                  onClick={() =>
-                    onRequestTransfer(
-                      otherBranches[0].code,
-                      Math.min(outstanding - usable, otherBranches[0].usable)
-                    )
-                  }
-                >
-                  <ArrowLeftRight />
-                  {t("pharmacy.dispense.line.requestTransfer", {
-                    branch: branchName(otherBranches[0].code, locale),
-                  })}
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    data-testid="transfer-request-menu"
+                    disabled={transferPending}
+                    className={buttonVariants({ variant: "outline", size: "sm" })}
+                  >
+                    <ArrowLeftRight />
+                    {t("pharmacy.dispense.line.requestTransferMenu")}
+                    <ChevronDown className="size-3.5" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-auto min-w-56">
+                    {otherBranches.map((other) => (
+                      <DropdownMenuItem
+                        key={other.code}
+                        data-testid="transfer-request-branch"
+                        data-branch={other.code}
+                        onClick={() =>
+                          onRequestTransfer(other.code, Math.min(outstanding - usable, other.usable))
+                        }
+                      >
+                        <span className="flex-1">
+                          {t("pharmacy.dispense.line.requestTransfer", {
+                            branch: branchName(other.code, locale),
+                          })}
+                        </span>
+                        <span className="nums text-xs text-muted-foreground">
+                          {t("pharmacy.dispense.line.usableAt", { qty: num(other.usable) })}
+                        </span>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )
             ) : null}
             {brand ? (

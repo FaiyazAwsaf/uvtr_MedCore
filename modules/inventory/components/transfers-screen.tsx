@@ -113,7 +113,7 @@ function useTransfers(branch: BranchCode | null): TransfersData | undefined {
 
 export function TransfersScreen() {
   const { t, num } = useLocale()
-  const { branch, branchLabel } = usePharmacyContext()
+  const { branch, branchLabel, isEdge } = usePharmacyContext()
   const data = useTransfers(branch)
   const [tab, setTab] = React.useState<"incoming" | "outgoing">("incoming")
   const [dispatching, setDispatching] = React.useState<TransferItem | null>(null)
@@ -188,7 +188,12 @@ export function TransfersScreen() {
             onClose={() => setDispatching(null)}
           />
           <ReceiveDialog item={receiving} data={data} onClose={() => setReceiving(null)} />
-          <RequestDialog open={requesting} branch={branch} onClose={() => setRequesting(false)} />
+          <RequestDialog
+            open={requesting}
+            branch={branch}
+            offline={isEdge}
+            onClose={() => setRequesting(false)}
+          />
         </>
       ) : null}
     </PageBody>
@@ -610,10 +615,13 @@ function ReceiveDialog({
 function RequestDialog({
   open,
   branch,
+  offline,
   onClose,
 }: {
   open: boolean
   branch: BranchCode
+  /** Other branches' stock is unknown while offline (HAZ-15) */
+  offline: boolean
   onClose: () => void
 }) {
   const { t, num, locale } = useLocale()
@@ -641,7 +649,7 @@ function RequestDialog({
     : []
 
   const sources = useLiveQuery(async () => {
-    if (!brandId) return []
+    if (!brandId || offline) return []
     const levels = await db.stockLevels.where("brandId").equals(brandId).toArray()
     const batches = (await db.batches.bulkGet(unique(levels.map((l) => l.batchId)))).filter(
       (b): b is BatchRow => !!b
@@ -654,7 +662,7 @@ function RequestDialog({
         usable: usableUnits(levels.filter((l) => l.branchId === b.code), batches, today),
       }))
       .filter((b) => b.usable > 0)
-  }, [db, brandId, branch])
+  }, [db, brandId, branch, offline])
 
   const close = () => {
     setQuery("")

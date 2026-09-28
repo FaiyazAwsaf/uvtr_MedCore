@@ -7,7 +7,8 @@ import { toast } from "sonner"
 import { PrintLayout } from "@/components/shared/print-layout"
 import { SimulatedBadge } from "@/components/shared/simulated-badge"
 import { Button } from "@/components/ui/button"
-import type { BranchCode } from "@/config/brand.config"
+import { branches, hospital, type BranchCode } from "@/config/brand.config"
+import { HospitalLogo } from "@/components/shared/hospital-brand"
 import type { Locale } from "@/lib/i18n/config"
 import { useLocale } from "@/lib/i18n/provider"
 import { cn } from "@/lib/utils"
@@ -37,6 +38,7 @@ export function DispenseLabel({
 }) {
   const { t } = useLocale()
   const model = buildLabel(input, lang)
+  const branchRow = branch ? branches.find((b) => b.code === branch) : undefined
   return (
     <figure
       data-testid="label-preview"
@@ -44,8 +46,23 @@ export function DispenseLabel({
       className={cn("flex flex-col items-center gap-2", fresh && "flash-sync rounded-lg")}
     >
       <div lang={lang} style={LABEL_FONT} className="w-full">
-        <PrintLayout size="label" branch={branch} docNo={input.rxNo} className="shadow-lg">
+        <PrintLayout size="label" showBrand={false} className="shadow-lg">
           <div className="flex flex-col gap-1 leading-snug">
+            <div
+              className="flex items-center gap-1.5 border-b-2 pb-1"
+              style={{ borderColor: hospital.colors.primary }}
+            >
+              <HospitalLogo size={16} />
+              <span className="min-w-0 flex-1 truncate text-[0.6875rem] font-bold">
+                {hospital.shortName[lang]}
+                {branchRow ? (
+                  <span className="font-normal text-[#555]"> · {branchRow.name[lang]}</span>
+                ) : null}
+              </span>
+              <span className="shrink-0 font-mono text-[0.625rem]" lang="en">
+                {input.rxNo}
+              </span>
+            </div>
             <div className="flex items-baseline justify-between gap-2">
               <span className="truncate text-[0.75rem] font-bold">{model.patient}</span>
               <span className="shrink-0 font-mono text-[0.625rem]" lang="en">
