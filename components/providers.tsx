@@ -33,7 +33,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
               toastOptions={{
                 classNames: {
                   toast:
-                    "!gap-2.5 !rounded-md !border !border-border !bg-popover !px-4 !py-3 !text-[0.8125rem] !text-popover-foreground !shadow-xl",
+                    "!gap-2.5 !font-sans !rounded-md !border !border-border !bg-popover !px-4 !py-3 !text-[0.8125rem] !text-popover-foreground !shadow-xl",
                   title: "!font-semibold",
                   description: "!text-muted-foreground",
                   error: "[&_[data-icon]]:!text-destructive",
