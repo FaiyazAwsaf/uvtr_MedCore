@@ -32,7 +32,8 @@ function useStaffName(staffId: string): string {
     [db, staffId, persona]
   )
   if (staffId === "system") return t("shell.feedback.system")
-  if (persona?.staff) return locale === "bn" ? persona.staff.nameBn : persona.staff.nameEn
+  if (persona?.staff)
+    return locale === "bn" ? persona.staff.nameBn : persona.staff.nameEn
   if (row) return locale === "bn" ? row.nameBn : row.nameEn
   return t("shell.feedback.someone")
 }
@@ -48,7 +49,8 @@ function DialogIcon({
     <span
       className={cn(
         "flex size-10 shrink-0 items-center justify-center rounded-full [&_svg]:size-5",
-        tone === "info" && "bg-[color-mix(in_oklch,var(--info)_16%,transparent)] text-info",
+        tone === "info" &&
+          "bg-[color-mix(in_oklch,var(--info)_16%,transparent)] text-info",
         tone === "destructive" &&
           "bg-[color-mix(in_oklch,var(--destructive)_16%,transparent)] text-destructive",
         tone === "warning" &&
@@ -85,7 +87,10 @@ export function ConflictDialog({
   const { t, num, time } = useLocale()
   const name = useStaffName(conflict.updatedBy)
   return (
-    <Dialog open={open} onOpenChange={(next) => (!next ? onReload() : undefined)}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => (!next ? onReload() : undefined)}
+    >
       <DialogContent showCloseButton={false} className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center gap-3">
@@ -129,26 +134,30 @@ export type RuleInfo = {
 export function RuleViolationDialog({
   open,
   violation,
+  command,
   onClose,
 }: {
   open: boolean
   /** A RuleViolation (or the same fields) */
   violation: RuleInfo
+  /** The refused command's name; its module's rule messages are tried first */
+  command?: string
   onClose: () => void
 }) {
   const { t, tk, num, money, dmy, uhid, locale } = useLocale()
   const params = violation.params ?? {}
-  const message = ruleMessage(violation.code, params, {
-    locale,
-    tk,
-    num: (value) => num(value),
-    money,
-    dmy,
-    uhid,
-  })
+  const message = ruleMessage(
+    violation.code,
+    params,
+    { locale, tk, num: (value) => num(value), money, dmy, uhid },
+    command
+  )
   const rule = typeof params.rule === "string" ? params.rule : undefined
   return (
-    <Dialog open={open} onOpenChange={(next) => (!next ? onClose() : undefined)}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => (!next ? onClose() : undefined)}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center gap-3">
@@ -204,7 +213,10 @@ export function DeniedDialog({
       : persona.staff.nameEn
     : (persona?.patientName?.[locale] ?? "")
   return (
-    <Dialog open={open} onOpenChange={(next) => (!next ? onClose() : undefined)}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => (!next ? onClose() : undefined)}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center gap-3">
@@ -215,7 +227,9 @@ export function DeniedDialog({
           </div>
           <DialogDescription className="pt-1 text-sm leading-relaxed text-foreground/90">
             {Array.isArray(roles) && roles.length
-              ? t("shell.feedback.deniedBody", { roles: rolesList(roles, tk, locale) })
+              ? t("shell.feedback.deniedBody", {
+                  roles: rolesList(roles, tk, locale),
+                })
               : t("shell.feedback.deniedUnknown")}{" "}
             {personaName
               ? t("shell.feedback.signedInAs", {
@@ -225,7 +239,9 @@ export function DeniedDialog({
               : null}
           </DialogDescription>
         </DialogHeader>
-        <p className="text-xs text-muted-foreground">{t("shell.feedback.audited")}</p>
+        <p className="text-xs text-muted-foreground">
+          {t("shell.feedback.audited")}
+        </p>
         <DialogFooter>
           <Button onClick={onClose} autoFocus>
             {t("shell.feedback.ok")}
@@ -246,7 +262,10 @@ export function NoPersonaDialog({
 }) {
   const { t } = useLocale()
   return (
-    <Dialog open={open} onOpenChange={(next) => (!next ? onClose() : undefined)}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => (!next ? onClose() : undefined)}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center gap-3">
@@ -263,7 +282,11 @@ export function NoPersonaDialog({
           <Button variant="neutral" onClick={onClose}>
             {t("common.close")}
           </Button>
-          <Button nativeButton={false} render={<Link href="/" />} onClick={onClose}>
+          <Button
+            nativeButton={false}
+            render={<Link href="/" />}
+            onClick={onClose}
+          >
             {t("shell.persona.openLauncher")}
           </Button>
         </DialogFooter>
