@@ -6,12 +6,12 @@ test("launcher renders the product and prompt", async ({ page }) => {
   await expect(page.getByText("Choose a role to start the demo")).toBeVisible()
 })
 
-test("every stub route resolves inside the staff shell, e.g. the pharmacy dispense screen", async ({
+test("every stub route resolves inside the staff shell, e.g. patient 360", async ({
   page,
 }) => {
-  await page.goto("/pharmacy/dispense/RX-TEST?persona=per_pharmacist_shirin")
-  await expect(page.getByText("/pharmacy/dispense/RX-TEST")).toBeVisible()
-  await expect(page.getByText("It arrives in phase 2.")).toBeVisible()
+  await page.goto("/patient-360/PAT-TEST?persona=per_doctor_kamal")
+  await expect(page.getByText("/patient-360/PAT-TEST")).toBeVisible()
+  await expect(page.getByText("It arrives in phase 5.")).toBeVisible()
 })
 
 test("a staff route without a persona asks for one, and an off-role route is denied", async ({
