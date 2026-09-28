@@ -6,7 +6,6 @@ import { useLiveQuery } from "dexie-react-hooks"
 import { ArrowRight, BadgePercent, WifiOff } from "lucide-react"
 
 import { branches } from "@/config/brand.config"
-import { EmptyState } from "@/components/shared/empty-state"
 import { KeyValueGrid, type KeyValueItem } from "@/components/shared/key-value"
 import { MoneyText } from "@/components/shared/money-text"
 import { SectionCard } from "@/components/shared/section-card"
@@ -395,7 +394,13 @@ function OffersCard({ brandId }: { brandId: string }) {
           ))}
         </ul>
       ) : offers ? (
-        <EmptyState icon={BadgePercent} title={t("library.offers.none")} size="sm" className="p-2" />
+        <p
+          data-testid="brand-offers-none"
+          className="flex items-center gap-2 rounded-md bg-surface-raised px-3 py-2.5 text-[0.8125rem] text-muted-foreground"
+        >
+          <BadgePercent className="size-4 shrink-0" />
+          {t("library.offers.none")}
+        </p>
       ) : null}
       <p className="text-xs text-muted-foreground">{t("library.offers.note")}</p>
     </SectionCard>
