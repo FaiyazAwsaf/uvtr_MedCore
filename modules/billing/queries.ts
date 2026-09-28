@@ -7,6 +7,7 @@ import type {
   Id,
   InvoiceLineRow,
   InvoiceRow,
+  ISODate,
   Ms,
   PatientRow,
   PaymentRow,
@@ -49,7 +50,10 @@ export type OpenBill = {
 }
 
 /** Patients with open basket lines at a branch, newest activity first. */
-export async function openBillsAt(db: MedcoreDb, branch: BranchCode): Promise<OpenBill[]> {
+export async function openBillsAt(
+  db: MedcoreDb,
+  branch: BranchCode
+): Promise<OpenBill[]> {
   const lines = await db.basketLines
     .where("status")
     .equals("open")
@@ -69,7 +73,8 @@ export async function openBillsAt(db: MedcoreDb, branch: BranchCode): Promise<Op
     if (!patient) return
     const list = byPatient.get(id)!
     const counts: OpenBill["counts"] = {}
-    for (const line of list) counts[line.sourceType] = (counts[line.sourceType] ?? 0) + 1
+    for (const line of list)
+      counts[line.sourceType] = (counts[line.sourceType] ?? 0) + 1
     bills.push({
       patient,
       lines: list,
@@ -103,7 +108,10 @@ async function withPayments(
     : []
   const out: DueInvoice[] = []
   for (const [index, invoice] of invoices.entries()) {
-    const payments = await db.payments.where("invoiceId").equals(invoice.id).toArray()
+    const payments = await db.payments
+      .where("invoiceId")
+      .equals(invoice.id)
+      .toArray()
     out.push({
       invoice,
       patient: patients[index],
@@ -116,7 +124,10 @@ async function withPayments(
 }
 
 /** Every invoice still due at a branch (the "waiting for payment" list). */
-export async function dueInvoicesAt(db: MedcoreDb, branch: BranchCode): Promise<DueInvoice[]> {
+export async function dueInvoicesAt(
+  db: MedcoreDb,
+  branch: BranchCode
+): Promise<DueInvoice[]> {
   const invoices = await db.invoices
     .where("status")
     .anyOf(OPEN_INVOICE)
@@ -134,7 +145,10 @@ export async function dueInvoicesOf(
   const invoices = await db.invoices
     .where("patientId")
     .equals(patientId)
-    .filter((invoice) => invoice.branchId === branch && OPEN_INVOICE.includes(invoice.status))
+    .filter(
+      (invoice) =>
+        invoice.branchId === branch && OPEN_INVOICE.includes(invoice.status)
+    )
     .toArray()
   return withPayments(db, invoices, false)
 }
@@ -146,6 +160,8 @@ export async function dueInvoicesOf(
 export type PatientBasket = {
   lines: BasketLineRow[]
   cover: Cover | null
+  /** Consultation fees for a visit after today, by basket line: paid at that visit unless chosen now */
+  laterVisits: Record<Id, ISODate>
 }
 
 export async function basketOf(
@@ -159,11 +175,21 @@ export async function basketOf(
     .equals([patient.id, "open"])
     .filter((line) => line.branchId === branch)
     .toArray()
-  lines.sort((a, b) => a.createdAt - b.createdAt || a.description.localeCompare(b.description))
+  lines.sort(
+    (a, b) =>
+      a.createdAt - b.createdAt || a.description.localeCompare(b.description)
+  )
   const cover = lines.some((line) => line.payerType === "corporate")
     ? await coverFor(dbReader(db), patient, today)
     : null
-  return { lines, cover }
+  const laterVisits: Record<Id, ISODate> = {}
+  for (const line of lines) {
+    if (line.sourceType !== "consult") continue
+    const appointment = await db.appointments.get(line.sourceId)
+    if (appointment && appointment.date > today)
+      laterVisits[line.id] = appointment.date
+  }
+  return { lines, cover, laterVisits }
 }
 
 /* ------------------------------------------------------------------ *
@@ -186,10 +212,18 @@ export type InvoiceDetail = {
   descriptionBn: Record<Id, string | undefined>
   /** Display order of each line: the order its basket line was added */
   lineOrder: Record<Id, number>
-  unlocked: { tests: number; specimens: number; imaging: number; medicines: number }
+  unlocked: {
+    tests: number
+    specimens: number
+    imaging: number
+    medicines: number
+  }
 }
 
-export async function invoiceDetail(db: MedcoreDb, invoiceId: Id): Promise<InvoiceDetail | null> {
+export async function invoiceDetail(
+  db: MedcoreDb,
+  invoiceId: Id
+): Promise<InvoiceDetail | null> {
   const invoice = await db.invoices.get(invoiceId)
   if (!invoice) return null
   const [lines, payments, receipts, patient, staff] = await Promise.all([
@@ -202,7 +236,9 @@ export async function invoiceDetail(db: MedcoreDb, invoiceId: Id): Promise<Invoi
   const approval = invoice.discountApprovalId
     ? await db.approvals.get(invoice.discountApprovalId)
     : undefined
-  const approverStaff = approval?.approverId ? await db.staff.get(approval.approverId) : undefined
+  const approverStaff = approval?.approverId
+    ? await db.staff.get(approval.approverId)
+    : undefined
   const client = invoice.corporateClientId
     ? await db.corporateClients.get(invoice.corporateClientId)
     : undefined
@@ -225,16 +261,26 @@ export async function invoiceDetail(db: MedcoreDb, invoiceId: Id): Promise<Invoi
     }
   }
   unlocked.specimens = specimenIds.size
-  payments.sort((a, b) => a.requestedAt - b.requestedAt || a.id.localeCompare(b.id))
-  const baskets = await db.basketLines.bulkGet(lines.map((line) => line.basketLineId ?? ""))
+  payments.sort(
+    (a, b) => a.requestedAt - b.requestedAt || a.id.localeCompare(b.id)
+  )
+  const baskets = await db.basketLines.bulkGet(
+    lines.map((line) => line.basketLineId ?? "")
+  )
   const descriptionBn: Record<Id, string | undefined> = {}
   lines.forEach((line, index) => {
     descriptionBn[line.id] = baskets[index]?.descriptionBn
   })
   const lineOrder: Record<Id, number> = {}
   lines
-    .map((line, index) => ({ line, at: baskets[index]?.createdAt ?? line.createdAt }))
-    .sort((a, b) => a.at - b.at || a.line.description.localeCompare(b.line.description))
+    .map((line, index) => ({
+      line,
+      at: baskets[index]?.createdAt ?? line.createdAt,
+    }))
+    .sort(
+      (a, b) =>
+        a.at - b.at || a.line.description.localeCompare(b.line.description)
+    )
     .forEach(({ line }, index) => {
       lineOrder[line.id] = index
     })
@@ -246,7 +292,9 @@ export async function invoiceDetail(db: MedcoreDb, invoiceId: Id): Promise<Invoi
     payments,
     receipt: receipts.sort((a, b) => b.at - a.at)[0],
     approval,
-    approver: approverStaff ? { en: approverStaff.nameEn, bn: approverStaff.nameBn } : undefined,
+    approver: approverStaff
+      ? { en: approverStaff.nameEn, bn: approverStaff.nameBn }
+      : undefined,
     patient,
     cashier: staff ? { en: staff.nameEn, bn: staff.nameBn } : undefined,
     corporateClient: client ? client.name : undefined,
@@ -287,7 +335,11 @@ export async function todayKpisAt(
   const end = start + 24 * 60 * 60 * 1000
   const [payments, invoices] = await Promise.all([
     db.payments.where("branchId").equals(branch).toArray(),
-    db.invoices.where("date").equals(today).filter((i) => i.branchId === branch).count(),
+    db.invoices
+      .where("date")
+      .equals(today)
+      .filter((i) => i.branchId === branch)
+      .count(),
   ])
   const byTender = emptyTotals()
   const counts: TodayKpis["payments"] = {}
@@ -300,13 +352,22 @@ export async function todayKpisAt(
       continue
     }
     const at = payment.confirmedAt ?? payment.requestedAt
-    if (payment.status !== "confirmed" && payment.status !== "refunded") continue
+    if (payment.status !== "confirmed" && payment.status !== "refunded")
+      continue
     if (at < start || at >= end) continue
     byTender[payment.tender] += payment.amountP
     counts[payment.tender] = (counts[payment.tender] ?? 0) + 1
   }
-  const collectedP = byTender.cash + byTender.card + byTender.bkash + byTender.nagad
-  return { collectedP, byTender, payments: counts, pendingP, pendingCount, invoices }
+  const collectedP =
+    byTender.cash + byTender.card + byTender.bkash + byTender.nagad
+  return {
+    collectedP,
+    byTender,
+    payments: counts,
+    pendingP,
+    pendingCount,
+    invoices,
+  }
 }
 
 /* ------------------------------------------------------------------ *
@@ -357,7 +418,8 @@ export async function shiftSummary(
       pendingMfsP += payment.amountP
       continue
     }
-    if (payment.status !== "confirmed" && payment.status !== "refunded") continue
+    if (payment.status !== "confirmed" && payment.status !== "refunded")
+      continue
     byTender[payment.tender] += payment.amountP
     counts[payment.tender] = (counts[payment.tender] ?? 0) + 1
   }
@@ -377,7 +439,9 @@ export async function shiftSummary(
   const invoiceIds = [...new Set(payments.map((p) => p.invoiceId))]
   const invoices = await db.invoices.bulkGet(invoiceIds)
   const invoiceById = new Map(invoices.filter(Boolean).map((i) => [i!.id, i!]))
-  const patients = await db.patients.bulkGet([...new Set(payments.map((p) => p.patientId))])
+  const patients = await db.patients.bulkGet([
+    ...new Set(payments.map((p) => p.patientId)),
+  ])
   const patientById = new Map(patients.filter(Boolean).map((p) => [p!.id, p!]))
   const rows = payments
     .map((payment) => ({

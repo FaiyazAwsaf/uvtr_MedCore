@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/shared/empty-state"
 import { MoneyText } from "@/components/shared/money-text"
 import { SectionCard } from "@/components/shared/section-card"
 import { Checkbox } from "@/components/ui/checkbox"
-import type { BasketLineRow, Id, Ms } from "@/core/db/schema"
+import type { BasketLineRow, Id, ISODate, Ms } from "@/core/db/schema"
 import { cn } from "@/lib/utils"
 import { useLocale } from "@/lib/i18n/provider"
 
@@ -29,12 +29,15 @@ export function Basket({
   onChange,
   cover,
   mountedAt,
+  laterVisits = {},
 }: {
   lines: BasketLineRow[]
   selected: ReadonlySet<Id>
   onChange: (ids: Id[], checked: boolean) => void
   cover: Cover | null
   mountedAt: Ms
+  /** Fees for a visit after today, with the visit date */
+  laterVisits?: Record<Id, ISODate>
 }) {
   const { t, tk, num, money } = useLocale()
   const groups = React.useMemo(
@@ -70,15 +73,24 @@ export function Basket({
             className="inline-flex items-center gap-1.5 text-[0.8125rem] font-medium text-link underline-offset-4 hover:underline"
           >
             <ListChecks className="size-4" />
-            {allChecked ? t("billing.cashier.basket.selectNone") : t("billing.cashier.basket.selectAll")}
+            {allChecked
+              ? t("billing.cashier.basket.selectNone")
+              : t("billing.cashier.basket.selectAll")}
           </button>
         ) : undefined
       }
     >
       {lines.length === 0 ? (
-        <EmptyState size="sm" icon={ShoppingBasket} title={t("billing.cashier.basket.empty")} />
+        <EmptyState
+          size="sm"
+          icon={ShoppingBasket}
+          title={t("billing.cashier.basket.empty")}
+        />
       ) : (
-        <div className="@container/basket flex flex-col gap-3" data-testid="basket">
+        <div
+          className="@container/basket flex flex-col gap-3"
+          data-testid="basket"
+        >
           <div
             className={cn(
               GRID,
@@ -93,26 +105,39 @@ export function Basket({
             <span className="hidden text-right @min-[34rem]/basket:block">
               {t("billing.cashier.basket.unitPrice")}
             </span>
-            <span className="text-right">{t("billing.cashier.basket.amount")}</span>
+            <span className="text-right">
+              {t("billing.cashier.basket.amount")}
+            </span>
           </div>
 
           {groups.map((group) => {
             const Icon = SOURCE_ICON[group.source]
             const ids = group.lines.map((line) => line.id)
             const count = ids.filter((id) => selected.has(id)).length
-            const groupTotal = group.lines.reduce((sum, l) => sum + l.qty * l.unitPriceP, 0)
+            const groupTotal = group.lines.reduce(
+              (sum, l) => sum + l.qty * l.unitPriceP,
+              0
+            )
             return (
-              <div key={group.source} className="flex flex-col" data-testid="basket-group">
+              <div
+                key={group.source}
+                className="flex flex-col"
+                data-testid="basket-group"
+              >
                 <div className={cn(GRID, "px-2 pb-1")}>
                   <Checkbox
                     checked={count === ids.length}
                     indeterminate={count > 0 && count < ids.length}
                     onCheckedChange={(checked) => onChange(ids, checked)}
-                    aria-label={tk(`billing.source.${SOURCE_KEY[group.source]}`)}
+                    aria-label={tk(
+                      `billing.source.${SOURCE_KEY[group.source]}`
+                    )}
                   />
                   <span className="flex min-w-0 items-center gap-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                     <Icon className="size-3.5" />
-                    <span className="truncate">{tk(`billing.source.${SOURCE_KEY[group.source]}`)}</span>
+                    <span className="truncate">
+                      {tk(`billing.source.${SOURCE_KEY[group.source]}`)}
+                    </span>
                   </span>
                   <span className="hidden @min-[34rem]/basket:block" />
                   <span className="hidden @min-[34rem]/basket:block" />
@@ -129,9 +154,12 @@ export function Basket({
                     onCheckedChange={(checked) => onChange([line.id], checked)}
                     fresh={line.createdAt > mountedAt}
                     corporateClient={
-                      line.payerType === "corporate" ? (cover?.client?.name ?? null) : undefined
+                      line.payerType === "corporate"
+                        ? (cover?.client?.name ?? null)
+                        : undefined
                     }
                     coPayPct={cover?.coPayPct}
+                    laterVisit={laterVisits[line.id]}
                   />
                 ))}
               </div>
@@ -139,7 +167,9 @@ export function Basket({
           })}
           <p className="px-2 text-xs text-muted-foreground">
             {t("billing.cashier.basket.total", {
-              amount: money(lines.reduce((sum, l) => sum + l.qty * l.unitPriceP, 0)),
+              amount: money(
+                lines.reduce((sum, l) => sum + l.qty * l.unitPriceP, 0)
+              ),
             })}
           </p>
         </div>
@@ -155,6 +185,7 @@ function BasketLine({
   fresh,
   corporateClient,
   coPayPct,
+  laterVisit,
 }: {
   line: BasketLineRow
   checked: boolean
@@ -163,8 +194,9 @@ function BasketLine({
   /** undefined: self pay; null: marked corporate but no live cover */
   corporateClient?: { en: string; bn: string } | null
   coPayPct?: number
+  laterVisit?: ISODate
 }) {
-  const { t, locale, num, money } = useLocale()
+  const { t, locale, num, money, dmy } = useLocale()
   const names = lineNames(line, locale)
   const amount = line.qty * line.unitPriceP
   return (
@@ -173,6 +205,7 @@ function BasketLine({
       data-line-id={line.id}
       data-source-type={line.sourceType}
       data-selected={checked}
+      data-later-visit={laterVisit}
       className={cn(
         GRID,
         "min-h-11 cursor-pointer rounded-md border-b border-hairline px-2 py-2 transition-colors last:border-0 hover:bg-primary-soft",
@@ -187,17 +220,36 @@ function BasketLine({
         aria-label={names.primary}
       />
       <span className="flex min-w-0 flex-col gap-0.5">
-        <span className={cn("truncate text-[0.8125rem] font-medium", checked && "text-foreground")}>
+        <span
+          className={cn(
+            "truncate text-[0.8125rem] font-medium",
+            checked && "text-foreground"
+          )}
+        >
           {names.primary}
         </span>
         {names.secondary ? (
-          <span className="truncate text-xs text-muted-foreground">{names.secondary}</span>
+          <span className="truncate text-xs text-muted-foreground">
+            {names.secondary}
+          </span>
         ) : null}
         <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground @min-[34rem]/basket:hidden">
           <span className="nums">
-            {t("billing.cashier.basket.qtyTimes", { qty: num(line.qty), price: money(line.unitPriceP) })}
+            {t("billing.cashier.basket.qtyTimes", {
+              qty: num(line.qty),
+              price: money(line.unitPriceP),
+            })}
           </span>
         </span>
+        {laterVisit ? (
+          <span className="flex flex-wrap items-center gap-1.5">
+            <span className="tag tag-blue">
+              {t("billing.cashier.basket.laterVisit", {
+                date: dmy(laterVisit),
+              })}
+            </span>
+          </span>
+        ) : null}
         {corporateClient !== undefined ? (
           <span className="flex flex-wrap items-center gap-1.5">
             {corporateClient ? (
@@ -208,7 +260,9 @@ function BasketLine({
                 })}
               </span>
             ) : (
-              <span className="tag tag-amber">{t("billing.cashier.basket.coverInactive")}</span>
+              <span className="tag tag-amber">
+                {t("billing.cashier.basket.coverInactive")}
+              </span>
             )}
           </span>
         ) : null}
@@ -222,7 +276,10 @@ function BasketLine({
       />
       <MoneyText
         poisha={amount}
-        className={cn("text-right text-[0.8125rem] font-semibold", checked && "text-foreground")}
+        className={cn(
+          "text-right text-[0.8125rem] font-semibold",
+          checked && "text-foreground"
+        )}
       />
     </label>
   )

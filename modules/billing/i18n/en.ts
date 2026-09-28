@@ -33,8 +33,10 @@ export const billingEn = {
     events: {
       invoiceIssued: "Invoice {invoiceNo} issued for {amount}",
       paymentReceived: "{tender} payment of {amount} received ({invoiceNo})",
-      paymentPending: "{tender} request of {amount} sent, waiting for the customer",
-      paymentTimedOut: "{tender} request of {amount} timed out, nothing unlocked",
+      paymentPending:
+        "{tender} request of {amount} sent, waiting for the customer",
+      paymentTimedOut:
+        "{tender} request of {amount} timed out, nothing unlocked",
       sampleUnlocked: "Lab tests unlocked for sample collection: {count}",
       imagingUnlocked: "Imaging order {orderNo} unlocked",
       dispenseUnlocked: "Medicines unlocked for dispensing: {count} ({rxNo})",
@@ -54,31 +56,40 @@ export const billingEn = {
     },
     rules: {
       NOTHING_SELECTED: "Select at least one item to bill.",
-      LINE_NOT_FOUND: "An item on this bill no longer exists. The bill has been refreshed.",
+      LINE_NOT_FOUND:
+        "An item on this bill no longer exists. The bill has been refreshed.",
       LINE_NOT_OPEN:
         "{item} is already billed or was removed, perhaps from another window. Check the bill and try again.",
       LINE_WRONG_PATIENT: "{item} belongs to another patient.",
-      LINE_WRONG_BRANCH: "{item} was ordered at another branch and is paid there.",
+      LINE_WRONG_BRANCH:
+        "{item} was ordered at another branch and is paid there.",
       LINES_MIXED_BRANCH: "Pay the bills of one branch at a time.",
       SOURCE_UNAVAILABLE:
         "{item} was cancelled or changed after it was ordered, so it can't be billed. Untick it and continue.",
-      PATIENT_MERGED: "This record was merged into UHID {uhid}. Bill the surviving record.",
+      PATIENT_MERGED:
+        "This record was merged into UHID {uhid}. Bill the surviving record.",
       NO_BRANCH: "This persona has no branch, so it can't take payments.",
       NO_OPEN_SHIFT: "Open a cash shift before taking payments.",
       SHIFT_ALREADY_OPEN: "You already have an open cash shift at this branch.",
       TENDER_MISMATCH: "The payments add up to {tenderedP} but {dueP} is due.",
-      CARD_NOT_APPROVED: "Run the card on the terminal and get an approval before paying.",
-      CASH_SHORT: "Cash received ({tenderedP}) is less than the cash part ({amountP}).",
-      APPROVER_SAME_PERSON: "A discount above your limit needs a second person to approve it.",
-      APPROVER_LACKS_AUTHORITY: "{name} can approve discounts of up to {limit}% only.",
+      CARD_NOT_APPROVED:
+        "Run the card on the terminal and get an approval before paying.",
+      CASH_SHORT:
+        "Cash received ({tenderedP}) is less than the cash part ({amountP}).",
+      APPROVER_SAME_PERSON:
+        "A discount above your limit needs a second person to approve it.",
+      APPROVER_LACKS_AUTHORITY:
+        "{name} can approve discounts of up to {limit}% only.",
       OFFLINE_MFS_LIMIT:
         "While the branch is offline, bKash and Nagad waiting for verification are limited to {limitP}. Take cash or card instead.",
       PAYMENT_NOT_PENDING: "This payment is no longer waiting for approval.",
-      NOT_MFS: "Only bKash and Nagad payments wait for the customer's approval.",
+      NOT_MFS:
+        "Only bKash and Nagad payments wait for the customer's approval.",
       PAYMENT_WRONG_BRANCH: "This payment belongs to another branch.",
       NOT_YOUR_PATIENT:
         "You can pay only your own bills or those of family members linked to your account.",
-      NOT_YOUR_PAYMENT: "This payment belongs to someone outside your family account.",
+      NOT_YOUR_PAYMENT:
+        "This payment belongs to someone outside your family account.",
       INVOICE_NOT_OPEN: "Invoice {invoiceNo} has nothing left to pay.",
       MFS_STILL_PENDING:
         "A bKash or Nagad request on invoice {invoiceNo} is still waiting. Wait for it or let it time out first.",
@@ -87,7 +98,8 @@ export const billingEn = {
       heading: "Patient bill",
       subtitle: "{branch} · consultations, tests, imaging and medicines",
       shiftOpen: "Shift open since {time} · float {amount}",
-      shiftSince: "Open since {time}. Expected cash, tenders and this shift's payments are on the shift page.",
+      shiftSince:
+        "Open since {time}. Expected cash, tenders and this shift's payments are on the shift page.",
       noShift: "No open shift",
       noShiftHint: "Open a cash shift to take payments.",
       openShiftLink: "Open a shift",
@@ -135,6 +147,7 @@ export const billingEn = {
         subtitle: "Selected: {selected} of {count}",
         empty: "Nothing left to bill for this patient.",
         selectAll: "Select all",
+        laterVisit: "For the visit on {date}",
         selectNone: "Clear all",
         item: "Item",
         qty: "Qty",
@@ -151,7 +164,8 @@ export const billingEn = {
         items: "Items: {count}",
         total: "Total",
         corporate: "Billed to {client}",
-        coverInactive: "Some corporate items are not covered today, so the patient pays them.",
+        coverInactive:
+          "Some corporate items are not covered today, so the patient pays them.",
         patientPays: "Patient pays",
         invoiceTotal: "Invoice total",
         alreadyPaid: "Already received",
@@ -178,7 +192,8 @@ export const billingEn = {
         terminalApprove: "Approve",
         terminalDecline: "Decline",
         cardApproved: "Card approved, code {ref}",
-        cardDeclined: "Declined by the terminal. Try again or use another tender.",
+        cardDeclined:
+          "Declined by the terminal. Try again or use another tender.",
         pushTo: "A payment request goes to {phone}",
         pushNoPhone: "A payment request goes to the customer's wallet",
         balanced: "The payments match the amount due",
@@ -256,7 +271,8 @@ export const billingEn = {
       cashRefunds: "Cash refunds",
       pendingMfs: "MFS waiting",
       expected: "Expected cash in the drawer",
-      expectedHint: "Float plus cash taken minus cash refunded on this shift. Card, bKash and Nagad are settled separately.",
+      expectedHint:
+        "Float plus cash taken minus cash refunded on this shift. Card, bKash and Nagad are settled separately.",
       byTender: "This shift by tender",
       payments: "This shift's payments",
       noPayments: "No payments on this shift yet",

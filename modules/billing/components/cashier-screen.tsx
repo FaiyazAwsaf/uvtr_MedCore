@@ -4,7 +4,14 @@ import * as React from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useLiveQuery } from "dexie-react-hooks"
-import { Banknote, ChevronRight, Hourglass, Landmark, Store, X } from "lucide-react"
+import {
+  Banknote,
+  ChevronRight,
+  Hourglass,
+  Landmark,
+  Store,
+  X,
+} from "lucide-react"
 
 import { EmptyState } from "@/components/shared/empty-state"
 import { IdentityBanner } from "@/components/shared/identity-banner"
@@ -60,7 +67,13 @@ export function CashierScreen() {
   return <CashierWorkspace branch={branch} cashierId={cashierId} />
 }
 
-function CashierWorkspace({ branch, cashierId }: { branch: BranchCode; cashierId: Id }) {
+function CashierWorkspace({
+  branch,
+  cashierId,
+}: {
+  branch: BranchCode
+  cashierId: Id
+}) {
   const db = useDb()
   const { t, locale, time, money } = useLocale()
   const nowMs = useNow(60_000)
@@ -84,7 +97,10 @@ function CashierWorkspace({ branch, cashierId }: { branch: BranchCode; cashierId
   const branchRow = getBranch(branch)
 
   return (
-    <div className="@container/cashier flex flex-col gap-4 pb-2" data-testid="cashier-screen">
+    <div
+      className="@container/cashier flex flex-col gap-4 pb-2"
+      data-testid="cashier-screen"
+    >
       <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <div className="min-w-0">
           <h1 className="text-[1.375rem] leading-tight font-semibold">
@@ -104,7 +120,10 @@ function CashierWorkspace({ branch, cashierId }: { branch: BranchCode; cashierId
             className="flex items-center gap-2 rounded-full bg-surface-raised px-3 py-1.5 text-xs font-medium transition-colors hover:bg-primary-soft"
           >
             <span className="size-2 rounded-full bg-success" />
-            {t("billing.cashier.shiftOpen", { time: time(shift.openedAt), amount: money(shift.floatP) })}
+            {t("billing.cashier.shiftOpen", {
+              time: time(shift.openedAt),
+              amount: money(shift.floatP),
+            })}
             <ChevronRight className="size-3.5 text-muted-foreground" />
           </Link>
         ) : (
@@ -174,9 +193,16 @@ function PatientBilling({
     () => (patient ? basketOf(db, patient, branch, today) : undefined),
     [db, patient, branch, today]
   )
-  const due = useLiveQuery(() => dueInvoicesOf(db, patientId, branch), [db, patientId, branch])
-  // Lines start selected, including ones that arrive while the bill is open.
-  const [deselected, setDeselected] = React.useState<ReadonlySet<Id>>(() => new Set())
+  const due = useLiveQuery(
+    () => dueInvoicesOf(db, patientId, branch),
+    [db, patientId, branch]
+  )
+  // Lines start selected, including ones that arrive while the bill is open;
+  // a fee for a later visit starts unselected (it is usually paid on the day).
+  const [deselected, setDeselected] = React.useState<ReadonlySet<Id>>(
+    () => new Set()
+  )
+  const [picked, setPicked] = React.useState<ReadonlySet<Id>>(() => new Set())
   const [changeDue, setChangeDue] = React.useState<Record<Id, Poisha>>({})
   const [mountedAt] = React.useState(() => now())
 
@@ -188,13 +214,23 @@ function PatientBilling({
       <EmptyState
         icon={X}
         title={t("billing.cashier.patient.missing")}
-        action={{ label: t("billing.cashier.patient.change"), onClick: () => onSelect(null) }}
+        action={{
+          label: t("billing.cashier.patient.change"),
+          onClick: () => onSelect(null),
+        }}
       />
     )
   }
 
   const lines = basket?.lines ?? []
-  const selected = new Set(lines.filter((line) => !deselected.has(line.id)).map((line) => line.id))
+  const laterVisits = basket?.laterVisits ?? {}
+  const selected = new Set(
+    lines
+      .filter((line) =>
+        laterVisits[line.id] ? picked.has(line.id) : !deselected.has(line.id)
+      )
+      .map((line) => line.id)
+  )
   const selectedLines = lines.filter((line) => selected.has(line.id))
   const waiting = due?.find((row) => row.pending.length > 0) ?? due?.[0]
   // With nothing left to bill, an invoice still due is what the cashier needs.
@@ -203,21 +239,36 @@ function PatientBilling({
       ? { kind: "invoice", invoiceId: waiting.invoice.id }
       : panel
 
-  const onChangeSelection = (ids: Id[], checked: boolean) =>
+  const onChangeSelection = (ids: Id[], checked: boolean) => {
+    const later = ids.filter((id) => laterVisits[id])
+    setPicked((current) => {
+      const next = new Set(current)
+      for (const id of later) {
+        if (checked) next.add(id)
+        else next.delete(id)
+      }
+      return next
+    })
     setDeselected((current) => {
       const next = new Set(current)
       for (const id of ids) {
+        if (laterVisits[id]) continue
         if (checked) next.delete(id)
         else next.add(id)
       }
       return next
     })
+  }
 
   const onPaid = (result: CheckoutResult) => {
     if (result.changeDueP > 0) {
-      setChangeDue((current) => ({ ...current, [result.invoiceId]: result.changeDueP }))
+      setChangeDue((current) => ({
+        ...current,
+        [result.invoiceId]: result.changeDueP,
+      }))
     }
     setDeselected(new Set())
+    setPicked(new Set())
     setPanel({ kind: "invoice", invoiceId: result.invoiceId })
   }
 
@@ -257,6 +308,7 @@ function PatientBilling({
             selected={selected}
             onChange={onChangeSelection}
             cover={basket.cover}
+            laterVisits={laterVisits}
             mountedAt={mountedAt}
           />
         ) : (
@@ -265,7 +317,9 @@ function PatientBilling({
         {due && due.length > 0 ? (
           <PatientDue
             due={due}
-            activeId={effective.kind === "bill" ? undefined : effective.invoiceId}
+            activeId={
+              effective.kind === "bill" ? undefined : effective.invoiceId
+            }
             onOpen={(invoiceId) => setPanel({ kind: "invoice", invoiceId })}
           />
         ) : null}
@@ -278,7 +332,9 @@ function PatientBilling({
             invoiceId={effective.invoiceId}
             changeDueP={changeDue[effective.invoiceId]}
             hasOpenLines={lines.length > 0}
-            onCollect={(detail) => setPanel({ kind: "balance", invoiceId: detail.invoice.id })}
+            onCollect={(detail) =>
+              setPanel({ kind: "balance", invoiceId: detail.invoice.id })
+            }
             onNewBill={() => setPanel({ kind: "bill" })}
             onNextPatient={() => onSelect(null)}
           />
@@ -295,12 +351,18 @@ function PatientBilling({
             patient={patient}
             shift={shift}
             onDone={(result) => onPaid(result)}
-            onCancel={() => setPanel({ kind: "invoice", invoiceId: balanceTarget.invoice.id })}
+            onCancel={() =>
+              setPanel({ kind: "invoice", invoiceId: balanceTarget.invoice.id })
+            }
           />
         ) : (
           <CheckoutPanel
             key="bill"
-            target={{ kind: "bill", lines: selectedLines, cover: basket?.cover ?? null }}
+            target={{
+              kind: "bill",
+              lines: selectedLines,
+              cover: basket?.cover ?? null,
+            }}
             patient={patient}
             shift={shift}
             onDone={(result) => onPaid(result)}
@@ -332,7 +394,10 @@ function PatientDue({
         {due.map((row) => {
           const pending = row.pending[0]
           return (
-            <li key={row.invoice.id} className="border-b border-hairline last:border-0">
+            <li
+              key={row.invoice.id}
+              className="border-b border-hairline last:border-0"
+            >
               <button
                 type="button"
                 onClick={() => onOpen(row.invoice.id)}
@@ -341,19 +406,30 @@ function PatientDue({
                   activeId === row.invoice.id && "bg-primary-soft"
                 )}
               >
-                <span lang="en" className="min-w-0 flex-1 truncate font-mono text-xs">
+                <span
+                  lang="en"
+                  className="min-w-0 flex-1 truncate font-mono text-xs"
+                >
                   {row.invoice.invoiceNo}
                 </span>
                 {pending ? (
                   <span className={cn("tag", TENDER_TAG[pending.tender])}>
-                    {t("billing.cashier.due.waiting", { tender: tk(`billing.tender.${pending.tender}`) })}
+                    {t("billing.cashier.due.waiting", {
+                      tender: tk(`billing.tender.${pending.tender}`),
+                    })}
                   </span>
                 ) : (
-                  <StatusPill tone="warning" className="h-5 px-2 text-[0.6875rem]">
+                  <StatusPill
+                    tone="warning"
+                    className="h-5 px-2 text-[0.6875rem]"
+                  >
                     {t("billing.cashier.due.partial")}
                   </StatusPill>
                 )}
-                <MoneyText poisha={row.dueP} className="text-[0.8125rem] font-semibold" />
+                <MoneyText
+                  poisha={row.dueP}
+                  className="text-[0.8125rem] font-semibold"
+                />
               </button>
             </li>
           )
@@ -364,13 +440,26 @@ function PatientDue({
 }
 
 /** Today's collections at the branch, tender by tender (plan §9 KPI detail). */
-function TodayByTender({ branch, today }: { branch: BranchCode; today: string }) {
+function TodayByTender({
+  branch,
+  today,
+}: {
+  branch: BranchCode
+  today: string
+}) {
   const db = useDb()
   const { t, tk, num } = useLocale()
-  const kpis = useLiveQuery(() => todayKpisAt(db, branch, today), [db, branch, today])
+  const kpis = useLiveQuery(
+    () => todayKpisAt(db, branch, today),
+    [db, branch, today]
+  )
   const tenders = ["cash", "card", "bkash", "nagad", "corporate"] as const
   return (
-    <SectionCard title={t("billing.cashier.byTender.title")} icon={Landmark} size="sm">
+    <SectionCard
+      title={t("billing.cashier.byTender.title")}
+      icon={Landmark}
+      size="sm"
+    >
       <ul className="flex flex-col" data-testid="today-by-tender">
         {tenders.map((tender) => {
           const Icon = TENDER_ICON[tender]
@@ -380,7 +469,12 @@ function TodayByTender({ branch, today }: { branch: BranchCode; today: string })
               className="flex items-center justify-between gap-3 border-b border-hairline py-2 text-[0.8125rem] last:border-0"
             >
               <span className="flex items-center gap-2">
-                <span className={cn("tag h-6 w-7 justify-center px-0", TENDER_TAG[tender])}>
+                <span
+                  className={cn(
+                    "tag h-6 w-7 justify-center px-0",
+                    TENDER_TAG[tender]
+                  )}
+                >
                   <Icon className="size-3.5" />
                 </span>
                 {tk(`billing.tender.${tender}`)}
@@ -388,7 +482,10 @@ function TodayByTender({ branch, today }: { branch: BranchCode; today: string })
                   {num(kpis?.payments[tender] ?? 0)}
                 </span>
               </span>
-              <MoneyText poisha={kpis?.byTender[tender] ?? 0} className="font-medium" />
+              <MoneyText
+                poisha={kpis?.byTender[tender] ?? 0}
+                className="font-medium"
+              />
             </li>
           )
         })}
@@ -413,7 +510,9 @@ function ShiftSnapshot({ shift }: { shift: ShiftRow | null | undefined }) {
           {t("billing.cashier.shiftSince", { time: time(shift.openedAt) })}
         </p>
       ) : (
-        <p className={cn("text-[0.8125rem]", TONE_TEXT.warning)}>{t("billing.cashier.noShiftHint")}</p>
+        <p className={cn("text-[0.8125rem]", TONE_TEXT.warning)}>
+          {t("billing.cashier.noShiftHint")}
+        </p>
       )}
     </SectionCard>
   )

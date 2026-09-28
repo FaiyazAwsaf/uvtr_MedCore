@@ -35,11 +35,15 @@ export const billingBn: typeof billingEn = {
     events: {
       invoiceIssued: "{amountBn}-এর ইনভয়েস {invoiceNo} তৈরি হয়েছে",
       paymentReceived: "{tenderBn}-এ {amountBn} পেমেন্ট গৃহীত ({invoiceNo})",
-      paymentPending: "{tenderBn}-এ {amountBn}-এর অনুরোধ পাঠানো হয়েছে, গ্রাহকের অনুমোদনের অপেক্ষা",
-      paymentTimedOut: "{tenderBn}-এ {amountBn}-এর অনুরোধের সময় শেষ, কিছুই খোলা হয়নি",
-      sampleUnlocked: "নমুনা সংগ্রহের জন্য {count}টি ল্যাব পরীক্ষা খুলে দেওয়া হয়েছে",
+      paymentPending:
+        "{tenderBn}-এ {amountBn}-এর অনুরোধ পাঠানো হয়েছে, গ্রাহকের অনুমোদনের অপেক্ষা",
+      paymentTimedOut:
+        "{tenderBn}-এ {amountBn}-এর অনুরোধের সময় শেষ, কিছুই খোলা হয়নি",
+      sampleUnlocked:
+        "নমুনা সংগ্রহের জন্য {count}টি ল্যাব পরীক্ষা খুলে দেওয়া হয়েছে",
       imagingUnlocked: "ইমেজিং অর্ডার {orderNo} খুলে দেওয়া হয়েছে",
-      dispenseUnlocked: "ওষুধ দেওয়ার জন্য {count}টি ওষুধ খুলে দেওয়া হয়েছে ({rxNo})",
+      dispenseUnlocked:
+        "ওষুধ দেওয়ার জন্য {count}টি ওষুধ খুলে দেওয়া হয়েছে ({rxNo})",
       feeShareAccrued: "{doctorBn}-এর জন্য {amountBn} ফি শেয়ার জমা হয়েছে",
       discountApproved: "{approverBn} {pct}% ছাড় অনুমোদন করেছেন",
       shiftOpened: "{cashierBn} {amountBn} ফ্লোট নিয়ে ক্যাশ শিফট খুলেছেন",
@@ -60,19 +64,24 @@ export const billingBn: typeof billingEn = {
       LINE_NOT_OPEN:
         "{item} আগেই বিল করা হয়েছে বা সরানো হয়েছে, হয়তো অন্য উইন্ডো থেকে। বিলটি দেখে আবার চেষ্টা করুন।",
       LINE_WRONG_PATIENT: "{item} অন্য রোগীর।",
-      LINE_WRONG_BRANCH: "{item} অন্য শাখায় অর্ডার করা হয়েছে, পেমেন্টও সেখানে হবে।",
+      LINE_WRONG_BRANCH:
+        "{item} অন্য শাখায় অর্ডার করা হয়েছে, পেমেন্টও সেখানে হবে।",
       LINES_MIXED_BRANCH: "একবারে একটি শাখার বিল পরিশোধ করুন।",
       SOURCE_UNAVAILABLE:
         "অর্ডারের পর {item} বাতিল বা পরিবর্তন হয়েছে, তাই বিল করা যাবে না। টিক তুলে দিয়ে এগিয়ে যান।",
-      PATIENT_MERGED: "এই রেকর্ডটি UHID {uhid}-এর সাথে একীভূত হয়েছে। টিকে থাকা রেকর্ডে বিল করুন।",
+      PATIENT_MERGED:
+        "এই রেকর্ডটি UHID {uhid}-এর সাথে একীভূত হয়েছে। টিকে থাকা রেকর্ডে বিল করুন।",
       NO_BRANCH: "এই পারসোনার কোনো শাখা নেই, তাই পেমেন্ট নেওয়া যাবে না।",
       NO_OPEN_SHIFT: "পেমেন্ট নেওয়ার আগে একটি ক্যাশ শিফট খুলুন।",
       SHIFT_ALREADY_OPEN: "এই শাখায় আপনার একটি ক্যাশ শিফট আগে থেকেই খোলা আছে।",
       TENDER_MISMATCH: "পেমেন্টের যোগফল {tenderedP}, কিন্তু প্রদেয় {dueP}।",
-      CARD_NOT_APPROVED: "পেমেন্টের আগে কার্ডটি টার্মিনালে চালিয়ে অনুমোদন নিন।",
+      CARD_NOT_APPROVED:
+        "পেমেন্টের আগে কার্ডটি টার্মিনালে চালিয়ে অনুমোদন নিন।",
       CASH_SHORT: "গৃহীত ক্যাশ ({tenderedP}) ক্যাশ অংশের ({amountP}) চেয়ে কম।",
-      APPROVER_SAME_PERSON: "আপনার সীমার বেশি ছাড়ে দ্বিতীয় একজনের অনুমোদন লাগবে।",
-      APPROVER_LACKS_AUTHORITY: "{name} সর্বোচ্চ {limit}% পর্যন্ত ছাড় অনুমোদন করতে পারেন।",
+      APPROVER_SAME_PERSON:
+        "আপনার সীমার বেশি ছাড়ে দ্বিতীয় একজনের অনুমোদন লাগবে।",
+      APPROVER_LACKS_AUTHORITY:
+        "{name} সর্বোচ্চ {limit}% পর্যন্ত ছাড় অনুমোদন করতে পারেন।",
       OFFLINE_MFS_LIMIT:
         "শাখা অফলাইন থাকার সময় যাচাইয়ের অপেক্ষায় থাকা বিকাশ ও নগদের সীমা {limitP}। ক্যাশ বা কার্ড নিন।",
       PAYMENT_NOT_PENDING: "এই পেমেন্ট আর অনুমোদনের অপেক্ষায় নেই।",
@@ -89,7 +98,8 @@ export const billingBn: typeof billingEn = {
       heading: "রোগীর বিল",
       subtitle: "{branch} · পরামর্শ, পরীক্ষা, ইমেজিং ও ওষুধ",
       shiftOpen: "{time} থেকে শিফট খোলা · ফ্লোট {amount}",
-      shiftSince: "{time} থেকে খোলা। প্রত্যাশিত ক্যাশ, পেমেন্টের মাধ্যম ও এই শিফটের পেমেন্ট শিফট পাতায় দেখুন।",
+      shiftSince:
+        "{time} থেকে খোলা। প্রত্যাশিত ক্যাশ, পেমেন্টের মাধ্যম ও এই শিফটের পেমেন্ট শিফট পাতায় দেখুন।",
       noShift: "কোনো শিফট খোলা নেই",
       noShiftHint: "পেমেন্ট নিতে একটি ক্যাশ শিফট খুলুন।",
       openShiftLink: "শিফট খুলুন",
@@ -137,6 +147,7 @@ export const billingBn: typeof billingEn = {
         subtitle: "{count}টির মধ্যে {selected}টি আইটেম বাছাই করা",
         empty: "এই রোগীর আর কিছু বিল করার নেই।",
         selectAll: "সব বাছুন",
+        laterVisit: "{date} তারিখের ভিজিটের জন্য",
         selectNone: "সব বাদ দিন",
         item: "আইটেম",
         qty: "পরিমাণ",
@@ -153,7 +164,8 @@ export const billingBn: typeof billingEn = {
         items: "{count}টি আইটেম",
         total: "মোট",
         corporate: "{client}-এর নামে বিল",
-        coverInactive: "কিছু কর্পোরেট আইটেম আজ সুবিধার আওতায় নেই, তাই রোগী সেগুলো পরিশোধ করবেন।",
+        coverInactive:
+          "কিছু কর্পোরেট আইটেম আজ সুবিধার আওতায় নেই, তাই রোগী সেগুলো পরিশোধ করবেন।",
         patientPays: "রোগী দেবেন",
         invoiceTotal: "ইনভয়েসের মোট",
         alreadyPaid: "আগেই গৃহীত",
@@ -180,7 +192,8 @@ export const billingBn: typeof billingEn = {
         terminalApprove: "অনুমোদন",
         terminalDecline: "প্রত্যাখ্যান",
         cardApproved: "কার্ড অনুমোদিত, কোড {ref}",
-        cardDeclined: "টার্মিনাল প্রত্যাখ্যান করেছে। আবার চেষ্টা করুন বা অন্য মাধ্যম নিন।",
+        cardDeclined:
+          "টার্মিনাল প্রত্যাখ্যান করেছে। আবার চেষ্টা করুন বা অন্য মাধ্যম নিন।",
         pushTo: "পেমেন্টের অনুরোধ যাবে {phone} নম্বরে",
         pushNoPhone: "পেমেন্টের অনুরোধ যাবে গ্রাহকের ওয়ালেটে",
         balanced: "পেমেন্ট প্রদেয় টাকার সাথে মিলেছে",
@@ -195,7 +208,8 @@ export const billingBn: typeof billingEn = {
         expiresIn: "{time} পর সময় শেষ হবে",
         expiring: "এখনই সময় শেষ হচ্ছে",
         received: "আগেই গৃহীত",
-        locked: "এই পেমেন্ট নিশ্চিত না হওয়া পর্যন্ত ল্যাব ও ফার্মেসি বন্ধ থাকবে।",
+        locked:
+          "এই পেমেন্ট নিশ্চিত না হওয়া পর্যন্ত ল্যাব ও ফার্মেসি বন্ধ থাকবে।",
         approve: "গ্রাহক অনুমোদন করেছেন",
         timeout: "সময় শেষ",
       },
@@ -206,7 +220,8 @@ export const billingBn: typeof billingEn = {
         receipt: "রসিদ",
         change: "ফেরত দিন",
         unlocked: "এই পেমেন্টে যা খুলেছে",
-        unlockedLab: "{count}টি পরীক্ষা নমুনা সংগ্রহে পাঠানো হয়েছে ({samples}টি নমুনা)",
+        unlockedLab:
+          "{count}টি পরীক্ষা নমুনা সংগ্রহে পাঠানো হয়েছে ({samples}টি নমুনা)",
         unlockedImaging: "{count}টি ইমেজিং অর্ডার প্রস্তুত",
         unlockedRx: "{count}টি ওষুধ দেওয়ার জন্য প্রস্তুত",
         print: "রসিদ প্রিন্ট",
@@ -258,7 +273,8 @@ export const billingBn: typeof billingEn = {
       cashRefunds: "ক্যাশ ফেরত",
       pendingMfs: "অপেক্ষমাণ এমএফএস",
       expected: "ড্রয়ারে প্রত্যাশিত ক্যাশ",
-      expectedHint: "ফ্লোট যোগ এই শিফটে নেওয়া ক্যাশ, বিয়োগ ফেরত দেওয়া ক্যাশ। কার্ড, বিকাশ ও নগদ আলাদাভাবে নিষ্পত্তি হয়।",
+      expectedHint:
+        "ফ্লোট যোগ এই শিফটে নেওয়া ক্যাশ, বিয়োগ ফেরত দেওয়া ক্যাশ। কার্ড, বিকাশ ও নগদ আলাদাভাবে নিষ্পত্তি হয়।",
       byTender: "মাধ্যম অনুযায়ী এই শিফট",
       payments: "এই শিফটের পেমেন্ট",
       noPayments: "এই শিফটে এখনো কোনো পেমেন্ট নেই",
