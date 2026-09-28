@@ -45,7 +45,8 @@ export const imagingEn = {
         "Simulated: no file leaves this browser. We keep its name and SHA-256 hash.",
       radiologist: "Reporting doctor",
       summary: "Impression (optional)",
-      summaryPlaceholder: "One line for the doctor, for example: fatty liver, grade I",
+      summaryPlaceholder:
+        "One line for the doctor, for example: fatty liver, grade I",
       confirm: "Upload",
     },
     events: {

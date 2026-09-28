@@ -65,16 +65,22 @@ async function itemsOf(tx: Tx, ids: Id[]): Promise<LabOrderItemRow[]> {
   return out
 }
 
-async function testsOf(tx: Tx, items: LabOrderItemRow[]): Promise<Map<Id, LabTestRow>> {
+async function testsOf(
+  tx: Tx,
+  items: LabOrderItemRow[]
+): Promise<Map<Id, LabTestRow>> {
   const map = new Map<Id, LabTestRow>()
   for (const item of items) {
-    if (!map.has(item.testId)) map.set(item.testId, await tx.get("labTests", item.testId))
+    if (!map.has(item.testId))
+      map.set(item.testId, await tx.get("labTests", item.testId))
   }
   return map
 }
 
 function codesOf(items: LabOrderItemRow[], tests: Map<Id, LabTestRow>): string {
-  return [...new Set(items.map((i) => tests.get(i.testId)?.code ?? i.testId))].join(", ")
+  return [
+    ...new Set(items.map((i) => tests.get(i.testId)?.code ?? i.testId)),
+  ].join(", ")
 }
 
 function ageOf(tx: Tx, patient: PatientRow): number {
@@ -84,7 +90,9 @@ function ageOf(tx: Tx, patient: PatientRow): number {
 /** Set the order's status from its items (ordered, in progress, completed). */
 async function refreshOrderStatus(tx: Tx, orderId: Id): Promise<void> {
   const order = await tx.get("labOrders", orderId)
-  const live = (await tx.list("labOrderItems", "labOrderId", orderId)).filter(isLive)
+  const live = (await tx.list("labOrderItems", "labOrderId", orderId)).filter(
+    isLive
+  )
   if (!live.length) return
   let status: LabOrderRow["status"] = "in-progress"
   if (live.every((i) => i.status === "released")) status = "completed"
@@ -135,7 +143,8 @@ export const collectSpecimen = defineCommand({
     }
 
     const items = (await itemsOf(tx, specimen.itemIds)).filter(isLive)
-    if (!items.length) tx.reject("LAB_NOTHING_TO_COLLECT", { accessionNo: specimen.accessionNo })
+    if (!items.length)
+      tx.reject("LAB_NOTHING_TO_COLLECT", { accessionNo: specimen.accessionNo })
     const tests = await testsOf(tx, items)
     for (const item of items) {
       if (item.status !== "paid" && item.status !== "ordered") {
@@ -161,9 +170,16 @@ export const collectSpecimen = defineCommand({
         specimenId: specimen.id,
         labOrderId: specimen.labOrderId,
       },
-      params: { accessionNo: specimen.accessionNo, tests: codesOf(items, tests) },
+      params: {
+        accessionNo: specimen.accessionNo,
+        tests: codesOf(items, tests),
+      },
     })
-    return { specimenId: specimen.id, accessionNo: specimen.accessionNo, matchedBy }
+    return {
+      specimenId: specimen.id,
+      accessionNo: specimen.accessionNo,
+      matchedBy,
+    }
   },
 })
 
@@ -222,7 +238,10 @@ export const receiveSpecimen = defineCommand({
         specimenId: specimen.id,
         labOrderId: specimen.labOrderId,
       },
-      params: { accessionNo: specimen.accessionNo, tests: codesOf(items, tests) },
+      params: {
+        accessionNo: specimen.accessionNo,
+        tests: codesOf(items, tests),
+      },
     })
     return { specimenId: specimen.id }
   },
@@ -256,14 +275,17 @@ export const rejectSpecimen = defineCommand({
     }
     const items = (await itemsOf(tx, specimen.itemIds)).filter(isLive)
     const tests = await testsOf(tx, items)
-    const used = items.find((i) => i.status !== "collected" && i.status !== "received")
+    const used = items.find(
+      (i) => i.status !== "collected" && i.status !== "received"
+    )
     if (used) {
       tx.reject("LAB_SPECIMEN_IN_USE", {
         accessionNo: specimen.accessionNo,
         test: tests.get(used.testId)?.code ?? used.testId,
       })
     }
-    if (!items.length) tx.reject("LAB_NOTHING_TO_COLLECT", { accessionNo: specimen.accessionNo })
+    if (!items.length)
+      tx.reject("LAB_NOTHING_TO_COLLECT", { accessionNo: specimen.accessionNo })
 
     await tx.update("specimens", specimen.id, {
       status: "rejected",
@@ -334,7 +356,11 @@ export const rejectSpecimen = defineCommand({
     })
     tx.emit("RecollectionOrdered", {
       branchId: specimen.branchId,
-      refs: { patientId: patient.id, labOrderId: order.id, specimenId: specimens[0]?.id },
+      refs: {
+        patientId: patient.id,
+        labOrderId: order.id,
+        specimenId: specimens[0]?.id,
+      },
       params: {
         orderNo,
         accessionNo: specimens.map((s) => s.accessionNo).join(", "),
@@ -376,12 +402,23 @@ async function writeResults(
   for (const entry of values) {
     const analyte = test.analytes.find((a) => a.code === entry.analyteCode)
     const numeric = typeof entry.value === "number"
-    const flag = analyte ? flagValue(analyte, entry.value, patient.sex, age) : "N"
+    const flag = analyte
+      ? flagValue(analyte, entry.value, patient.sex, age)
+      : "N"
     let deltaFlag: boolean | undefined
     if (numeric) {
-      const previous = previousFor(history, entry.analyteCode, item.id, tx.now() + 1)
+      const previous = previousFor(
+        history,
+        entry.analyteCode,
+        item.id,
+        tx.now() + 1
+      )
       if (typeof previous?.value === "number") {
-        deltaFlag = deltaCheck(entry.analyteCode, entry.value as number, previous.value).flagged
+        deltaFlag = deltaCheck(
+          entry.analyteCode,
+          entry.value as number,
+          previous.value
+        ).flagged
       }
     }
     rows.push(
@@ -414,13 +451,16 @@ function emitCriticals(
 ): void {
   for (const row of rows) {
     if (!row.critical) continue
-    const analyte = tests.get(row.testId)?.analytes.find((a) => a.code === row.analyteCode)
+    const analyte = tests
+      .get(row.testId)
+      ?.analytes.find((a) => a.code === row.analyteCode)
     tx.emit("CriticalFlagged", {
       branchId,
       refs: { ...refs, resultId: row.id, labItemId: row.labOrderItemId },
       params: {
         analyte: analyte?.name ?? row.analyteCode,
-        value: `${resultText(row, analyte?.decimals ?? 2)} ${row.unit ?? ""}`.trim(),
+        value:
+          `${resultText(row, analyte?.decimals ?? 2)} ${row.unit ?? ""}`.trim(),
       },
     })
   }
@@ -452,10 +492,15 @@ export const importAnalyserResults = defineCommand({
     }
     const patient = await tx.get("patients", specimen.patientId)
     const age = ageOf(tx, patient)
-    const all = (await itemsOf(tx, specimen.itemIds)).filter((i) => i.status === "received")
+    const all = (await itemsOf(tx, specimen.itemIds)).filter(
+      (i) => i.status === "received"
+    )
     const tests = await testsOf(tx, all)
-    const runnable = all.filter((i) => (tests.get(i.testId)?.analytes.length ?? 0) > 0)
-    if (!runnable.length) tx.reject("LAB_NOTHING_TO_RUN", { accessionNo: specimen.accessionNo })
+    const runnable = all.filter(
+      (i) => (tests.get(i.testId)?.analytes.length ?? 0) > 0
+    )
+    if (!runnable.length)
+      tx.reject("LAB_NOTHING_TO_RUN", { accessionNo: specimen.accessionNo })
 
     const history = await tx.list("results", "patientId", patient.id)
     const rows: ResultRow[] = []
@@ -468,12 +513,23 @@ export const importAnalyserResults = defineCommand({
           script?.values[analyte.code] ??
           defaultAnalyserValue(analyte, patient.sex, age, item.id),
       }))
-      rows.push(...(await writeResults(tx, item, test, patient, values, "analyser", history)))
+      rows.push(
+        ...(await writeResults(
+          tx,
+          item,
+          test,
+          patient,
+          values,
+          "analyser",
+          history
+        ))
+      )
     }
     await tx.update("specimens", specimen.id, {
       volumeRemainingMl: Math.max(
         0,
-        Math.round((specimen.volumeRemainingMl - 0.5 * runnable.length) * 10) / 10
+        Math.round((specimen.volumeRemainingMl - 0.5 * runnable.length) * 10) /
+          10
       ),
     })
 
@@ -534,20 +590,38 @@ export const enterManualResults = defineCommand({
     const values: NewResult[] = []
     if (test.analytes.length === 0) {
       const text = byCode.get(TEXT_ANALYTE)?.text
-      if (!text) tx.reject("LAB_RESULT_MISSING", { test: test.code, analyte: TEXT_ANALYTE })
+      if (!text)
+        tx.reject("LAB_RESULT_MISSING", {
+          test: test.code,
+          analyte: TEXT_ANALYTE,
+        })
       values.push({ analyteCode: TEXT_ANALYTE, value: text as string })
     } else {
       for (const analyte of test.analytes) {
         const entry = byCode.get(analyte.code)
         const value = analyte.qualitative ? entry?.text : entry?.value
         if (value === undefined || value === "") {
-          tx.reject("LAB_RESULT_MISSING", { test: test.code, analyte: analyte.name })
+          tx.reject("LAB_RESULT_MISSING", {
+            test: test.code,
+            analyte: analyte.name,
+          })
         }
-        values.push({ analyteCode: analyte.code, value: value as number | string })
+        values.push({
+          analyteCode: analyte.code,
+          value: value as number | string,
+        })
       }
     }
     const history = await tx.list("results", "patientId", patient.id)
-    const rows = await writeResults(tx, item, test, patient, values, "manual", history)
+    const rows = await writeResults(
+      tx,
+      item,
+      test,
+      patient,
+      values,
+      "manual",
+      history
+    )
     const tests = new Map([[test.id, test]])
     const refs = {
       patientId: patient.id,
@@ -589,16 +663,17 @@ export const validateItem = defineCommand({
     if (item.status !== "resulted") {
       tx.reject("LAB_ITEM_STATE", { test: test.code, status: item.status })
     }
-    const results = (await tx.list("results", "labOrderItemId", item.id)).filter(
-      (r) => r.status === "pending"
-    )
+    const results = (
+      await tx.list("results", "labOrderItemId", item.id)
+    ).filter((r) => r.status === "pending")
     if (!results.length) tx.reject("LAB_NO_RESULTS", { test: test.code })
 
     const manual = results.filter((r) => r.source === "manual")
     let secondCheckBy: Id | undefined
     if (manual.length) {
       secondCheckBy = input.secondCheckBy
-      if (!secondCheckBy) tx.reject("LAB_SECOND_CHECK_REQUIRED", { test: test.code })
+      if (!secondCheckBy)
+        tx.reject("LAB_SECOND_CHECK_REQUIRED", { test: test.code })
       if (
         secondCheckBy === tx.actor.staffId ||
         manual.some((r) => r.createdBy === secondCheckBy)
@@ -606,7 +681,10 @@ export const validateItem = defineCommand({
         tx.reject("LAB_SECOND_CHECK_SAME_PERSON", { test: test.code })
       }
       const checker = await tx.find("staff", secondCheckBy!)
-      if (!checker || (checker.role !== "labtech" && checker.role !== "pathologist")) {
+      if (
+        !checker ||
+        (checker.role !== "labtech" && checker.role !== "pathologist")
+      ) {
         tx.reject("LAB_SECOND_CHECKER_INVALID", { test: test.code })
       }
     }
@@ -622,7 +700,11 @@ export const validateItem = defineCommand({
     await tx.update("labOrderItems", item.id, { status: "validated" })
     tx.emit("TechnicallyValidated", {
       branchId: item.branchId,
-      refs: { patientId: item.patientId, labOrderId: item.labOrderId, labItemId: item.id },
+      refs: {
+        patientId: item.patientId,
+        labOrderId: item.labOrderId,
+        labItemId: item.id,
+      },
       params: {
         test: test.code,
         abnormal: results.filter((r) => r.flag !== "N").length,
@@ -652,7 +734,11 @@ async function releaseOrHold(
 ): Promise<{ released: boolean }> {
   const items = await itemsOf(tx, report.itemIds)
   const order = await tx.get("labOrders", report.labOrderId)
-  const refs = { patientId: report.patientId, reportId: report.id, labOrderId: order.id }
+  const refs = {
+    patientId: report.patientId,
+    reportId: report.id,
+    labOrderId: order.id,
+  }
 
   if (items.some((i) => !i.paymentCleared)) {
     if (!report.heldForPayment) {
@@ -673,14 +759,18 @@ async function releaseOrHold(
   })
   for (const item of items) {
     if (item.status !== "released") {
-      await tx.update("labOrderItems", item.id, { status: "released", reportId: report.id })
+      await tx.update("labOrderItems", item.id, {
+        status: "released",
+        reportId: report.id,
+      })
     }
   }
   await refreshOrderStatus(tx, order.id)
 
   const tests = await testsOf(tx, items)
   const results: ResultRow[] = []
-  for (const item of items) results.push(...(await tx.list("results", "labOrderItemId", item.id)))
+  for (const item of items)
+    results.push(...(await tx.list("results", "labOrderItemId", item.id)))
   const kind = opts.kind === "corrected" ? "corrected" : inboxKindFor(results)
   if (order.doctorId) {
     tx.insert("inboxItems", {
@@ -745,8 +835,11 @@ export const signAndRelease = defineCommand({
     const order = await tx.get("labOrders", input.labOrderId)
     const onOrder = await tx.list("labOrderItems", "labOrderId", order.id)
     const wanted = input.itemIds ? new Set(input.itemIds) : undefined
-    const items = onOrder.filter((i) => (wanted ? wanted.has(i.id) : i.status === "validated"))
-    if (!items.length) tx.reject("LAB_NOTHING_TO_SIGN", { orderNo: order.orderNo })
+    const items = onOrder.filter((i) =>
+      wanted ? wanted.has(i.id) : i.status === "validated"
+    )
+    if (!items.length)
+      tx.reject("LAB_NOTHING_TO_SIGN", { orderNo: order.orderNo })
     const tests = await testsOf(tx, items)
     for (const item of items) {
       if (item.status !== "validated") {
@@ -782,15 +875,25 @@ export const signAndRelease = defineCommand({
       hash: reportHash(base, results),
     })
     for (const item of items) {
-      await tx.update("labOrderItems", item.id, { status: "signed", reportId: report.id })
+      await tx.update("labOrderItems", item.id, {
+        status: "signed",
+        reportId: report.id,
+      })
     }
     tx.emit("ReportSigned", {
       branchId: order.branchId,
-      refs: { patientId: order.patientId, reportId: report.id, labOrderId: order.id },
+      refs: {
+        patientId: order.patientId,
+        reportId: report.id,
+        labOrderId: order.id,
+      },
       params: { reportNo, version: 1, tests: codesOf(items, tests) },
     })
     const { released } = input.release
-      ? await releaseOrHold(tx, report, { kind: "ready", smsLang: input.smsLang })
+      ? await releaseOrHold(tx, report, {
+          kind: "ready",
+          smsLang: input.smsLang,
+        })
       : { released: false }
     await refreshOrderStatus(tx, order.id)
     return {
@@ -816,7 +919,10 @@ export const releaseReport = defineCommand({
       expectedVersion: input.expectedVersion,
     })
     if (report.status !== "signed") {
-      tx.reject("LAB_REPORT_STATE", { reportNo: report.reportNo, status: report.status })
+      tx.reject("LAB_REPORT_STATE", {
+        reportNo: report.reportNo,
+        status: report.status,
+      })
     }
     const items = await itemsOf(tx, report.itemIds)
     if (items.some((i) => !i.paymentCleared)) {
@@ -866,7 +972,10 @@ export const correctReport = defineCommand({
       expectedVersion: input.expectedVersion,
     })
     if (current.status !== "signed" && current.status !== "released") {
-      tx.reject("LAB_REPORT_STATE", { reportNo: current.reportNo, status: current.status })
+      tx.reject("LAB_REPORT_STATE", {
+        reportNo: current.reportNo,
+        status: current.status,
+      })
     }
     const patient = await tx.get("patients", current.patientId)
     const age = ageOf(tx, patient)
@@ -879,8 +988,12 @@ export const correctReport = defineCommand({
       if (!current.itemIds.includes(result.labOrderItemId)) {
         tx.reject("LAB_RESULT_NOT_ON_REPORT", { reportNo: current.reportNo })
       }
-      const analyte = tests.get(result.testId)?.analytes.find((a) => a.code === result.analyteCode)
-      const numeric = typeof result.value === "number" || (analyte ? !analyte.qualitative : false)
+      const analyte = tests
+        .get(result.testId)
+        ?.analytes.find((a) => a.code === result.analyteCode)
+      const numeric =
+        typeof result.value === "number" ||
+        (analyte ? !analyte.qualitative : false)
       const value = numeric ? (fix.value ?? result.value) : null
       const text = numeric ? undefined : (fix.text ?? result.text)
       const unit = fix.unit ?? result.unit
@@ -890,10 +1003,16 @@ export const correctReport = defineCommand({
           analyte: analyte?.name ?? result.analyteCode,
         })
       }
-      const same = value === result.value && text === result.text && unit === result.unit
+      const same =
+        value === result.value && text === result.text && unit === result.unit
       if (same) continue
       const flag = analyte
-        ? flagValue(analyte, numeric ? (value as number) : (text ?? ""), patient.sex, age)
+        ? flagValue(
+            analyte,
+            numeric ? (value as number) : (text ?? ""),
+            patient.sex,
+            age
+          )
         : result.flag
       await tx.update("results", result.id, {
         value,
@@ -951,7 +1070,10 @@ export const correctReport = defineCommand({
       },
     })
     const { released } = wasReleased
-      ? await releaseOrHold(tx, next, { kind: "corrected", smsLang: input.smsLang })
+      ? await releaseOrHold(tx, next, {
+          kind: "corrected",
+          smsLang: input.smsLang,
+        })
       : { released: false }
     return {
       reportId: next.id,
@@ -1017,7 +1139,10 @@ export const logCriticalCall = defineCommand({
         labOrderId: item.labOrderId,
         labItemId: item.id,
       },
-      params: { analyte: analyte?.name ?? result.analyteCode, person: input.calledPerson },
+      params: {
+        analyte: analyte?.name ?? result.analyteCode,
+        person: input.calledPerson,
+      },
     })
     return { callId: call.id, valueText }
   },

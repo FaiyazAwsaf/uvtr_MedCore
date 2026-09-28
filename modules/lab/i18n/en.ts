@@ -42,6 +42,7 @@ export const labEn = {
       version: "v{version}",
       byName: "by {name}",
       orderedBy: "Ordered by {doctor}",
+      urgent: "Urgent",
       walkIn: "Walk-in order (no referring doctor)",
       volume: "{ml} ml",
       someone: "Staff",
@@ -124,7 +125,8 @@ export const labEn = {
         label: "Tube label",
         printLabel: "Print label",
         printed: "Sent to label printer",
-        notPrinted: "Print the label and stick it on the tube in front of the patient.",
+        notPrinted:
+          "Print the label and stick it on the tube in front of the patient.",
       },
     },
     label: {
@@ -133,7 +135,8 @@ export const labEn = {
     },
     reception: {
       title: "Specimen intake",
-      subtitle: "Receive specimens at the lab bench, or reject them with a reason.",
+      subtitle:
+        "Receive specimens at the lab bench, or reject them with a reason.",
       inTransit: "Collected, not yet received",
       inTransitEmpty: "No specimens on the way.",
       received: "Received, waiting for results",
@@ -183,7 +186,7 @@ export const labEn = {
       openValidation: "Open validation",
       manualDialog: {
         title: "Enter results manually",
-        hint: "Manual values are marked \"manual\" and need a second person's check at validation.",
+        hint: 'Manual values are marked "manual" and need a second person\'s check at validation.',
         reportText: "Report text",
         reportPlaceholder: "Write the report as it should appear",
         save: "Save results",
@@ -205,7 +208,8 @@ export const labEn = {
         "These values were typed by hand. A second person must check them before validation.",
       criticalNotice:
         "Critical value. After validation the pathologist phones the doctor and logs the call.",
-      deltaNotice: "Large change since the previous result: check the sample and the patient.",
+      deltaNotice:
+        "Large change since the previous result: check the sample and the patient.",
       secondCheck: {
         title: "Second check",
         checker: "Checked by",
@@ -248,7 +252,8 @@ export const labEn = {
     },
     reports: {
       title: "Reports",
-      subtitle: "Released in the last 7 days at this branch. Print, verify or correct them.",
+      subtitle:
+        "Released in the last 7 days at this branch. Print, verify or correct them.",
       empty: "No reports released in the last 7 days.",
       print: "Print",
       correct: "Correct",
@@ -268,7 +273,8 @@ export const labEn = {
       reason: "Reason for correction",
       reasonPlaceholder: "For example: unit conversion error at result entry",
       summary: "Change summary",
-      summaryHint: "Printed on the corrected report and shown to the doctor and on the verification page.",
+      summaryHint:
+        "Printed on the corrected report and shown to the doctor and on the verification page.",
       confirm: "Sign version {version}",
       done: "Report {reportNo} corrected to version {version}",
       noChange: "Change at least one value.",
@@ -343,7 +349,8 @@ export const labEn = {
       notFoundBody:
         "We could not find this report. Check the QR code, or call {helpline}.",
       superseded: "This version was corrected",
-      supersededBody: "Version {version} replaced it on {date}. Please use the current version.",
+      supersededBody:
+        "Version {version} replaced it on {date}. Please use the current version.",
       viewCurrent: "View the current version",
       correctedNotice: "Corrected report: it replaces version {from}.",
       reportNo: "Report no.",
@@ -374,7 +381,8 @@ export const labEn = {
         "Specimen {accessionNo} is {status} now, so this step no longer applies.",
       LAB_SECOND_ID_MISMATCH:
         "The second identifier doesn't match the patient for {accessionNo}. Nothing was collected.",
-      LAB_NOTHING_TO_COLLECT: "There is nothing left to collect on {accessionNo}.",
+      LAB_NOTHING_TO_COLLECT:
+        "There is nothing left to collect on {accessionNo}.",
       LAB_ITEM_STATE: "{test} is {status} now, so this step no longer applies.",
       LAB_SPECIMEN_IN_USE:
         "{test} on {accessionNo} already has results, so the specimen can't be rejected now.",
@@ -386,15 +394,18 @@ export const labEn = {
         "{test} has manual values. A second person must check them before validation.",
       LAB_SECOND_CHECK_SAME_PERSON:
         "The second check must be done by someone else: not the validator and not the person who typed the values.",
-      LAB_SECOND_CHECKER_INVALID: "The second checker must be lab or pathology staff.",
+      LAB_SECOND_CHECKER_INVALID:
+        "The second checker must be lab or pathology staff.",
       LAB_NOTHING_TO_SIGN: "Order {orderNo} has no validated results to sign.",
-      LAB_REPORT_STATE: "Report {reportNo} is {status}, so this step no longer applies.",
+      LAB_REPORT_STATE:
+        "Report {reportNo} is {status}, so this step no longer applies.",
       LAB_RESULT_NOT_ON_REPORT: "That value is not on report {reportNo}.",
       LAB_NO_CHANGE: "Nothing changed. Enter at least one corrected value.",
       LAB_NOT_CRITICAL: "{test} has no critical value to call.",
       LAB_CALL_IN_FUTURE: "The call time can't be in the future.",
       LAB_IMAGING_NOT_PAID: "Imaging order {orderNo} is not paid yet.",
-      LAB_IMAGING_STATE: "Imaging order {orderNo} is {status}, so this step no longer applies.",
+      LAB_IMAGING_STATE:
+        "Imaging order {orderNo} is {status}, so this step no longer applies.",
     },
     events: {
       SpecimenCollected: "Specimen {accessionNo} collected ({tests})",

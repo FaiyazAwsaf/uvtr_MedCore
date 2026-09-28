@@ -50,12 +50,17 @@ export function secondIdentifierMatch(
   if (parts.length === 3 && parts.every((p) => /^\d+$/.test(p))) {
     const [a, b, c] = parts
     const pad = (s: string) => s.padStart(2, "0")
-    if (c.length === 4 && `${c}-${pad(b)}-${pad(a)}` === patient.dob) return "dob"
-    if (a.length === 4 && `${a}-${pad(b)}-${pad(c)}` === patient.dob) return "dob"
+    if (c.length === 4 && `${c}-${pad(b)}-${pad(a)}` === patient.dob)
+      return "dob"
+    if (a.length === 4 && `${a}-${pad(b)}-${pad(c)}` === patient.dob)
+      return "dob"
   }
 
   const digits = digitsOnly(latin)
-  if (digits.length === 8 && (digits === `${d}${m}${y}` || digits === `${y}${m}${d}`)) {
+  if (
+    digits.length === 8 &&
+    (digits === `${d}${m}${y}` || digits === `${y}${m}${d}`)
+  ) {
     return "dob"
   }
   if (digits.length === 4) {
@@ -88,7 +93,11 @@ export function isCriticalFlag(flag: ResultFlag): boolean {
 }
 
 /** The normal text of a qualitative analyte for this patient ("Negative", "Nil"). */
-export function normalText(analyte: Analyte, sex: Sex, ageYears: number): string {
+export function normalText(
+  analyte: Analyte,
+  sex: Sex,
+  ageYears: number
+): string {
   return rangeFor(analyte, sex, ageYears)?.text ?? "Negative"
 }
 
@@ -114,11 +123,15 @@ export function formatValue(value: number, decimals: number): string {
 }
 
 /** "4.0 - 11.0", "< 200", "> 40", "Negative", or "-" when there is no range. */
-export function formatRange(range: RefRange | undefined, decimals: number): string {
+export function formatRange(
+  range: RefRange | undefined,
+  decimals: number
+): string {
   if (!range) return "-"
   if (range.text) return range.text
   const f = (n: number) => formatValue(n, decimals)
-  if (range.low !== undefined && range.high !== undefined) return `${f(range.low)} - ${f(range.high)}`
+  if (range.low !== undefined && range.high !== undefined)
+    return `${f(range.low)} - ${f(range.high)}`
   if (range.high !== undefined) return `< ${f(range.high)}`
   if (range.low !== undefined) return `> ${f(range.low)}`
   return "-"
@@ -129,7 +142,8 @@ export function resultText(
   result: Pick<ResultRow, "value" | "text">,
   decimals: number
 ): string {
-  if (typeof result.value === "number") return formatValue(result.value, decimals)
+  if (typeof result.value === "number")
+    return formatValue(result.value, decimals)
   return result.text ?? "-"
 }
 
@@ -155,13 +169,26 @@ export const DELTA_LIMIT_PCT: Record<string, number> = {
 }
 export const DEFAULT_DELTA_PCT = 40
 
-export type Delta = { diff: number; pct: number; limit: number; flagged: boolean }
+export type Delta = {
+  diff: number
+  pct: number
+  limit: number
+  flagged: boolean
+}
 
-export function deltaCheck(analyteCode: string, current: number, previous: number): Delta {
+export function deltaCheck(
+  analyteCode: string,
+  current: number,
+  previous: number
+): Delta {
   const diff = current - previous
   const limit = DELTA_LIMIT_PCT[analyteCode] ?? DEFAULT_DELTA_PCT
   const pct =
-    previous === 0 ? (current === 0 ? 0 : 100) : (diff / Math.abs(previous)) * 100
+    previous === 0
+      ? current === 0
+        ? 0
+        : 100
+      : (diff / Math.abs(previous)) * 100
   return { diff, pct, limit, flagged: Math.abs(pct) > limit }
 }
 
@@ -169,7 +196,12 @@ export function deltaCheck(analyteCode: string, current: number, previous: numbe
  * The patient's latest validated numeric result for the same analyte before
  * `before`, from another order item (the delta check baseline).
  */
-export function previousFor<R extends Pick<ResultRow, "analyteCode" | "labOrderItemId" | "status" | "value" | "createdAt">>(
+export function previousFor<
+  R extends Pick<
+    ResultRow,
+    "analyteCode" | "labOrderItemId" | "status" | "value" | "createdAt"
+  >,
+>(
   rows: R[],
   analyteCode: string,
   excludeItemId: string,
@@ -177,7 +209,8 @@ export function previousFor<R extends Pick<ResultRow, "analyteCode" | "labOrderI
 ): R | undefined {
   let best: R | undefined
   for (const row of rows) {
-    if (row.analyteCode !== analyteCode || row.labOrderItemId === excludeItemId) continue
+    if (row.analyteCode !== analyteCode || row.labOrderItemId === excludeItemId)
+      continue
     if (row.status !== "validated" || typeof row.value !== "number") continue
     if (row.createdAt >= before) continue
     if (!best || row.createdAt > best.createdAt) best = row
@@ -193,7 +226,8 @@ export type InboxResultKind = "critical" | "abnormal" | "result"
 export function inboxKindFor(
   results: Pick<ResultRow, "flag" | "critical">[]
 ): InboxResultKind {
-  if (results.some((r) => r.critical || isCriticalFlag(r.flag))) return "critical"
+  if (results.some((r) => r.critical || isCriticalFlag(r.flag)))
+    return "critical"
   if (results.some((r) => r.flag !== "N")) return "abnormal"
   return "result"
 }
@@ -213,7 +247,13 @@ type HashReport = Pick<
 >
 type HashResult = Pick<
   ResultRow,
-  "labOrderItemId" | "testId" | "analyteCode" | "value" | "text" | "unit" | "flag"
+  | "labOrderItemId"
+  | "testId"
+  | "analyteCode"
+  | "value"
+  | "text"
+  | "unit"
+  | "flag"
 >
 
 /** The signed content of one report version: what the hash covers. */
@@ -224,9 +264,19 @@ export function reportContent(report: HashReport, results: HashResult[]) {
     .sort(
       (a, b) =>
         order.get(a.labOrderItemId)! - order.get(b.labOrderItemId)! ||
-        (a.analyteCode < b.analyteCode ? -1 : a.analyteCode > b.analyteCode ? 1 : 0)
+        (a.analyteCode < b.analyteCode
+          ? -1
+          : a.analyteCode > b.analyteCode
+            ? 1
+            : 0)
     )
-    .map((r) => [r.testId, r.analyteCode, r.value ?? r.text ?? null, r.unit ?? "", r.flag])
+    .map((r) => [
+      r.testId,
+      r.analyteCode,
+      r.value ?? r.text ?? null,
+      r.unit ?? "",
+      r.flag,
+    ])
   return {
     reportNo: report.reportNo,
     version: report.reportVersion,

@@ -22,9 +22,13 @@ export const markImagingDone = defineCommand({
     const order = await tx.get("imagingOrders", input.imagingOrderId, {
       expectedVersion: input.expectedVersion,
     })
-    if (!order.paymentCleared) tx.reject("LAB_IMAGING_NOT_PAID", { orderNo: order.orderNo })
+    if (!order.paymentCleared)
+      tx.reject("LAB_IMAGING_NOT_PAID", { orderNo: order.orderNo })
     if (order.status !== "paid" && order.status !== "ordered") {
-      tx.reject("LAB_IMAGING_STATE", { orderNo: order.orderNo, status: order.status })
+      tx.reject("LAB_IMAGING_STATE", {
+        orderNo: order.orderNo,
+        status: order.status,
+      })
     }
     await tx.update("imagingOrders", order.id, { status: "done" })
     const test = await tx.get("labTests", order.testId)
@@ -59,12 +63,15 @@ export const uploadImagingReport = defineCommand({
   async run(tx, input) {
     const order = await tx.get("imagingOrders", input.imagingOrderId)
     if (order.status !== "done") {
-      tx.reject("LAB_IMAGING_STATE", { orderNo: order.orderNo, status: order.status })
+      tx.reject("LAB_IMAGING_STATE", {
+        orderNo: order.orderNo,
+        status: order.status,
+      })
     }
     const radiologist = await tx.get("doctors", input.radiologistId)
-    const previous = (await tx.list("imagingReports", "imagingOrderId", order.id)).sort(
-      (a, b) => b.reportVersion - a.reportVersion
-    )[0]
+    const previous = (
+      await tx.list("imagingReports", "imagingOrderId", order.id)
+    ).sort((a, b) => b.reportVersion - a.reportVersion)[0]
     const reportVersion = (previous?.reportVersion ?? 0) + 1
     // Simulated file: the hash stands in for the digest of the uploaded PDF.
     const pdfHash = sha256Hex(
@@ -91,7 +98,10 @@ export const uploadImagingReport = defineCommand({
     if (previous && previous.status !== "superseded") {
       await tx.update("imagingReports", previous.id, { status: "superseded" })
     }
-    await tx.update("imagingOrders", order.id, { status: "reported", reportId: report.id })
+    await tx.update("imagingOrders", order.id, {
+      status: "reported",
+      reportId: report.id,
+    })
     tx.emit("ImagingReportUploaded", {
       branchId: order.branchId,
       refs: { patientId: order.patientId, imagingOrderId: order.id },
@@ -115,14 +125,24 @@ export const releaseImagingReport = defineCommand({
       expectedVersion: input.expectedVersion,
     })
     if (order.status !== "reported" || !order.reportId) {
-      tx.reject("LAB_IMAGING_STATE", { orderNo: order.orderNo, status: order.status })
+      tx.reject("LAB_IMAGING_STATE", {
+        orderNo: order.orderNo,
+        status: order.status,
+      })
     }
-    if (!order.paymentCleared) tx.reject("PAYMENT_GATE", { step: "release", rule: "INV-10" })
+    if (!order.paymentCleared)
+      tx.reject("PAYMENT_GATE", { step: "release", rule: "INV-10" })
     const report = await tx.get("imagingReports", order.reportId!)
     if (report.status !== "uploaded") {
-      tx.reject("LAB_IMAGING_STATE", { orderNo: order.orderNo, status: report.status })
+      tx.reject("LAB_IMAGING_STATE", {
+        orderNo: order.orderNo,
+        status: report.status,
+      })
     }
-    await tx.update("imagingReports", report.id, { status: "released", releasedAt: tx.now() })
+    await tx.update("imagingReports", report.id, {
+      status: "released",
+      releasedAt: tx.now(),
+    })
     await tx.update("imagingOrders", order.id, { status: "released" })
 
     const test = await tx.get("labTests", order.testId)
@@ -145,7 +165,8 @@ export const releaseImagingReport = defineCommand({
       refs,
     })
     const patient = await tx.get("patients", order.patientId)
-    const smsConsent = patient.consents.find((c) => c.purpose === "sms")?.granted !== false
+    const smsConsent =
+      patient.consents.find((c) => c.purpose === "sms")?.granted !== false
     if (patient.phone && patient.phoneVerified && smsConsent) {
       queueSms(tx, {
         to: patient.phone,

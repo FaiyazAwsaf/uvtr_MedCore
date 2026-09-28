@@ -18,7 +18,13 @@ const patient = { dob: "1964-05-07", phone: "01711-523418" }
 
 describe("second identifier (HAZ-01)", () => {
   it("accepts the date of birth in the usual forms, Bangla digits too", () => {
-    for (const typed of ["07-05-1964", "7/5/1964", "07051964", "1964-05-07", "০৭-০৫-১৯৬৪"]) {
+    for (const typed of [
+      "07-05-1964",
+      "7/5/1964",
+      "07051964",
+      "1964-05-07",
+      "০৭-০৫-১৯৬৪",
+    ]) {
       expect(secondIdentifierMatch(patient, typed), typed).toBe("dob")
     }
   })
@@ -26,13 +32,23 @@ describe("second identifier (HAZ-01)", () => {
   it("accepts the last four phone digits, or the attendant's", () => {
     expect(secondIdentifierMatch(patient, "3418")).toBe("phone")
     expect(secondIdentifierMatch(patient, "৩৪১৮")).toBe("phone")
-    expect(secondIdentifierMatch({ dob: "2018-01-01", attendantPhone: "01819-000777" }, "0777")).toBe(
-      "phone"
-    )
+    expect(
+      secondIdentifierMatch(
+        { dob: "2018-01-01", attendantPhone: "01819-000777" },
+        "0777"
+      )
+    ).toBe("phone")
   })
 
   it("rejects anything else", () => {
-    for (const typed of ["", "1234", "05-07-1964", "341", "01711523418", "1964"]) {
+    for (const typed of [
+      "",
+      "1234",
+      "05-07-1964",
+      "341",
+      "01711523418",
+      "1964",
+    ]) {
       expect(secondIdentifierMatch(patient, typed), typed).toBeNull()
     }
     expect(digitsOnly("০১৭-১১")).toBe("01711")
@@ -91,10 +107,34 @@ describe("delta check", () => {
 
   it("picks the latest earlier validated value from another item", () => {
     const rows = [
-      { analyteCode: "HB", labOrderItemId: "a", status: "validated" as const, value: 11, createdAt: 10 },
-      { analyteCode: "HB", labOrderItemId: "b", status: "validated" as const, value: 12, createdAt: 20 },
-      { analyteCode: "HB", labOrderItemId: "c", status: "pending" as const, value: 13, createdAt: 30 },
-      { analyteCode: "HB", labOrderItemId: "now", status: "validated" as const, value: 9, createdAt: 25 },
+      {
+        analyteCode: "HB",
+        labOrderItemId: "a",
+        status: "validated" as const,
+        value: 11,
+        createdAt: 10,
+      },
+      {
+        analyteCode: "HB",
+        labOrderItemId: "b",
+        status: "validated" as const,
+        value: 12,
+        createdAt: 20,
+      },
+      {
+        analyteCode: "HB",
+        labOrderItemId: "c",
+        status: "pending" as const,
+        value: 13,
+        createdAt: 30,
+      },
+      {
+        analyteCode: "HB",
+        labOrderItemId: "now",
+        status: "validated" as const,
+        value: 9,
+        createdAt: 25,
+      },
     ]
     expect(previousFor(rows, "HB", "now", 40)?.value).toBe(12)
     expect(previousFor(rows, "HB", "now", 15)?.value).toBe(11)
@@ -105,8 +145,18 @@ describe("delta check", () => {
 describe("reports", () => {
   it("picks the doctor inbox kind", () => {
     expect(inboxKindFor([{ flag: "N", critical: false }])).toBe("result")
-    expect(inboxKindFor([{ flag: "N", critical: false }, { flag: "H", critical: false }])).toBe("abnormal")
-    expect(inboxKindFor([{ flag: "HH", critical: true }, { flag: "H", critical: false }])).toBe("critical")
+    expect(
+      inboxKindFor([
+        { flag: "N", critical: false },
+        { flag: "H", critical: false },
+      ])
+    ).toBe("abnormal")
+    expect(
+      inboxKindFor([
+        { flag: "HH", critical: true },
+        { flag: "H", critical: false },
+      ])
+    ).toBe("critical")
   })
 
   it("hashes the signed content deterministically, whatever the result order", () => {
@@ -119,8 +169,22 @@ describe("reports", () => {
       signedBy: "stf_mizanur_rahman",
       signedAt: 1_000,
     }
-    const a = { labOrderItemId: "i1", testId: "lt_cbc", analyteCode: "WBC", value: 12.8, unit: "x10^9/L", flag: "H" as const }
-    const b = { labOrderItemId: "i2", testId: "lt_crp", analyteCode: "CRP", value: 48, unit: "mg/L", flag: "H" as const }
+    const a = {
+      labOrderItemId: "i1",
+      testId: "lt_cbc",
+      analyteCode: "WBC",
+      value: 12.8,
+      unit: "x10^9/L",
+      flag: "H" as const,
+    }
+    const b = {
+      labOrderItemId: "i2",
+      testId: "lt_crp",
+      analyteCode: "CRP",
+      value: 48,
+      unit: "mg/L",
+      flag: "H" as const,
+    }
     const other = { ...a, labOrderItemId: "elsewhere" }
     const hash = reportHash(report, [a, b])
     expect(hash).toMatch(/^[0-9a-f]{64}$/)

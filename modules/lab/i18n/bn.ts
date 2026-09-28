@@ -44,6 +44,7 @@ export const labBn: typeof labEn = {
       version: "সংস্করণ {version}",
       byName: "{name} দ্বারা",
       orderedBy: "অর্ডার দিয়েছেন {doctor}",
+      urgent: "জরুরি অর্ডার",
       walkIn: "সরাসরি অর্ডার (রেফার করা চিকিৎসক নেই)",
       volume: "{ml} মিলি",
       someone: "কর্মী",
@@ -106,7 +107,8 @@ export const labBn: typeof labEn = {
         "{branch}-এ পরিশোধিত পরীক্ষার নমুনা নেওয়া বাকি। সংগ্রহের আগে দ্বিতীয় একটি পরিচয় মিলিয়ে নিন।",
       listTitle: "সংগ্রহের অপেক্ষায়",
       empty: "পরিশোধিত কোনো নমুনা অপেক্ষায় নেই।",
-      emptyHint: "ক্যাশিয়ার পেমেন্ট নেওয়ার সাথে সাথে পরিশোধিত পরীক্ষা এখানে আসে।",
+      emptyHint:
+        "ক্যাশিয়ার পেমেন্ট নেওয়ার সাথে সাথে পরিশোধিত পরীক্ষা এখানে আসে।",
       collect: "সংগ্রহ করুন",
       recentTitle: "আজ সংগৃহীত",
       recentEmpty: "আজ এখনো কিছু সংগ্রহ হয়নি।",
@@ -184,7 +186,7 @@ export const labBn: typeof labEn = {
       openValidation: "যাচাই খুলুন",
       manualDialog: {
         title: "হাতে ফলাফল লিখুন",
-        hint: "হাতে লেখা মান \"হাতে লেখা\" হিসেবে চিহ্নিত হয় এবং যাচাইয়ের সময় দ্বিতীয় একজনের পরীক্ষা লাগে।",
+        hint: 'হাতে লেখা মান "হাতে লেখা" হিসেবে চিহ্নিত হয় এবং যাচাইয়ের সময় দ্বিতীয় একজনের পরীক্ষা লাগে।',
         reportText: "রিপোর্টের লেখা",
         reportPlaceholder: "রিপোর্ট যেভাবে দেখাবে সেভাবে লিখুন",
         save: "ফলাফল সংরক্ষণ",
@@ -206,7 +208,8 @@ export const labBn: typeof labEn = {
         "এই মানগুলো হাতে লেখা। যাচাইয়ের আগে দ্বিতীয় একজনকে পরীক্ষা করতে হবে।",
       criticalNotice:
         "জরুরি মান। যাচাইয়ের পর প্যাথলজিস্ট চিকিৎসককে ফোন করে কলটি লিখে রাখবেন।",
-      deltaNotice: "আগের ফলাফলের তুলনায় বড় পরিবর্তন: নমুনা ও রোগী মিলিয়ে দেখুন।",
+      deltaNotice:
+        "আগের ফলাফলের তুলনায় বড় পরিবর্তন: নমুনা ও রোগী মিলিয়ে দেখুন।",
       secondCheck: {
         title: "দ্বিতীয় পরীক্ষা",
         checker: "পরীক্ষা করেছেন",
@@ -269,7 +272,8 @@ export const labBn: typeof labEn = {
       reason: "সংশোধনের কারণ",
       reasonPlaceholder: "যেমন: ফলাফল লেখার সময় এককের রূপান্তরে ভুল",
       summary: "পরিবর্তনের সারাংশ",
-      summaryHint: "সংশোধিত রিপোর্টে ছাপা হবে এবং চিকিৎসক ও যাচাই পাতায় দেখানো হবে।",
+      summaryHint:
+        "সংশোধিত রিপোর্টে ছাপা হবে এবং চিকিৎসক ও যাচাই পাতায় দেখানো হবে।",
       confirm: "সংস্করণ {version}-এ স্বাক্ষর",
       done: "রিপোর্ট {reportNo} সংস্করণ {version}-এ সংশোধিত হয়েছে",
       noChange: "অন্তত একটি মান বদলান।",
@@ -310,7 +314,8 @@ export const labBn: typeof labEn = {
     report: {
       title: "ল্যাবরেটরি রিপোর্ট",
       corrected: "সংশোধিত রিপোর্ট",
-      correctedBanner: "এই রিপোর্টটি {date} তারিখে স্বাক্ষরিত সংস্করণ {from}-এর জায়গা নিয়েছে।",
+      correctedBanner:
+        "এই রিপোর্টটি {date} তারিখে স্বাক্ষরিত সংস্করণ {from}-এর জায়গা নিয়েছে।",
       reason: "কারণ",
       change: "পরিবর্তন",
       patient: "রোগী",
@@ -344,7 +349,8 @@ export const labBn: typeof labEn = {
       notFoundBody:
         "রিপোর্টটি খুঁজে পাওয়া যায়নি। QR কোডটি আবার দেখুন, অথবা {helpline} নম্বরে ফোন করুন।",
       superseded: "এই সংস্করণটি সংশোধিত হয়েছে",
-      supersededBody: "{date} তারিখে সংস্করণ {version} এর জায়গা নিয়েছে। অনুগ্রহ করে বর্তমান সংস্করণ দেখুন।",
+      supersededBody:
+        "{date} তারিখে সংস্করণ {version} এর জায়গা নিয়েছে। অনুগ্রহ করে বর্তমান সংস্করণ দেখুন।",
       viewCurrent: "বর্তমান সংস্করণ দেখুন",
       correctedNotice: "সংশোধিত রিপোর্ট: এটি সংস্করণ {from}-এর জায়গা নিয়েছে।",
       reportNo: "রিপোর্ট নম্বর",
@@ -387,15 +393,19 @@ export const labBn: typeof labEn = {
         "{test}-এ হাতে লেখা মান আছে। যাচাইয়ের আগে দ্বিতীয় একজনকে পরীক্ষা করতে হবে।",
       LAB_SECOND_CHECK_SAME_PERSON:
         "দ্বিতীয় পরীক্ষা অন্য কাউকে করতে হবে: যিনি যাচাই করছেন বা যিনি মান লিখেছেন তিনি নন।",
-      LAB_SECOND_CHECKER_INVALID: "দ্বিতীয় পরীক্ষককে ল্যাব বা প্যাথলজির কর্মী হতে হবে।",
-      LAB_NOTHING_TO_SIGN: "অর্ডার {orderNo}-এ স্বাক্ষরের মতো যাচাইকৃত ফলাফল নেই।",
-      LAB_REPORT_STATE: "রিপোর্ট {reportNo} এখন {status}, তাই এই ধাপটি আর প্রযোজ্য নয়।",
+      LAB_SECOND_CHECKER_INVALID:
+        "দ্বিতীয় পরীক্ষককে ল্যাব বা প্যাথলজির কর্মী হতে হবে।",
+      LAB_NOTHING_TO_SIGN:
+        "অর্ডার {orderNo}-এ স্বাক্ষরের মতো যাচাইকৃত ফলাফল নেই।",
+      LAB_REPORT_STATE:
+        "রিপোর্ট {reportNo} এখন {status}, তাই এই ধাপটি আর প্রযোজ্য নয়।",
       LAB_RESULT_NOT_ON_REPORT: "এই মানটি রিপোর্ট {reportNo}-এ নেই।",
       LAB_NO_CHANGE: "কিছুই বদলায়নি। অন্তত একটি সংশোধিত মান লিখুন।",
       LAB_NOT_CRITICAL: "{test}-এ ফোন করার মতো জরুরি মান নেই।",
       LAB_CALL_IN_FUTURE: "কলের সময় ভবিষ্যতের হতে পারে না।",
       LAB_IMAGING_NOT_PAID: "ইমেজিং অর্ডার {orderNo}-এর পেমেন্ট এখনো হয়নি।",
-      LAB_IMAGING_STATE: "ইমেজিং অর্ডার {orderNo} এখন {status}, তাই এই ধাপটি আর প্রযোজ্য নয়।",
+      LAB_IMAGING_STATE:
+        "ইমেজিং অর্ডার {orderNo} এখন {status}, তাই এই ধাপটি আর প্রযোজ্য নয়।",
     },
     events: {
       SpecimenCollected: "নমুনা {accessionNo} সংগৃহীত ({tests})",
@@ -420,7 +430,7 @@ export const labBn: typeof labEn = {
       pathologist: "প্যাথলজিস্ট",
       doctorInbox: "চিকিৎসকের ইনবক্স",
       patientApp: "রোগীর অ্যাপ",
-      sms: "SMS",
+      sms: "এসএমএস",
       billing: "বিলিং",
       dutyDoctor: "ডিউটি চিকিৎসক",
       audit: "অডিট",

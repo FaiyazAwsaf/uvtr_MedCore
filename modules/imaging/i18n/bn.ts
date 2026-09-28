@@ -21,7 +21,7 @@ export const imagingBn: typeof imagingEn = {
       uploadedToast: "{orderNo}-এর স্বাক্ষরিত রিপোর্ট আপলোড হয়েছে",
       releasedToast: "{orderNo}-এর ইমেজিং রিপোর্ট প্রকাশিত হয়েছে",
       releasedAt: "প্রকাশ {time}",
-      hash: "SHA-256 {hash}",
+      hash: "SHA-256 হ্যাশ {hash}",
     },
     status: {
       ordered: "পেমেন্ট বাকি",

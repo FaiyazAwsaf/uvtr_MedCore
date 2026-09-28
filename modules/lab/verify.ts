@@ -47,10 +47,14 @@ function pickTest(test: LabTestRow | undefined) {
 }
 
 /** The current version: the highest version that is not superseded. */
-function currentOf<R extends { status: string; reportVersion: number }>(versions: R[]): R {
+function currentOf<R extends { status: string; reportVersion: number }>(
+  versions: R[]
+): R {
   const live = versions.filter((v) => v.status !== "superseded")
   const pool = live.length ? live : versions
-  return pool.reduce((best, v) => (v.reportVersion > best.reportVersion ? v : best))
+  return pool.reduce((best, v) =>
+    v.reportVersion > best.reportVersion ? v : best
+  )
 }
 
 export async function loadVerification(
@@ -59,15 +63,23 @@ export async function loadVerification(
 ): Promise<Verification> {
   const lab = await db.labReports.get(reportId)
   if (lab && lab.status !== "draft") {
-    const versions = (await db.labReports.where("reportNo").equals(lab.reportNo).toArray())
+    const versions = (
+      await db.labReports.where("reportNo").equals(lab.reportNo).toArray()
+    )
       .filter((v) => v.branchId === lab.branchId && v.status !== "draft")
       .sort((a, b) => a.reportVersion - b.reportVersion)
     const current = currentOf(versions)
     const patient = await db.patients.get(lab.patientId)
-    const items = (await db.labOrderItems.bulkGet(current.itemIds)).filter((i) => !!i)
+    const items = (await db.labOrderItems.bulkGet(current.itemIds)).filter(
+      (i) => !!i
+    )
     const testIds = [...new Set(items.map((i) => i!.testId))]
-    const tests = (await db.labTests.bulkGet(testIds)).map(pickTest).filter((t) => !!t)
-    const signer = current.signedBy ? await db.staff.get(current.signedBy) : undefined
+    const tests = (await db.labTests.bulkGet(testIds))
+      .map(pickTest)
+      .filter((t) => !!t)
+    const signer = current.signedBy
+      ? await db.staff.get(current.signedBy)
+      : undefined
     return {
       state: "genuine",
       kind: "lab",
