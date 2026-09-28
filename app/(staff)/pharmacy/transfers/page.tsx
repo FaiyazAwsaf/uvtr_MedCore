@@ -1,5 +1,6 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { TransfersScreen } from "@/modules/inventory/components/transfers-screen"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.pharmacy" phase={2} />
+/** "/pharmacy/transfers": stock transfers to and from this branch (plan §9). */
+export default function TransfersPage() {
+  return <TransfersScreen />
 }
