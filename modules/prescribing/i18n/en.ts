@@ -67,6 +67,7 @@ export const prescribingEn = {
         controlled: "Controlled",
       },
       antibiotic: "Antibiotic",
+      library: "Browse the medicine library",
     },
     pick: {
       clear: "Choose another medicine",

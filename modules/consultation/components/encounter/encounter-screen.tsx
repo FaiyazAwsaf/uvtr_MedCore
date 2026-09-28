@@ -36,7 +36,14 @@ const SECTIONS = [
  * note, the Rx pad and the test orders. One scrolling page with a sticky
  * section bar, so it works in a 960x600 quadrant and at full width.
  */
-export function EncounterScreen({ encounterId }: { encounterId: string }) {
+export function EncounterScreen({
+  encounterId,
+  addBrandId,
+}: {
+  encounterId: string
+  /** A brand to open on the Rx pad (the library's "Add to prescription") */
+  addBrandId?: string
+}) {
   const { t } = useLocale()
   const core = useEncounterCore(encounterId)
   const notes = useNotes(encounterId)
@@ -152,6 +159,7 @@ export function EncounterScreen({ encounterId }: { encounterId: string }) {
           </div>
           <div id="enc-rx" className="min-w-0 scroll-mt-14">
             <RxPad
+              addBrandId={addBrandId}
               encounter={encounter}
               patient={patient}
               doctor={core.doctor}

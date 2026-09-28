@@ -1,8 +1,10 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import { useLiveQuery } from "dexie-react-hooks"
 import {
+  BookOpen,
   FileSignature,
   History,
   Pill,
@@ -40,6 +42,7 @@ import {
   QuickTextMenu,
 } from "@/modules/consultation/components/quick-text"
 import { useClinicalCommand } from "@/modules/consultation/components/use-clinical-command"
+import { libraryPaths, withRxParams } from "@/modules/medicine-library/paths"
 
 import type { AlertOverride, DuplicateContext } from "../alerts"
 import {
@@ -146,6 +149,7 @@ export function RxPad({
   labTestName,
   diagnoses,
   readOnly,
+  addBrandId,
 }: {
   encounter: EncounterRow
   patient: PatientRow
@@ -155,6 +159,8 @@ export function RxPad({
   labTestName: (testId: string) => string
   diagnoses: Diagnosis[]
   readOnly: boolean
+  /** Opened from the medicine library's "Add to prescription" */
+  addBrandId?: string
 }) {
   const { t, tk, num, locale, time } = useLocale()
   const db = useDb()
@@ -431,6 +437,44 @@ export function RxPad({
     syncedFrom.current = ""
     closePick()
   }
+
+  // The medicine library's "Add to prescription" (?addBrand=): open that
+  // brand on the pad once (a signed Rx opens a revision for it).
+  const addedFromLibrary = React.useRef(false)
+  React.useEffect(() => {
+    if (!addBrandId || addedFromLibrary.current || !data || !catalog) return
+    if (!catalog.brandById.has(addBrandId) || (readOnly && !signed)) return
+    addedFromLibrary.current = true
+    const lines = signed && !revising ? signedLines.map(contentOfRow) : null
+    const keys = signed && !revising ? signedLines.map((l) => l.id) : []
+    window.history.replaceState(
+      window.history.state,
+      "",
+      window.location.pathname
+    )
+    // Deferred: the pad opens on the next tick, not inside this effect.
+    window.setTimeout(() => {
+      if (lines) {
+        setLocal(
+          lines.map((content, i) => ({
+            key: keys[i],
+            keepLineId: keys[i],
+            content,
+          }))
+        )
+        setReason("")
+        syncedFrom.current = ""
+        setRevising(true)
+      }
+      setEditKey(null)
+      setPick({ kind: "brand", brandId: addBrandId })
+      window.setTimeout(
+        () =>
+          document.getElementById("enc-rx")?.scrollIntoView({ block: "start" }),
+        80
+      )
+    }, 0)
+  }, [addBrandId, data, catalog, readOnly, signed, revising, signedLines])
   const submitRevision = async () => {
     if (!signed) return
     const out = await revise.run({
@@ -528,7 +572,17 @@ export function RxPad({
         {canWrite && catalog ? (
           <div className="flex flex-col gap-3">
             {!pick ? (
-              <MedicineSearch catalog={catalog} onPick={(p) => setPick(p)} />
+              <div className="flex flex-col gap-1.5">
+                <MedicineSearch catalog={catalog} onPick={(p) => setPick(p)} />
+                <Link
+                  href={withRxParams(libraryPaths.home, encounter.id)}
+                  className="inline-flex w-fit items-center gap-1.5 text-xs font-medium text-link underline-offset-4 hover:underline"
+                  data-testid="rx-open-library"
+                >
+                  <BookOpen className="size-3.5" />
+                  {t("prescribing.search.library")}
+                </Link>
+              </div>
             ) : null}
             {pick ? (
               <PickPanel

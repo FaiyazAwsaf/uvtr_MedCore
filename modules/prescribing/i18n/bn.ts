@@ -67,6 +67,7 @@ export const prescribingBn: typeof prescribingEn = {
         controlled: "নিয়ন্ত্রিত",
       },
       antibiotic: "অ্যান্টিবায়োটিক",
+      library: "ওষুধ লাইব্রেরিতে খুঁজুন",
     },
     pick: {
       clear: "অন্য ওষুধ বাছুন",
