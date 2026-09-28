@@ -12,6 +12,7 @@ import type { RuleViolation } from "@/core/engine/errors"
 import { cn } from "@/lib/utils"
 import { useLocale } from "@/lib/i18n/provider"
 
+import { formatTyping, isoToDmy, latinDigits, parseDmy } from "../dmy"
 import { useRuleText } from "./desk-command"
 
 /** Page heading used by the front desk screens (22px / 600, muted subtitle). */
@@ -209,6 +210,53 @@ export function ChoicePills<T extends string>({
         )
       })}
     </div>
+  )
+}
+
+/**
+ * A date typed as DD-MM-YYYY (plan §3.11), whatever the browser's locale. The
+ * value in and out is an ISO date, "" while incomplete. Bangla digits work.
+ */
+export function DmyInput({
+  value,
+  onChange,
+  className,
+  "aria-invalid": ariaInvalid,
+  ...props
+}: {
+  value: string
+  onChange: (iso: string) => void
+} & Omit<React.ComponentProps<"input">, "value" | "onChange" | "type">) {
+  const { t } = useLocale()
+  const [text, setText] = React.useState(() => isoToDmy(value))
+  const [seen, setSeen] = React.useState(value)
+  if (value !== seen) {
+    // Follow a value set from outside (cleared, prefilled).
+    setSeen(value)
+    if (parseDmy(text) !== value) setText(isoToDmy(value))
+  }
+  const complete = latinDigits(text).replace(/\D/g, "").length === 8
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      autoComplete="off"
+      placeholder={t("identity.register.dmyPlaceholder")}
+      value={text}
+      aria-invalid={(complete && !parseDmy(text)) || !!ariaInvalid || undefined}
+      onChange={(event) => {
+        const next = formatTyping(event.target.value)
+        setText(next)
+        const iso = parseDmy(next)
+        setSeen(iso)
+        onChange(iso)
+      }}
+      className={cn(
+        "nums h-10 w-full min-w-0 rounded-md border border-border bg-input-fill px-3 py-1 text-sm text-foreground transition-[color,border-color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20 aria-invalid:border-destructive aria-invalid:ring-[3px] aria-invalid:ring-destructive/20",
+        className
+      )}
+      {...props}
+    />
   )
 }
 

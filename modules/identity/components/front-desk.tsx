@@ -9,14 +9,12 @@ import { CalendarDays, ChevronLeft, Search, UserPlus, UsersRound, X } from "luci
 import { EmptyState } from "@/components/shared/empty-state"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { now } from "@/core/clock/clock"
-import { dhakaDate } from "@/core/clock/dates"
 import { useDb } from "@/core/db/DbProvider"
 import { cn } from "@/lib/utils"
 import { useLocale } from "@/lib/i18n/provider"
 
 import { classifyQuery, searchFrontDesk } from "../search"
-import { DeskHeader } from "./desk-ui"
+import { DeskHeader, DmyInput } from "./desk-ui"
 import { PatientPanel } from "./patient-panel"
 import { RegisterSheet, type RegisterOutcome, type RegisterPrefill } from "./register-sheet"
 import { SearchResults } from "./search-results"
@@ -60,7 +58,6 @@ export function FrontDesk() {
     open: params.get("register") === "1",
   })
   const deferredQuery = React.useDeferredValue(query)
-  const today = dhakaDate(now())
 
   const result = useLiveQuery(
     () => searchFrontDesk(db, deferredQuery, { dob }),
@@ -138,17 +135,15 @@ export function FrontDesk() {
             {t("identity.desk.dobFilter")}
           </label>
           <div className="flex gap-1.5">
-            <Input
+            <DmyInput
               id="desk-dob"
               data-testid="reception-dob"
-              type="date"
-              max={today}
               value={dob}
-              onChange={(event) => {
-                setDob(event.target.value)
+              onChange={(iso) => {
+                setDob(iso)
                 setResultsOpen(true)
               }}
-              className="nums h-11 [color-scheme:light] dark:[color-scheme:dark]"
+              className="h-11"
             />
             {dob ? (
               <Button

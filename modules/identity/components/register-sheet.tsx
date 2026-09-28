@@ -47,7 +47,7 @@ import {
   type IdMissingReason,
 } from "../registration"
 import { useDeskCommand } from "./desk-command"
-import { ChoicePills, FormField, NativeSelect, RuleAlert } from "./desk-ui"
+import { ChoicePills, DmyInput, FormField, NativeSelect, RuleAlert } from "./desk-ui"
 import { DuplicateWarning, type DuplicateEntry } from "./duplicate-warning"
 
 export type RegisterPrefill = {
@@ -481,15 +481,12 @@ function RegisterForm({
                 }
               >
                 {form.dobMode === "dob" ? (
-                  <Input
+                  <DmyInput
                     id={`${id}-dob`}
                     data-testid="register-dob"
-                    type="date"
-                    max={today}
                     value={form.dob}
                     aria-invalid={!!err("dob")}
-                    className="nums [color-scheme:light] dark:[color-scheme:dark]"
-                    onChange={(e) => set("dob", e.target.value)}
+                    onChange={(iso) => set("dob", iso)}
                   />
                 ) : (
                   <Input

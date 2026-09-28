@@ -6,7 +6,7 @@ import { Megaphone, RotateCcw, SkipForward, Ticket } from "lucide-react"
 
 import { EmptyState } from "@/components/shared/empty-state"
 import { nameIn } from "@/components/shared/person"
-import { StatusPill, type Tone } from "@/components/shared/status"
+import { StatusPill, StatusText, type Tone } from "@/components/shared/status"
 import { Button } from "@/components/ui/button"
 import type { PatientRow, QueueTokenRow } from "@/core/db/schema"
 import { useFlashOnChange } from "@/hooks/use-flash-on-change"
@@ -76,7 +76,6 @@ function TokenRow({
   const recall = useDeskCommand(recallToken)
   const flash = useFlashOnChange(token.version)
   const pending = call.pending || skip.pending || recall.pending
-  const finished = token.status === "done" || token.status === "in-consult"
 
   const act = async (command: typeof call, done: string) => {
     const outcome = await command.run({ tokenId: token.id, expectedVersion: token.version })
@@ -110,6 +109,9 @@ function TokenRow({
           {patient ? nameIn(patient, locale) : ""}
         </span>
         <span className="nums truncate text-xs text-muted-foreground">
+          <StatusText tone={TOKEN_TONE[token.status]} className="mr-1.5 @[26rem]/tok:hidden">
+            {tk(`queue.status.${token.status}`)}
+          </StatusText>
           {t(token.kind === "walk-in" ? "queue.tokens.walkIn" : "queue.tokens.booked")} ·{" "}
           {token.calledAt && token.status !== "waiting"
             ? t("queue.tokens.calledAt", { time: time(token.calledAt) })
@@ -155,11 +157,6 @@ function TokenRow({
             <RotateCcw />
             <span className="hidden @[30rem]/tok:inline">{t("queue.actions.recall")}</span>
           </Button>
-        ) : null}
-        {finished ? (
-          <span className="px-2 text-xs text-muted-foreground @[26rem]/tok:hidden">
-            {tk(`queue.status.${token.status}`)}
-          </span>
         ) : null}
       </span>
     </li>

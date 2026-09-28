@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import { atDhaka } from "@/core/clock/dates"
 import type { AppointmentRow } from "@/core/db/schema"
 import { boardSessions, boardView, compareRoomCodes } from "@/modules/queue/board"
+import { appointmentIdFromQr, findByQr } from "@/modules/queue/qr"
 import { freeSlotTimes, sessionLoad, slotGrid, slotTimes } from "@/modules/scheduling/slots"
 
 const DAY = "2026-09-28"
@@ -104,5 +105,20 @@ describe("board", () => {
       "early",
     ])
     expect(["10", "2", "C-1", "3"].sort(compareRoomCodes)).toEqual(["2", "3", "10", "C-1"])
+  })
+})
+
+describe("check-in QR codes", () => {
+  it("reads the appointment from the seed's and the contract's QR formats", () => {
+    expect(appointmentIdFromQr("MC|APT|apt_kamal_1150")).toBe("apt_kamal_1150")
+    expect(appointmentIdFromQr("MEDCORE:APT:apt_x1y2")).toBe("apt_x1y2")
+    expect(appointmentIdFromQr("hello")).toBeUndefined()
+    const list = [
+      { id: "apt_a", qrCode: "MC|APT|apt_a" },
+      { id: "apt_b", qrCode: "MC|APT|apt_b" },
+    ]
+    expect(findByQr(list, " MC|APT|apt_b ")?.id).toBe("apt_b")
+    expect(findByQr(list, "MEDCORE:APT:apt_a")?.id).toBe("apt_a")
+    expect(findByQr(list, "MC|APT|apt_zzz")).toBeUndefined()
   })
 })

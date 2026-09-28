@@ -120,8 +120,12 @@ function WalkInForm({
             appointments.filter((a) => a.sessionId === s.session.id)
           ),
         }))
-        .sort((a, b) => a.session.start.localeCompare(b.session.start)),
-    [sessions, appointments, nowMs]
+        .sort(
+          (a, b) =>
+            Number(b.session.id === defaultSessionId) - Number(a.session.id === defaultSessionId) ||
+            a.session.start.localeCompare(b.session.start)
+        ),
+    [sessions, appointments, nowMs, defaultSessionId]
   )
   const [sessionId, setSessionId] = React.useState<string | null>(() => {
     const preferred = options.find((o) => o.session.id === defaultSessionId && o.load.walkInLeft > 0)
@@ -206,7 +210,7 @@ function WalkInForm({
       <div className="flex flex-col gap-2">
         <p className="text-[0.8125rem] font-medium">{t("queue.walkIn.session")}</p>
         {options.length ? (
-          <div role="radiogroup" className="flex max-h-56 flex-col gap-1.5 overflow-y-auto">
+          <div role="radiogroup" className="flex max-h-44 flex-col gap-1.5 overflow-y-auto">
             {options.map(({ session, staff, room, specialty, load }) => {
               const full = load.walkInLeft <= 0
               const active = session.id === sessionId

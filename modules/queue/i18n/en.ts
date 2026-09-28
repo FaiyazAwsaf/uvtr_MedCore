@@ -45,6 +45,7 @@ export const queueEn = {
       issuedAt: "issued {time}",
       serving: "Now serving",
       next: "Next",
+      none: "None",
     },
     arrivals: {
       title: "To check in ({count})",

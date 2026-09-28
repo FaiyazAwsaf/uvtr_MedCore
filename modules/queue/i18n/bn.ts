@@ -47,6 +47,7 @@ export const queueBn: typeof queueEn = {
       issuedAt: "টোকেন {time}",
       serving: "এখন সেবা দেওয়া হচ্ছে",
       next: "পরবর্তী",
+      none: "কেউ নেই",
     },
     arrivals: {
       title: "চেক-ইন বাকি ({count})",

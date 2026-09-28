@@ -99,7 +99,13 @@ export function SlotGrid({
         <span className="ml-auto flex flex-wrap items-center gap-3">
           {(["free", "taken", "past", "full"] as const).map((state) => (
             <span key={state} className="inline-flex items-center gap-1.5">
-              <span className={cn("size-2.5 rounded-sm border", STATE_CLASS[state])} />
+              <span
+                className={cn(
+                  "size-2.5 rounded-sm border",
+                  STATE_CLASS[state],
+                  state === "past" && "border-muted-foreground/40 bg-muted-foreground/15"
+                )}
+              />
               {t(`scheduling.slots.state.${state}`)}
             </span>
           ))}

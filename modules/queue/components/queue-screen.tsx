@@ -95,6 +95,7 @@ export function QueueScreen() {
   }))
   const [qrOpen, setQrOpen] = React.useState(false)
   const [highlight, setHighlight] = React.useState<string | null>(null)
+  const activeChip = React.useRef<HTMLButtonElement>(null)
 
   const tokensBySession = React.useMemo(() => {
     const map = new Map<string, QueueTokenRow[]>()
@@ -121,6 +122,16 @@ export function QueueScreen() {
   }, [data, sessionId, nowMs, tokensBySession])
 
   React.useEffect(() => replaceParam("session", sessionId), [sessionId])
+  React.useEffect(() => {
+    // Bring the chosen session's chip into view along the strip (never scroll the page).
+    const chip = activeChip.current
+    const strip = chip?.parentElement
+    if (!chip || !strip) return
+    const left = chip.offsetLeft - strip.offsetLeft
+    if (left < strip.scrollLeft || left + chip.offsetWidth > strip.scrollLeft + strip.clientWidth) {
+      strip.scrollTo({ left: Math.max(0, left - 8), behavior: "smooth" })
+    }
+  }, [selectedId])
 
   const selected = selectedId ? data?.info.get(selectedId) : undefined
   const selectedTokens = selectedId ? (tokensBySession.get(selectedId) ?? []) : []
@@ -238,6 +249,7 @@ export function QueueScreen() {
                   aria-selected={active}
                   data-testid="queue-session"
                   data-session-id={session.id}
+                  ref={active ? activeChip : undefined}
                   onClick={() => setSessionId(session.id)}
                   className={cn(
                     "flex shrink-0 items-center gap-2.5 rounded-lg border px-3 py-2 text-left transition-colors",
@@ -257,7 +269,7 @@ export function QueueScreen() {
                     {session.tokenPrefix}
                   </span>
                   <span className="flex flex-col">
-                    <span className="max-w-[11rem] truncate text-[0.8125rem] font-medium">
+                    <span className="max-w-44 truncate text-[0.8125rem] font-medium">
                       {staff ? (locale === "bn" ? staff.nameBn : staff.nameEn) : ""}
                     </span>
                     <span className="nums text-xs text-muted-foreground">
@@ -299,14 +311,20 @@ export function QueueScreen() {
                 <div className="flex items-center gap-3 text-right">
                   <div className="flex flex-col">
                     <span className="text-[0.6875rem] text-muted-foreground">{t("queue.tokens.serving")}</span>
-                    <span data-testid="queue-serving" lang="en" className="font-mono text-xl font-bold text-link">
-                      {view.serving?.label ?? "..."}
-                    </span>
+                    {view.serving ? (
+                      <span data-testid="queue-serving" lang="en" className="font-mono text-xl font-bold text-link">
+                        {view.serving.label}
+                      </span>
+                    ) : (
+                      <span data-testid="queue-serving" className="text-sm text-muted-foreground">
+                        {t("queue.tokens.none")}
+                      </span>
+                    )}
                   </div>
                   <div className="flex flex-col">
                     <span className="text-[0.6875rem] text-muted-foreground">{t("queue.tokens.next")}</span>
                     <span lang="en" className="font-mono text-sm font-semibold">
-                      {view.next.map((tk) => tk.label).join(", ") || "..."}
+                      {view.next.map((tk) => tk.label).join(", ") || t("queue.tokens.none")}
                     </span>
                   </div>
                 </div>

@@ -26,12 +26,7 @@ import { RuleAlert } from "@/modules/identity/components/desk-ui"
 import type { SessionInfo } from "@/modules/scheduling/components/use-session-info"
 
 import { checkIn } from "../commands"
-
-/** The appointment id inside a check-in QR payload ("MC|APT|<id>" or "MEDCORE:APT:<id>"). */
-export function appointmentIdFromQr(code: string): string | undefined {
-  const match = /APT[|:]([a-z0-9_]+)\s*$/i.exec(code.trim())
-  return match?.[1]
-}
+import { findByQr } from "../qr"
 
 type Scanned = { label: string; appointmentId: string; sessionId: string; tokenId: string }
 
@@ -115,10 +110,7 @@ function QrScanner({
     setRule(null)
     const value = raw.trim()
     if (!value) return
-    const id = appointmentIdFromQr(value)
-    const appointment =
-      appointments.find((a) => a.qrCode === value) ??
-      (id ? appointments.find((a) => a.id === id) : undefined)
+    const appointment = findByQr(appointments, value)
     if (!appointment) {
       setProblem(t("queue.qr.notFound"))
       return
