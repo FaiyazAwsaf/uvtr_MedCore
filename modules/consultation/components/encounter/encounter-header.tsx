@@ -54,7 +54,7 @@ export function EncounterHeader({
   core: EncounterCore
   latestNote: NoteRow | undefined
 }) {
-  const { t, tk, time, locale } = useLocale()
+  const { t, tk, num, time, locale } = useLocale()
   const router = useRouter()
   const db = useDb()
   const finish = useClinicalCommand(finishConsultation)
@@ -220,7 +220,7 @@ export function EncounterHeader({
               ok
               neutral
               label={t("consultation.encounter.checks.ordersPlaced", {
-                count: state?.orders ?? 0,
+                count: num(state?.orders ?? 0),
               })}
             />
           </ul>

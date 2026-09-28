@@ -64,7 +64,7 @@ export function ScribePanel({
   readOnly: boolean
   flushNote: () => Promise<void>
 }) {
-  const { t, locale } = useLocale()
+  const { t, num, locale } = useLocale()
   const start = useClinicalCommand(startScribe)
   const complete = useClinicalCommand(completeScribe)
   const accept = useClinicalCommand(acceptScribe)
@@ -155,7 +155,7 @@ export function ScribePanel({
     if (out.ok) {
       toast.success(
         out.result.added
-          ? t("consultation.scribe.accepted", { count: out.result.added })
+          ? t("consultation.scribe.accepted", { count: num(out.result.added) })
           : t("consultation.scribe.nothingNew")
       )
     }
