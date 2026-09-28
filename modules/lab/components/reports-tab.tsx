@@ -4,7 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { useLiveQuery } from "dexie-react-hooks"
 import { FilePenLine, FileText, Printer, ShieldCheck } from "lucide-react"
-import { toast } from "sonner"
+import { labToast as toast } from "./lab-toast"
 
 import { DateText } from "@/components/shared/date-text"
 import { EmptyState } from "@/components/shared/empty-state"
@@ -101,10 +101,10 @@ export function ReportsTab({ branch }: { branch: BranchCode }) {
               <TableRow>
                 <TableHead>{t("lab.report.title")}</TableHead>
                 <TableHead>{t("lab.common.patient")}</TableHead>
-                <TableHead className="hidden @min-[44rem]/table:table-cell">
+                <TableHead className="hidden @min-[58rem]/table:table-cell">
                   {t("lab.common.tests")}
                 </TableHead>
-                <TableHead className="hidden @min-[36rem]/table:table-cell">
+                <TableHead className="hidden @min-[46rem]/table:table-cell">
                   {t("lab.common.released")}
                 </TableHead>
                 <TableHead className="w-0" />
@@ -200,10 +200,10 @@ function ReportRowView({
       <TableCell className="max-w-[14rem]">
         <PatientCell patient={row.patient} />
       </TableCell>
-      <TableCell className="hidden whitespace-normal @min-[44rem]/table:table-cell">
+      <TableCell className="hidden whitespace-normal @min-[58rem]/table:table-cell">
         <TestChips testIds={row.items.map((i) => i.testId)} tests={tests} />
       </TableCell>
-      <TableCell className="hidden text-xs text-muted-foreground @min-[36rem]/table:table-cell">
+      <TableCell className="hidden text-xs text-muted-foreground @min-[46rem]/table:table-cell">
         {report.releasedAt ? (
           <DateText value={report.releasedAt} variant="dmyTime" />
         ) : (
@@ -231,7 +231,7 @@ function ReportRowView({
                 onClick={onPrint}
               >
                 <Printer />
-                <span className="hidden @min-[40rem]/table:inline">
+                <span className="hidden @min-[66rem]/table:inline">
                   {t("lab.reports.print")}
                 </span>
               </Button>
@@ -242,7 +242,7 @@ function ReportRowView({
                 onClick={onCorrect}
               >
                 <FilePenLine />
-                <span className="hidden @min-[40rem]/table:inline">
+                <span className="hidden @min-[66rem]/table:inline">
                   {t("lab.reports.correct")}
                 </span>
               </Button>
@@ -283,8 +283,13 @@ function CorrectBody({
       ? (tests?.get(item.testId) ?? doc.tests.get(item.testId))
       : undefined
     if (!item || !test) return []
+    const order = (code: string) => {
+      const index = test.analytes.findIndex((a) => a.code === code)
+      return index < 0 ? Number.MAX_SAFE_INTEGER : index
+    }
     return doc.results
       .filter((r) => r.labOrderItemId === item.id)
+      .sort((a, b) => order(a.analyteCode) - order(b.analyteCode))
       .map((result) => ({
         result,
         test,

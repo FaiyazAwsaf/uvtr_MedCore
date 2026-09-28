@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { Activity, FlaskConical, PencilLine, Radio } from "lucide-react"
-import { toast } from "sonner"
+import { labToast as toast } from "./lab-toast"
 
 import { DateText } from "@/components/shared/date-text"
 import { EmptyState } from "@/components/shared/empty-state"
@@ -108,10 +108,10 @@ export function AnalyserScreen() {
                 <TableRow>
                   <TableHead>{t("lab.common.patient")}</TableHead>
                   <TableHead>{t("lab.common.tests")}</TableHead>
-                  <TableHead className="hidden @min-[44rem]/table:table-cell">
+                  <TableHead className="hidden @min-[60rem]/table:table-cell">
                     {t("lab.common.accession")}
                   </TableHead>
-                  <TableHead className="hidden @min-[36rem]/table:table-cell">
+                  <TableHead className="hidden @min-[50rem]/table:table-cell">
                     {t("lab.common.received")}
                   </TableHead>
                   <TableHead className="w-0" />
@@ -189,12 +189,12 @@ function AnalyserRow({
         </div>
       </TableCell>
       <TableCell
-        className="hidden font-mono text-xs @min-[44rem]/table:table-cell"
+        className="hidden font-mono text-xs @min-[60rem]/table:table-cell"
         lang="en"
       >
         {view.specimen.accessionNo}
       </TableCell>
-      <TableCell className="hidden text-muted-foreground @min-[36rem]/table:table-cell">
+      <TableCell className="hidden text-muted-foreground @min-[50rem]/table:table-cell">
         {view.specimen.receivedAt ? (
           <DateText value={view.specimen.receivedAt} variant="relative" />
         ) : (
@@ -210,7 +210,7 @@ function AnalyserRow({
             onClick={onManual}
           >
             <PencilLine />
-            <span className="hidden @min-[40rem]/table:inline">
+            <span className="hidden @min-[64rem]/table:inline">
               {t("lab.analyser.manual")}
             </span>
           </Button>
@@ -242,7 +242,12 @@ function AnalyserRow({
             }}
           >
             <Activity />
-            {t("lab.analyser.run")}
+            <span className="hidden @min-[60rem]/table:inline">
+              {t("lab.analyser.run")}
+            </span>
+            <span className="@min-[60rem]/table:hidden">
+              {t("lab.analyser.runShort")}
+            </span>
           </Button>
         </div>
       </TableCell>

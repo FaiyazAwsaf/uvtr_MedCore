@@ -4,7 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { useLiveQuery } from "dexie-react-hooks"
 import { CheckCheck, FileImage, FileUp, Send, ShieldCheck } from "lucide-react"
-import { toast } from "sonner"
+import { labToast as toast } from "@/modules/lab/components/lab-toast"
 
 import { EmptyState } from "@/components/shared/empty-state"
 import { IdentityBanner } from "@/components/shared/identity-banner"
@@ -161,7 +161,7 @@ export function ImagingScreen() {
                 <TableRow>
                   <TableHead>{t("lab.common.patient")}</TableHead>
                   <TableHead>{t("imaging.worklist.study")}</TableHead>
-                  <TableHead className="hidden @min-[48rem]/table:table-cell">
+                  <TableHead className="hidden @min-[62rem]/table:table-cell">
                     {t("imaging.worklist.indication")}
                   </TableHead>
                   <TableHead>{t("common.status")}</TableHead>
@@ -228,7 +228,7 @@ function ImagingRow({
       <TableCell className="max-w-[14rem]">
         <PatientCell patient={view.patient} />
       </TableCell>
-      <TableCell className="whitespace-normal">
+      <TableCell className="min-w-[13rem] whitespace-normal">
         <span className="block text-[0.8125rem] font-medium">
           {test?.name ?? tk(`imaging.modalities.${order.modality}`)}
         </span>
@@ -239,7 +239,7 @@ function ImagingRow({
           </span>
         </span>
       </TableCell>
-      <TableCell className="hidden max-w-[14rem] truncate text-xs text-muted-foreground @min-[48rem]/table:table-cell">
+      <TableCell className="hidden max-w-[14rem] truncate text-xs text-muted-foreground @min-[62rem]/table:table-cell">
         {order.indication}
       </TableCell>
       <TableCell className="text-xs whitespace-normal">
@@ -294,7 +294,7 @@ function ImagingRow({
             onClick={onUpload}
           >
             <FileUp />
-            <span className="hidden @min-[40rem]/table:inline">
+            <span className="hidden @min-[62rem]/table:inline">
               {t("imaging.worklist.upload")}
             </span>
           </Button>

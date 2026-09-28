@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { Printer, ShieldCheck, ShieldX, TestTube } from "lucide-react"
-import { toast } from "sonner"
+import { labToast as toast } from "./lab-toast"
 
 import { DateText } from "@/components/shared/date-text"
 import { EmptyState } from "@/components/shared/empty-state"
@@ -59,7 +59,7 @@ import {
  * (HAZ-01), and the tube label on the simulated label printer.
  */
 export function CollectionScreen() {
-  const { t, locale } = useLocale()
+  const { t, locale, num } = useLocale()
   const branch = useBranch()
   const tests = useLabTests()
   const waiting = useSpecimens(branch, ["awaiting-collection"])
@@ -85,12 +85,13 @@ export function CollectionScreen() {
         <div className="grid gap-4 @min-[68rem]:grid-cols-[minmax(0,1fr)_19rem]">
           <SectionCard
             size="sm"
+            className="self-start"
             icon={TestTube}
             title={t("lab.collection.listTitle")}
             action={
               waiting?.length ? (
                 <span className="nums text-sm text-muted-foreground">
-                  {waiting.length}
+                  {num(waiting.length)}
                 </span>
               ) : null
             }
@@ -335,7 +336,7 @@ function CollectBody({
   tests: Map<string, LabTestRow> | undefined
   onClose: () => void
 }) {
-  const { t } = useLocale()
+  const { t, num } = useLocale()
   const collect = useLabCommand(collectSpecimen)
   const print = useLabCommand(printSpecimenLabel)
   const [secondId, setSecondId] = React.useState("")
@@ -397,7 +398,7 @@ function CollectBody({
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
               <ContainerChip container={specimen.container} />
               <span className="nums text-xs text-muted-foreground">
-                {t("lab.common.volume", { ml: volume })}
+                {t("lab.common.volume", { ml: num(volume) })}
               </span>
             </div>
             <ul className="mt-2 flex flex-col gap-0.5 text-[0.8125rem]">

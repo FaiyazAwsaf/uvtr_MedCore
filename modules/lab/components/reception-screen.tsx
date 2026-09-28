@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useLiveQuery } from "dexie-react-hooks"
 import { Ban, Inbox, ScanLine, Send } from "lucide-react"
-import { toast } from "sonner"
+import { labToast as toast } from "./lab-toast"
 
 import { DateText } from "@/components/shared/date-text"
 import { EmptyState } from "@/components/shared/empty-state"
@@ -135,7 +135,10 @@ export function ReceptionScreen() {
         open={!!rejecting}
         onOpenChange={(next) => (!next ? setRejecting(null) : undefined)}
       >
-        <DialogContent className="sm:max-w-lg" data-testid="reject-dialog">
+        <DialogContent
+          className="gap-4 sm:max-w-lg"
+          data-testid="reject-dialog"
+        >
           {rejecting ? (
             <RejectBody
               key={rejecting.specimen.id}
@@ -169,7 +172,7 @@ function SpecimenTable({
           <TableRow>
             <TableHead>{t("lab.common.patient")}</TableHead>
             <TableHead>{t("lab.common.tests")}</TableHead>
-            <TableHead className="hidden @min-[40rem]/table:table-cell">
+            <TableHead className="hidden @min-[52rem]/table:table-cell">
               {t("lab.common.accession")}
             </TableHead>
             <TableHead className="hidden @min-[32rem]/table:table-cell">
@@ -236,7 +239,7 @@ function SpecimenRowView({
         </div>
       </TableCell>
       <TableCell
-        className="hidden font-mono text-xs @min-[40rem]/table:table-cell"
+        className="hidden font-mono text-xs @min-[52rem]/table:table-cell"
         lang="en"
       >
         {view.specimen.accessionNo}
@@ -254,7 +257,7 @@ function SpecimenRowView({
             onClick={onReject}
           >
             <Ban />
-            <span className="hidden @min-[34rem]/table:inline">
+            <span className="hidden @min-[56rem]/table:inline">
               {t("lab.reception.reject")}
             </span>
           </Button>
@@ -325,18 +328,18 @@ function RejectBody({
     <>
       <DialogHeader>
         <DialogTitle>{t("lab.reception.rejectDialog.title")}</DialogTitle>
-        <DialogDescription>
-          {t("lab.common.accession")}{" "}
-          <span className="font-mono text-foreground" lang="en">
-            {view.specimen.accessionNo}
+        <DialogDescription className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span>
+            {t("lab.common.accession")}{" "}
+            <span className="font-mono text-foreground" lang="en">
+              {view.specimen.accessionNo}
+            </span>
           </span>
+          <ContainerChip container={view.specimen.container} short />
+          <TestChips testIds={view.items.map((i) => i.testId)} tests={tests} />
         </DialogDescription>
       </DialogHeader>
       <IdentityBanner patientId={view.specimen.patientId} compact />
-      <div className="flex flex-wrap items-center gap-2">
-        <ContainerChip container={view.specimen.container} />
-        <TestChips testIds={view.items.map((i) => i.testId)} tests={tests} />
-      </div>
       <div className="flex flex-col gap-2">
         <Label id="reject-reason-label">
           {t("lab.reception.rejectDialog.reason")}
@@ -378,7 +381,7 @@ function RejectBody({
         <Textarea
           id="reject-note"
           data-testid="reject-note"
-          className="min-h-14"
+          className="min-h-11"
           value={note}
           maxLength={300}
           placeholder={t("lab.reception.rejectDialog.notePlaceholder")}

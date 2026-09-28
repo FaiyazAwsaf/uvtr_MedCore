@@ -9,7 +9,7 @@ import {
   Siren,
   TrendingUp,
 } from "lucide-react"
-import { toast } from "sonner"
+import { labToast as toast } from "./lab-toast"
 
 import { GeneratedAvatar } from "@/components/shared/avatars"
 import { DateText } from "@/components/shared/date-text"

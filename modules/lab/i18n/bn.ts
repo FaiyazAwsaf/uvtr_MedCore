@@ -177,6 +177,7 @@ export const labBn: typeof labEn = {
       queueTitle: "ফলাফলের অপেক্ষায়",
       queueEmpty: "ফলাফলের অপেক্ষায় কোনো গৃহীত নমুনা নেই।",
       run: "অ্যানালাইজার থেকে ফলাফল আনুন",
+      runShort: "ফলাফল আনুন",
       manual: "হাতে লিখুন",
       needsManual: "লিখিত রিপোর্ট: হাতে লিখুন",
       receivedToast: "{accessionNo}-এর ফলাফল এসেছে: {count}টি মান",

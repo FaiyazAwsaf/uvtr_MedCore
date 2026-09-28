@@ -3,6 +3,7 @@
 import { Barcode } from "@/components/shared/barcode"
 import { PrintLayout } from "@/components/shared/print-layout"
 import { ageOn, dhakaDate } from "@/core/clock/dates"
+import { useNow } from "@/core/clock/useNow"
 import type { LabTestRow, PatientRow, SpecimenRow } from "@/core/db/schema"
 import { useLocale } from "@/lib/i18n/provider"
 
@@ -21,8 +22,9 @@ export function TubeLabel({
   tests: LabTestRow[]
 }) {
   const { t, tk, time, dmy, num } = useLocale()
-  const at =
-    specimen.collectedAt ?? specimen.labelPrintedAt ?? specimen.createdAt
+  const tick = useNow(60_000)
+  // The label carries the collection time; before collection, the time now.
+  const at = specimen.collectedAt ?? (tick || specimen.createdAt)
   const age = patient ? ageOn(patient.dob, dhakaDate(at)) : undefined
   return (
     <PrintLayout

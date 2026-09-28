@@ -177,6 +177,7 @@ export const labEn = {
       queueTitle: "Waiting for results",
       queueEmpty: "No received specimens are waiting for results.",
       run: "Receive results from analyser",
+      runShort: "Get results",
       manual: "Enter manually",
       needsManual: "Written report: enter manually",
       receivedToast: "Results received for {accessionNo}: {count} values",
@@ -245,7 +246,7 @@ export const labEn = {
       heldToast: "Report {reportNo} signed and held for payment",
       releasedToast: "Report {reportNo} released",
       pendingItems:
-        "{count} more tests on this order are still in progress. They will follow in their own report.",
+        "Tests still in progress on this order: {count}. They will follow in their own report.",
       delivery:
         "Release sends it to the doctor's inbox and the patient app, with an SMS to a verified phone (no results in the SMS).",
       resultsCount: "{count} results",

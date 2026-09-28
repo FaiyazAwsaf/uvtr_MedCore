@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useLiveQuery } from "dexie-react-hooks"
 import { PhoneCall, Siren } from "lucide-react"
-import { toast } from "sonner"
+import { labToast as toast } from "./lab-toast"
 
 import { DateText } from "@/components/shared/date-text"
 import { EmptyState } from "@/components/shared/empty-state"
@@ -139,7 +139,7 @@ export function CriticalTab({
               <TableRow>
                 <TableHead>{t("lab.common.patient")}</TableHead>
                 <TableHead>{t("lab.common.result")}</TableHead>
-                <TableHead className="hidden @min-[40rem]/table:table-cell">
+                <TableHead className="hidden @min-[58rem]/table:table-cell">
                   {t("lab.common.validated")}
                 </TableHead>
                 <TableHead>{t("common.status")}</TableHead>
@@ -229,7 +229,7 @@ function CriticalRowView({
           <FlagText flag={row.result.flag} />
         </span>
       </TableCell>
-      <TableCell className="hidden text-xs text-muted-foreground @min-[40rem]/table:table-cell">
+      <TableCell className="hidden text-xs text-muted-foreground @min-[58rem]/table:table-cell">
         {row.result.validatedAt ? (
           <DateText value={row.result.validatedAt} variant="dmyTime" />
         ) : (
@@ -280,7 +280,7 @@ function CriticalRowView({
           onClick={onLog}
         >
           <PhoneCall />
-          <span className="hidden @min-[36rem]/table:inline">
+          <span className="hidden @min-[58rem]/table:inline">
             {t("lab.critical.logCall")}
           </span>
         </Button>

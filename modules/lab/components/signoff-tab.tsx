@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useLiveQuery } from "dexie-react-hooks"
 import { BadgeCheck, Lock, Microscope, Send, Siren } from "lucide-react"
-import { toast } from "sonner"
+import { labToast as toast } from "./lab-toast"
 
 import { DateText } from "@/components/shared/date-text"
 import { EmptyState } from "@/components/shared/empty-state"
