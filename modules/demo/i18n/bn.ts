@@ -146,6 +146,7 @@ export const demoBn: typeof demoEn = {
       hint: "একসাথে সব উইন্ডোর সময় এগিয়ে দেয়",
       atRealTime: "আসল সময়ে চলছে",
       ahead: "আসল সময়ের চেয়ে {duration} এগিয়ে",
+      behind: "আসল সময়ের চেয়ে {duration} পিছিয়ে",
       days: "{n} দিন",
       hours: "{n} ঘণ্টা",
       minutes: "{n} মিনিট",

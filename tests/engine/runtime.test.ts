@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import { z } from "zod"
 
 import { applyClockOffset, getClockOffset, now } from "@/core/clock/clock"
+import { dhakaTime } from "@/core/clock/dates"
 import { advanceClock, resetClock } from "@/core/clock/control"
 import { sweepOnce } from "@/core/clock/sweeper"
 import type { SweepJob } from "@/core/clock/types"
@@ -19,12 +20,17 @@ beforeEach(async () => {
 afterEach(() => applyClockOffset(0))
 
 describe("demo clock", () => {
+  it("starts at clinic time after a reset", () => {
+    expect(dhakaTime(now()) >= "11:30" && dhakaTime(now()) < "11:35").toBe(true)
+  })
+
   it("fast-forwards for every reader and records the change", async () => {
+    const start = getClockOffset()
     const before = now()
     await advanceClock(30 * 60_000)
-    expect(getClockOffset()).toBe(30 * 60_000)
+    expect(getClockOffset()).toBe(start + 30 * 60_000)
     expect(now() - before).toBeGreaterThanOrEqual(30 * 60_000)
-    expect((await getControlDb().clock.get("clock"))?.offsetMs).toBe(30 * 60_000)
+    expect((await getControlDb().clock.get("clock"))?.offsetMs).toBe(start + 30 * 60_000)
     const types = (await getCentralDb().events.toArray()).map((e) => e.type)
     expect(types).toContain("ClockAdvanced")
     await resetClock()

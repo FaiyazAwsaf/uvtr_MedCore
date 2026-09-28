@@ -239,6 +239,7 @@ export const coreEn = {
       label: "Demo clock",
       realTime: "Demo time runs with real time",
       ahead: "Demo time is {offset} ahead of real time",
+      behind: "Demo time is {offset} behind real time",
       units: { d: "d", h: "h", m: "m" },
     },
     network: {

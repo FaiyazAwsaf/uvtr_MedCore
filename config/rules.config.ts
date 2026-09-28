@@ -82,6 +82,13 @@ export const rules = {
   simulated: {
     supervisorPin: "1234",
     otp: "123456",
+    /**
+     * Reset and first load start the demo clock at this Dhaka time today, so
+     * the demo always opens mid-clinic (Dr. Kamal's 10:00 to 13:00 session has
+     * patients seen, patients waiting and free slots ahead) whatever the real
+     * time. "Real time" in the demo panel returns to the wall clock.
+     */
+    clinicTime: "11:30",
   },
 } as const
 

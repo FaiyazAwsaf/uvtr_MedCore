@@ -73,7 +73,9 @@ export function ClockChip({ className }: { className?: string }) {
       </TooltipTrigger>
       <TooltipContent side="bottom">
         {offsetText
-          ? t("shell.clock.ahead", { offset: offsetText.replace(/^[+-]/, "") })
+          ? t(offset < 0 ? "shell.clock.behind" : "shell.clock.ahead", {
+              offset: offsetText.replace(/^[+-]/, ""),
+            })
           : t("shell.clock.realTime")}
       </TooltipContent>
     </Tooltip>

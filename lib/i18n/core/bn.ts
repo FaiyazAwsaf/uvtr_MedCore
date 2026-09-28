@@ -236,6 +236,7 @@ export const coreBn: typeof coreEn = {
       label: "ডেমো ঘড়ি",
       realTime: "ডেমো সময় আসল সময়ের সঙ্গেই চলছে",
       ahead: "ডেমো সময় আসল সময়ের চেয়ে {offset} এগিয়ে",
+      behind: "ডেমো সময় আসল সময়ের চেয়ে {offset} পিছিয়ে",
       units: { d: "দি", h: "ঘ", m: "মি" },
     },
     network: {

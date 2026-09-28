@@ -143,6 +143,7 @@ export const demoEn = {
       hint: "Moves time forward in every window at once",
       atRealTime: "Running at real time",
       ahead: "{duration} ahead of real time",
+      behind: "{duration} behind real time",
       days: "{n}d",
       hours: "{n}h",
       minutes: "{n}m",

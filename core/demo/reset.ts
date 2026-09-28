@@ -2,8 +2,9 @@ import Dexie from "dexie"
 
 import { branches } from "@/config/brand.config"
 import { chainAudit, GENESIS_HASH } from "@/core/audit/chain"
+import { rules } from "@/config/rules.config"
 import { applyClockOffset, now } from "@/core/clock/clock"
-import { dhakaDate } from "@/core/clock/dates"
+import { atDhaka, dhakaDate } from "@/core/clock/dates"
 import { getControlDb } from "@/core/db/control"
 import { getCentralDb, getEdgeDb, type MedcoreDb } from "@/core/db/database"
 import { newId } from "@/core/db/ids"
@@ -19,7 +20,7 @@ import { onlineRow } from "@/core/sync/network"
 import { clearDatabase } from "@/core/sync/offline"
 
 /** Bump when the seed changes shape, so stale browsers re-seed on load. */
-export const SEED_VERSION = 2
+export const SEED_VERSION = 3
 const SEED_LOCK = "mc:seed"
 
 /** Empty every branch edge store that exists in this browser. */
@@ -82,8 +83,11 @@ async function resetUnlocked(): Promise<SeedSummary> {
   return withLock(commitLockName(central.name), async () => {
     await clearEdges()
     await clearDatabase(central)
-    await control.clock.put({ id: "clock", offsetMs: 0, updatedAt: Date.now() })
-    applyClockOffset(0)
+    // Anchor the demo clock to clinic time today (rules.simulated.clinicTime).
+    const wall = Date.now()
+    const offsetMs = atDhaka(dhakaDate(wall), rules.simulated.clinicTime) - wall
+    await control.clock.put({ id: "clock", offsetMs, updatedAt: wall })
+    applyClockOffset(offsetMs)
     await control.network.bulkPut(branches.map((b) => onlineRow(b.code)))
     const at = now()
     const summary = await seedDatabase(central, { now: at, today: dhakaDate(at) })
@@ -99,9 +103,9 @@ async function resetUnlocked(): Promise<SeedSummary> {
 }
 
 /**
- * One-click demo reset (plan §3.8): wipes every store, returns the clock to
- * real time, brings all branches online, re-seeds for today and tells every
- * window to reload.
+ * One-click demo reset (plan §3.8): wipes every store, sets the demo clock to
+ * clinic time today (`rules.simulated.clinicTime`), brings all branches
+ * online, re-seeds for that moment and tells every window to reload.
  */
 export async function resetDemo(): Promise<SeedSummary> {
   const summary = await withLock(SEED_LOCK, resetUnlocked)
