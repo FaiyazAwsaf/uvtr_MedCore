@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest"
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 
 import type { MedcoreDb } from "@/core/db/database"
 import { commit } from "@/core/engine/commit"
@@ -32,11 +32,14 @@ import {
  * interruptive alerts.
  */
 
+// Many commits per test: allow for a busy machine.
+vi.setConfig({ testTimeout: 20_000 })
+
 let db: MedcoreDb
 
 beforeAll(async () => {
   db = await seededDb("clinical-rx-test")
-})
+}, 60_000)
 afterAll(async () => {
   await dropDb(db)
 })

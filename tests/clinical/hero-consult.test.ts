@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest"
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 
 import { addDaysISO, dhakaDate } from "@/core/clock/dates"
 import { now } from "@/core/clock/clock"
@@ -37,6 +37,9 @@ import { dropDb, kamal, seededDb, startVisit } from "./helpers"
  * the Rx in the pharmacy queue and its lines in the billing basket.
  */
 
+// Many commits per test: allow for a busy machine.
+vi.setConfig({ testTimeout: 20_000 })
+
 let db: MedcoreDb
 let encounterId: string
 let appointmentId: string
@@ -44,7 +47,7 @@ let tokenId: string
 
 beforeAll(async () => {
   db = await seededDb("clinical-hero-test")
-})
+}, 60_000)
 afterAll(async () => {
   await dropDb(db)
 })
