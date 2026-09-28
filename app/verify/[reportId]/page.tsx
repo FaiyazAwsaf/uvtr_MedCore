@@ -1,5 +1,11 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { VerifyScreen } from "@/modules/lab/components/verify-screen"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.verify" phase={5} />
+/** "/verify/[reportId]": public QR verification of a report (plan T2.7). */
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ reportId: string }>
+}) {
+  const { reportId } = await params
+  return <VerifyScreen reportId={decodeURIComponent(reportId)} />
 }

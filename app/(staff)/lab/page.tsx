@@ -1,5 +1,6 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { CollectionScreen } from "@/modules/lab/components/collection-screen"
 
+/** "/lab": the collection worklist (plan §9). */
 export default function Page() {
-  return <StubPage sectionKey="shell.section.lab" phase={2} />
+  return <CollectionScreen />
 }
