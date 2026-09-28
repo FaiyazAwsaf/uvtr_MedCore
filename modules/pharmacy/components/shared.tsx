@@ -3,20 +3,16 @@
 import * as React from "react"
 import Link from "next/link"
 import { ChevronLeft } from "lucide-react"
-import { toast } from "sonner"
 import type { z } from "zod"
 
 import { branches, type BranchCode } from "@/config/brand.config"
 import { StatusPill, type Tone } from "@/components/shared/status"
-import { useDb, useDbInfo } from "@/core/db/DbProvider"
+import { useDbInfo } from "@/core/db/DbProvider"
 import { newId } from "@/core/db/ids"
 import type { BrandRow, PharmacyQueueRow, RxLineRow } from "@/core/db/schema"
-import { commit } from "@/core/engine/commit"
-import { RuleViolation } from "@/core/engine/errors"
-import { feedbackFor, useEngineFeedback } from "@/core/engine/feedback"
 import type { CommandDef } from "@/core/engine/types"
-import { useActor, usePersona } from "@/core/session/persona"
-import { dictionaries, lookup } from "@/lib/i18n"
+import { useCommand } from "@/core/engine/useCommand"
+import { usePersona } from "@/core/session/persona"
 import { useLocale } from "@/lib/i18n/provider"
 import { cn } from "@/lib/utils"
 
@@ -108,61 +104,13 @@ export function usePharmacyContext() {
 
 /* ---------------- Commands ---------------- */
 
-const MODULE_RULE_NAMESPACES = ["pharmacy.rules", "inventory.rules"]
-
 /**
- * Run a pharmacy or inventory command as this window's persona. Rule codes
- * this module defines messages for are explained in a toast in the window's
- * language; everything else (engine rules such as RX_REQUIRED, conflicts,
- * denials) goes to the shared engine dialogs.
+ * Run a pharmacy or inventory command as this window's persona. Refusals go
+ * to the shared engine dialogs, which read this module's own messages first
+ * (`pharmacy.rules.<CODE>`, `inventory.rules.<CODE>`), then the engine's.
  */
 export function useModuleCommand<S extends z.ZodType, O>(def: CommandDef<S, O>) {
-  const db = useDb()
-  const actor = useActor()
-  const show = useEngineFeedback((state) => state.show)
-  const { tk, locale, num, money } = useLocale()
-  const [pending, setPending] = React.useState(false)
-
-  const run = React.useCallback(
-    async (input: z.input<S>): Promise<O | undefined> => {
-      if (!actor) {
-        show({ kind: "no-persona", command: def.name })
-        return undefined
-      }
-      setPending(true)
-      try {
-        return (await commit(def, input, { db, actor })).result
-      } catch (error) {
-        if (error instanceof RuleViolation) {
-          for (const ns of MODULE_RULE_NAMESPACES) {
-            const key = `${ns}.${error.code}`
-            if (lookup(dictionaries[locale], key) !== key) {
-              const params: Record<string, string | number> = {}
-              for (const [name, value] of Object.entries(error.params)) {
-                if (typeof value === "number") {
-                  params[name] = name.endsWith("P") ? money(value) : num(value)
-                } else if (name === "branch") {
-                  params[name] = branchName(value as BranchCode, locale)
-                } else if (name === "status") {
-                  const label = tk(`pharmacy.lineStatus.${value}`)
-                  params[name] = label.startsWith("pharmacy.") ? value : label
-                } else {
-                  params[name] = value
-                }
-              }
-              toast.error(tk(key, params), { id: `rule:${def.name}` })
-              return undefined
-            }
-          }
-        }
-        show(feedbackFor(error, def.name))
-        return undefined
-      } finally {
-        setPending(false)
-      }
-    },
-    [actor, db, def, show, tk, locale, num, money]
-  )
+  const { run, pending } = useCommand(def)
   return { run, pending }
 }
 

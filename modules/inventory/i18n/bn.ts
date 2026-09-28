@@ -96,7 +96,7 @@ export const inventoryBn: typeof inventoryEn = {
     },
     rules: {
       TRANSFER_SAME_BRANCH: "স্থানান্তরের জন্য দুটি আলাদা শাখা লাগে।",
-      TRANSFER_STATE: "স্থানান্তর {transferNo}-এ এখন এটি করা যাবে না (অবস্থা: {status})।",
+      TRANSFER_STATE: "স্থানান্তর {transferNo} আগেই পরের ধাপে গেছে, তাই এখন এটি করা যাবে না।",
       TRANSFER_NOT_SOURCE: "শুধু পাঠানো শাখা {branch} এই স্থানান্তর পাঠাতে পারে।",
       TRANSFER_NOT_DESTINATION: "শুধু গ্রহণকারী শাখা {branch} এই স্থানান্তর গ্রহণ করতে পারে।",
       NOTHING_TO_DISPATCH: "স্থানান্তর {transferNo}-এর জন্য পাঠানোর মতো ব্যবহারযোগ্য মজুদ নেই।",

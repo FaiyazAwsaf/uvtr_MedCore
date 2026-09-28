@@ -313,8 +313,9 @@ export const pharmacyEn = {
         "Your Pharmacy Council number is missing, so you can't dispense. Ask the chief pharmacist.",
       DUPLICATE_LINE: "The same line was sent twice. Nothing was dispensed.",
       LINE_NOT_ON_RX: "That line is not on prescription {rxNo}.",
-      LINE_NOT_DISPENSABLE: "This line can't be dispensed now (status: {status}).",
-      LINE_NOT_OPEN: "This line is already settled (status: {status}).",
+      LINE_NOT_DISPENSABLE:
+        "This line can't be dispensed now: it is settled, waiting for the doctor, or its balance has expired.",
+      LINE_NOT_OPEN: "This line is already settled or waiting for the doctor, so nothing was changed.",
       QTY_ABOVE_OUTSTANDING: "Only {outstanding} are still owed on this line, not {qty}.",
       BALANCE_EXPIRED:
         "The balance on {rxNo} has expired. The patient needs a new prescription.",

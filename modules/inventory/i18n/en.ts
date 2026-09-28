@@ -94,7 +94,7 @@ export const inventoryEn = {
     },
     rules: {
       TRANSFER_SAME_BRANCH: "A transfer needs two different branches.",
-      TRANSFER_STATE: "Transfer {transferNo} can't do this now (status: {status}).",
+      TRANSFER_STATE: "Transfer {transferNo} has already moved on, so this step can't be done now.",
       TRANSFER_NOT_SOURCE: "Only {branch}, the sending branch, can dispatch this transfer.",
       TRANSFER_NOT_DESTINATION: "Only {branch}, the receiving branch, can receive this transfer.",
       NOTHING_TO_DISPATCH: "No usable stock to send for transfer {transferNo}.",
