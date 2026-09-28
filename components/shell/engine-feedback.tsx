@@ -31,7 +31,9 @@ export function EngineFeedbackHost() {
     if (current.kind === "validation") {
       const detail = current.error.issues
         .slice(0, 2)
-        .map((issue) => (issue.path ? `${issue.path}: ${issue.message}` : issue.message))
+        .map((issue) =>
+          issue.path ? `${issue.path}: ${issue.message}` : issue.message
+        )
         .join("; ")
       message = t("shell.feedback.validation", { detail })
     } else if (current.kind === "not-found") {
@@ -50,7 +52,14 @@ export function EngineFeedbackHost() {
     case "conflict":
       return <ConflictDialog open conflict={current.error} onReload={clear} />
     case "rule":
-      return <RuleViolationDialog open violation={current.error} onClose={clear} />
+      return (
+        <RuleViolationDialog
+          open
+          violation={current.error}
+          command={current.command}
+          onClose={clear}
+        />
+      )
     case "denied":
       return (
         <DeniedDialog

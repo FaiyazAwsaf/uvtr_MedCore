@@ -1,5 +1,11 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { DisplayBoard } from "@/modules/queue/components/display-board"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.display" phase={2} />
+/** "/display/[branchId]": the queue display board (TV), token numbers only. */
+export default async function DisplayPage({
+  params,
+}: {
+  params: Promise<{ branchId: string }>
+}) {
+  const { branchId } = await params
+  return <DisplayBoard branchId={branchId} />
 }
