@@ -120,7 +120,8 @@ describe("draft lines", () => {
     )
     await commit(signRx, { rxId: result.rxId }, { db, actor: kamal })
     const saved = (await db.rxLines.get(result.lineId))!
-    expect(saved).toMatchObject({ nonDictionaryName: "Herbal cough syrup", brandId: undefined })
+    expect(saved).toMatchObject({ nonDictionaryName: "Herbal cough syrup", isAntibiotic: false })
+    expect(saved.brandId).toBeUndefined()
     expect(await db.basketLines.where("sourceId").equals(result.lineId).count()).toBe(0)
   })
 })
@@ -346,7 +347,7 @@ describe("substitution requests from the pharmacy", () => {
   })
 
   it("keeps a paid line's payment when the brand is swapped", async () => {
-    const { rxId } = await signedRxFor(HERO.patient.nusratKarim === "" ? "" : "pat_0181", [
+    const { rxId } = await signedRxFor("pat_0181", [
       line(SEED_REFS.brand.ace500),
     ])
     const [ace] = await db.rxLines.where("rxId").equals(rxId).toArray()

@@ -65,32 +65,45 @@ export async function dropDb(db: MedcoreDb): Promise<void> {
   await db.delete()
 }
 
-/** Book, check in and call a patient in Dr. Kamal's session, then start the consultation. */
+/**
+ * Bring a patient to Dr. Kamal: reuse their appointment in today's session
+ * (checking it in if needed) or book one (counter, or walk-in when the booked
+ * slots are full), call the token, then start the consultation.
+ */
 export async function startVisit(
   db: MedcoreDb,
   patientId: string = HERO.patient.abdulKarim
 ): Promise<{ appointmentId: string; tokenId: string; encounterId: string }> {
-  const booked = await commit(
-    bookAppointment,
-    { sessionId: KAMAL_SESSION, patientId, source: "counter" },
-    { db, actor: reception }
+  const existing = (await db.appointments.where("sessionId").equals(KAMAL_SESSION).toArray()).find(
+    (a) => a.patientId === patientId && ["booked", "checked-in"].includes(a.status)
   )
-  const token = await commit(
-    checkIn,
-    { appointmentId: booked.result.appointmentId },
-    { db, actor: reception }
-  )
-  await commit(callToken, { tokenId: token.result.tokenId }, { db, actor: kamal })
-  const started = await commit(
-    startConsultation,
-    { appointmentId: booked.result.appointmentId },
-    { db, actor: kamal }
-  )
-  return {
-    appointmentId: booked.result.appointmentId,
-    tokenId: token.result.tokenId,
-    encounterId: started.result.encounterId,
+  let appointmentId = existing?.id
+  if (!appointmentId) {
+    try {
+      appointmentId = (
+        await commit(
+          bookAppointment,
+          { sessionId: KAMAL_SESSION, patientId, source: "counter" },
+          { db, actor: reception }
+        )
+      ).result.appointmentId
+    } catch {
+      appointmentId = (
+        await commit(
+          bookAppointment,
+          { sessionId: KAMAL_SESSION, patientId, source: "walk-in" },
+          { db, actor: reception }
+        )
+      ).result.appointmentId
+    }
   }
+  let tokenId = (await db.appointments.get(appointmentId))!.tokenId
+  if (!tokenId) {
+    tokenId = (await commit(checkIn, { appointmentId }, { db, actor: reception })).result.tokenId
+  }
+  await commit(callToken, { tokenId }, { db, actor: kamal })
+  const started = await commit(startConsultation, { appointmentId }, { db, actor: kamal })
+  return { appointmentId, tokenId, encounterId: started.result.encounterId }
 }
 
 /**
