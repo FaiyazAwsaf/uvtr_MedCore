@@ -1,5 +1,13 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { Suspense } from "react"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.library" phase={2} />
+import { LibraryHome } from "@/modules/medicine-library/components/library-home"
+
+/** "/library": the medicine library search and A to Z browse (plan §9). */
+export default function LibraryPage() {
+  // The page reads its query and Rx-pad mode from the address (useSearchParams).
+  return (
+    <Suspense>
+      <LibraryHome />
+    </Suspense>
+  )
 }
