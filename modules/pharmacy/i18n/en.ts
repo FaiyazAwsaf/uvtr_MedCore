@@ -9,7 +9,6 @@ export const pharmacyEn = {
       returns: "Returns",
     },
     common: {
-      branch: "{name} ({code})",
       units: "{count} units",
       live: "Live",
       patient: "Patient",
@@ -85,7 +84,7 @@ export const pharmacyEn = {
       back: "Rx queue",
       notFound: "This prescription was not found",
       notFoundHint: "It may have been replaced by a newer version.",
-      signedBy: "Signed by {doctor}, {time}",
+      signedBy: "Signed by {doctor}",
       version: "v{version}",
       superseded: "This version was replaced. Open the current prescription from the queue.",
       otherBranch: "Written at {branch}. Stock is taken from your branch.",
@@ -186,6 +185,7 @@ export const pharmacyEn = {
       },
     },
     label: {
+      uhid: "UHID {uhid}",
       rx: "Rx {rxNo}",
       count: "{count} {unit}",
       given: "Given: {qty}",

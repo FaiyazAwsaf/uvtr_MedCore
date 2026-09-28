@@ -10,7 +10,7 @@ import type { Bilingual } from "@/config/brand.config"
 import type { ISODate, MealTiming, Ms } from "@/core/db/schema"
 import { doseInstruction } from "@/core/seed/content"
 import { dictionaries, interpolate, lookup, type Locale } from "@/lib/i18n"
-import { formatDmy, formatNumber } from "@/lib/i18n/format"
+import { formatDmy, formatNumber, formatUhid } from "@/lib/i18n/format"
 
 export type LabelInput = {
   rxNo: string
@@ -71,7 +71,7 @@ export function buildLabel(input: LabelInput, lang: Locale = "bn"): LabelModel {
     lang,
     rx: tr(lang, "rx", { rxNo: input.rxNo }),
     patient: lang === "bn" ? input.patient.nameBn : input.patient.nameEn,
-    uhid: input.patient.uhid,
+    uhid: tr(lang, "uhid", { uhid: formatUhid(input.patient.uhid) }),
     medicine: `${input.brand.name} ${input.brand.strength}`.trim(),
     generic: input.genericName,
     dose,

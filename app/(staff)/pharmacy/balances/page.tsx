@@ -1,5 +1,6 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { BalancesScreen } from "@/modules/pharmacy/components/balances-screen"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.pharmacy" phase={2} />
+/** "/pharmacy/balances": open partial-dispense balances (plan §9). */
+export default function BalancesPage() {
+  return <BalancesScreen />
 }

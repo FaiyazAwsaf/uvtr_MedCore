@@ -1,5 +1,6 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { ReturnsScreen } from "@/modules/pharmacy/components/returns-screen"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.pharmacy" phase={2} />
+/** "/pharmacy/returns": returned medicine to quarantine (plan §9). */
+export default function ReturnsPage() {
+  return <ReturnsScreen />
 }

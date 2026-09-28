@@ -11,7 +11,6 @@ export const pharmacyBn: typeof pharmacyEn = {
       returns: "ফেরত ওষুধ",
     },
     common: {
-      branch: "{name} ({code})",
       units: "{count} ইউনিট",
       live: "লাইভ",
       patient: "রোগী",
@@ -87,7 +86,7 @@ export const pharmacyBn: typeof pharmacyEn = {
       back: "প্রেসক্রিপশনের সারি",
       notFound: "প্রেসক্রিপশনটি পাওয়া যায়নি",
       notFoundHint: "হয়তো এর নতুন সংস্করণ তৈরি হয়েছে।",
-      signedBy: "{doctor} সই করেছেন, {time}",
+      signedBy: "{doctor} সই করেছেন",
       version: "সংস্করণ {version}",
       superseded: "এই সংস্করণ বদলে গেছে। সারি থেকে বর্তমান প্রেসক্রিপশনটি খুলুন।",
       otherBranch: "{branch}-এ লেখা। মজুদ আপনার শাখা থেকে নেওয়া হবে।",
@@ -188,6 +187,7 @@ export const pharmacyBn: typeof pharmacyEn = {
       },
     },
     label: {
+      uhid: "UHID {uhid}",
       rx: "প্রেসক্রিপশন {rxNo}",
       count: "{count}টি {unit}",
       given: "দেওয়া হলো: {qty}",
