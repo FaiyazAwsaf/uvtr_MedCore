@@ -82,11 +82,11 @@ function OpenBillsCard({
     <SectionCard
       title={t("billing.cashier.openBills.title")}
       subtitle={
-        bills
+        bills && !compact
           ? t("billing.cashier.openBills.subtitle", { count: num(bills.length) })
           : undefined
       }
-      icon={ReceiptText}
+      icon={compact ? undefined : ReceiptText}
       size="sm"
       bodyClassName="-mx-1.5"
       onSeeAll={
@@ -175,10 +175,14 @@ function OpenBillRow({
               </span>
             )
           })}
-          <span aria-hidden className="text-border">
-            ·
-          </span>
-          <DateText value={bill.latestAt} variant="relative" />
+          {!compact ? (
+            <>
+              <span aria-hidden className="text-border">
+                ·
+              </span>
+              <DateText value={bill.latestAt} variant="relative" />
+            </>
+          ) : null}
         </span>
       </span>
       <MoneyText poisha={bill.totalP} className="text-[0.8125rem] font-semibold" />
@@ -241,19 +245,23 @@ function DueRow({
         <span className="truncate text-sm font-semibold">
           {row.patient ? nameIn(row.patient, locale) : row.invoice.patientId}
         </span>
-        <span lang="en" className="truncate font-mono text-[0.6875rem] text-muted-foreground">
-          {row.invoice.invoiceNo}
+        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          {pending ? (
+            <span className={cn("tag", TENDER_TAG[pending.tender])}>
+              {t("billing.cashier.due.waiting", {
+                tender: tk(`billing.tender.${pending.tender}`),
+              })}
+            </span>
+          ) : (
+            <StatusText tone="warning" className="text-xs">
+              {t("billing.cashier.due.partial")}
+            </StatusText>
+          )}
+          <span lang="en" className="truncate font-mono text-[0.6875rem] text-muted-foreground">
+            {row.invoice.invoiceNo}
+          </span>
         </span>
       </span>
-      {pending ? (
-        <span className={cn("tag", TENDER_TAG[pending.tender])}>
-          {t("billing.cashier.due.waiting", { tender: tk(`billing.tender.${pending.tender}`) })}
-        </span>
-      ) : (
-        <StatusText tone="warning" className="text-xs">
-          {t("billing.cashier.due.partial")}
-        </StatusText>
-      )}
       <MoneyText poisha={row.dueP} className="text-[0.8125rem] font-semibold" />
       <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
     </button>

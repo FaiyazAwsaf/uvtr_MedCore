@@ -10,7 +10,7 @@ import { EmptyState } from "@/components/shared/empty-state"
 import { IdentityBanner } from "@/components/shared/identity-banner"
 import { MoneyText } from "@/components/shared/money-text"
 import { SectionCard } from "@/components/shared/section-card"
-import { StatusPill } from "@/components/shared/status"
+import { StatusPill, TONE_TEXT } from "@/components/shared/status"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getBranch, type BranchCode } from "@/config/brand.config"
@@ -227,7 +227,7 @@ function PatientBilling({
       : undefined
 
   return (
-    <div className="grid items-start gap-4 @min-[52rem]/cashier:grid-cols-[minmax(0,1fr)_20rem] @min-[90rem]/cashier:grid-cols-[18rem_minmax(0,1fr)_24rem]">
+    <div className="grid items-start gap-4 @min-[52rem]/cashier:grid-cols-[minmax(0,1fr)_20rem] @min-[90rem]/cashier:grid-cols-[20rem_minmax(0,1fr)_24rem]">
       <div className="hidden @min-[90rem]/cashier:block">
         <PatientFinder branch={branch} onSelect={onSelect} compact />
       </div>
@@ -413,7 +413,7 @@ function ShiftSnapshot({ shift }: { shift: ShiftRow | null | undefined }) {
           {t("billing.cashier.shiftSince", { time: time(shift.openedAt) })}
         </p>
       ) : (
-        <p className="text-[0.8125rem] text-warning">{t("billing.cashier.noShiftHint")}</p>
+        <p className={cn("text-[0.8125rem]", TONE_TEXT.warning)}>{t("billing.cashier.noShiftHint")}</p>
       )}
     </SectionCard>
   )

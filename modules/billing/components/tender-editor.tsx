@@ -330,7 +330,7 @@ function TenderRow({
           <span className="flex items-center gap-1.5">
             <Smartphone className="size-3.5" />
             {walletPhone
-              ? t("billing.cashier.tenders.pushTo", { phone: digits(walletPhone) })
+              ? t("billing.cashier.tenders.pushTo", { phone: digits(walletPhone).replace(/-/g, "\u2011") })
               : t("billing.cashier.tenders.pushNoPhone")}
           </span>
           <SimulatedBadge />

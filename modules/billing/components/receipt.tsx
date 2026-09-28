@@ -53,10 +53,12 @@ export function ReceiptSheet({
   /** Change given back for cash at this counter, when known */
   changeDueP?: Poisha
 }) {
-  const { t, tk, money, num, locale, dmy, time } = useLocale()
+  const { t, tk, money, num, locale, dmy, time, uhid } = useLocale()
   const { invoice, receipt, patient } = detail
   const lines = [...detail.lines].sort(
-    (a, b) => SOURCE_ORDER.indexOf(a.sourceType) - SOURCE_ORDER.indexOf(b.sourceType)
+    (a, b) =>
+      SOURCE_ORDER.indexOf(a.sourceType) - SOURCE_ORDER.indexOf(b.sourceType) ||
+      (detail.lineOrder[a.id] ?? 0) - (detail.lineOrder[b.id] ?? 0)
   )
   const confirmed = detail.payments.filter((p) => p.status === "confirmed")
   const cashP = confirmed.filter((p) => p.tender === "cash").reduce((s, p) => s + p.amountP, 0)
@@ -94,7 +96,7 @@ export function ReceiptSheet({
                 label={t("common.uhid")}
                 value={
                   <span lang="en" className="font-mono">
-                    {patient.uhid}
+                    {uhid(patient.uhid)}
                   </span>
                 }
               />
@@ -215,7 +217,7 @@ export function ReceiptDialog({
   const { t } = useLocale()
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[26rem]" data-testid="receipt-dialog">
+      <DialogContent className="sm:max-w-104" data-testid="receipt-dialog">
         <DialogHeader>
           <DialogTitle>{t("billing.receipt.previewTitle")}</DialogTitle>
           <DialogDescription>{t("billing.receipt.previewBody")}</DialogDescription>

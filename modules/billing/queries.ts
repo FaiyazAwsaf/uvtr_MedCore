@@ -159,7 +159,7 @@ export async function basketOf(
     .equals([patient.id, "open"])
     .filter((line) => line.branchId === branch)
     .toArray()
-  lines.sort((a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id))
+  lines.sort((a, b) => a.createdAt - b.createdAt || a.description.localeCompare(b.description))
   const cover = lines.some((line) => line.payerType === "corporate")
     ? await coverFor(dbReader(db), patient, today)
     : null
@@ -184,6 +184,8 @@ export type InvoiceDetail = {
   corporateClient?: { en: string; bn: string }
   /** Bangla text of each line, from its basket line (invoice lines keep English only) */
   descriptionBn: Record<Id, string | undefined>
+  /** Display order of each line: the order its basket line was added */
+  lineOrder: Record<Id, number>
   unlocked: { tests: number; specimens: number; imaging: number; medicines: number }
 }
 
@@ -229,8 +231,16 @@ export async function invoiceDetail(db: MedcoreDb, invoiceId: Id): Promise<Invoi
   lines.forEach((line, index) => {
     descriptionBn[line.id] = baskets[index]?.descriptionBn
   })
+  const lineOrder: Record<Id, number> = {}
+  lines
+    .map((line, index) => ({ line, at: baskets[index]?.createdAt ?? line.createdAt }))
+    .sort((a, b) => a.at - b.at || a.line.description.localeCompare(b.line.description))
+    .forEach(({ line }, index) => {
+      lineOrder[line.id] = index
+    })
   return {
     descriptionBn,
+    lineOrder,
     invoice,
     lines,
     payments,

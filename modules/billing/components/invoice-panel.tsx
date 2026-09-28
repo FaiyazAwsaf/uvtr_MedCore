@@ -37,6 +37,11 @@ import { TENDER_ICON, TENDER_TAG } from "./labels"
 import { ReceiptDialog } from "./receipt"
 import { useBillingCommand, useProblemText } from "./use-billing-command"
 
+/** Keeps a phone number on one line (non-breaking hyphen). */
+export function keepTogether(text: string): string {
+  return text.replace(/-/g, "\u2011")
+}
+
 /**
  * Where an invoice stands after Pay, live from the data (so another window,
  * such as the patient app approving the push, updates it too): waiting for
@@ -116,7 +121,6 @@ function MfsPending({ detail, pending }: { detail: InvoiceDetail; pending: Payme
       subtitle={detail.invoice.invoiceNo}
       icon={Hourglass}
       size="sm"
-      action={<SimulatedBadge />}
     >
       <div className="flex flex-col gap-3">
         {pending.map((payment) => (
@@ -153,7 +157,7 @@ function PendingPush({ payment, detail }: { payment: PaymentRow; detail: Invoice
       data-testid="mfs-pending"
       data-payment-id={payment.id}
       data-tender={payment.tender}
-      className="flex flex-col gap-3 rounded-md border border-dashed border-border p-3"
+      className="@container/mfs flex flex-col gap-3 rounded-md border border-dashed border-border p-3"
     >
       <div className="flex items-center gap-3">
         <span className="relative flex size-11 shrink-0 items-center justify-center rounded-full bg-surface-raised">
@@ -170,7 +174,7 @@ function PendingPush({ payment, detail }: { payment: PaymentRow; detail: Invoice
           </span>
           <span className="text-xs text-muted-foreground">
             {phone
-              ? t("billing.cashier.mfs.sentTo", { phone: digits(phone) })
+              ? t("billing.cashier.mfs.sentTo", { phone: keepTogether(digits(phone)) })
               : t("billing.cashier.mfs.sent")}
           </span>
         </div>
@@ -178,12 +182,15 @@ function PendingPush({ payment, detail }: { payment: PaymentRow; detail: Invoice
       <p className="text-[0.8125rem] text-foreground/90">
         {t("billing.cashier.mfs.body", { tender, amount: money(payment.amountP) })}
       </p>
-      <p className="nums text-xs text-muted-foreground" data-testid="mfs-countdown">
-        {leftSec > 0
-          ? t("billing.cashier.mfs.expiresIn", { time: duration(leftSec) })
-          : t("billing.cashier.mfs.expiring")}
-      </p>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="nums text-xs text-muted-foreground" data-testid="mfs-countdown">
+          {leftSec > 0
+            ? t("billing.cashier.mfs.expiresIn", { time: duration(leftSec) })
+            : t("billing.cashier.mfs.expiring")}
+        </p>
+        <SimulatedBadge />
+      </div>
+      <div className="grid grid-cols-1 gap-2 @min-[19rem]/mfs:grid-cols-[minmax(0,1fr)_auto]">
         <Button
           type="button"
           data-testid="mfs-approve"
@@ -275,16 +282,16 @@ function PaymentDone({
         </div>
       </header>
 
-      <dl className="grid grid-cols-2 gap-3 rounded-md bg-surface-raised/60 px-3 py-2.5 dark:bg-surface-raised/45">
-        <div className="min-w-0">
+      <dl className="flex flex-col gap-1.5 rounded-md bg-surface-raised/60 px-3 py-2.5 dark:bg-surface-raised/45">
+        <div className="flex items-baseline justify-between gap-3">
           <dt className="text-xs text-muted-foreground">{t("billing.cashier.done.invoice")}</dt>
-          <dd lang="en" className="truncate font-mono text-[0.8125rem] font-medium" data-testid="invoice-no">
+          <dd lang="en" className="font-mono text-[0.8125rem] font-medium" data-testid="invoice-no">
             {invoice.invoiceNo}
           </dd>
         </div>
-        <div className="min-w-0">
+        <div className="flex items-baseline justify-between gap-3">
           <dt className="text-xs text-muted-foreground">{t("billing.cashier.done.receipt")}</dt>
-          <dd lang="en" className="truncate font-mono text-[0.8125rem] font-medium" data-testid="receipt-no">
+          <dd lang="en" className="font-mono text-[0.8125rem] font-medium" data-testid="receipt-no">
             {receipt?.receiptNo ?? "-"}
           </dd>
         </div>

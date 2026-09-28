@@ -104,7 +104,7 @@ export const billingBn: typeof billingEn = {
         invoices: "{count}টি ইনভয়েস",
         payments: "{count}টি পেমেন্ট",
         cardMfs: "কার্ড ও এমএফএস",
-        pendingMfs: "অপেক্ষমাণ এমএফএস",
+        pendingMfs: "এমএফএস বাকি",
         waiting: "{count}টি অপেক্ষায়",
       },
       search: {

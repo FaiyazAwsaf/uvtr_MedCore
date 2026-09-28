@@ -6,6 +6,7 @@ import { CircleAlert, LoaderCircle, ShieldCheck, Wallet } from "lucide-react"
 
 import { MoneyText } from "@/components/shared/money-text"
 import { SectionCard } from "@/components/shared/section-card"
+import { TONE_TEXT } from "@/components/shared/status"
 import {
   useSupervisorOverride,
   type SupervisorApproval,
@@ -223,7 +224,7 @@ export function CheckoutPanel({
                 </span>
               ) : needsApproval ? (
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs text-warning">
+                  <span className={cn("text-xs", TONE_TEXT.warning)}>
                     {t("billing.cashier.discount.aboveLimit", { pct: num(limit) })}
                   </span>
                   <Button
@@ -259,7 +260,7 @@ export function CheckoutPanel({
               </SummaryRow>
             ) : null}
             {bill.uncoveredCorporate > 0 ? (
-              <p className="text-xs text-warning">{t("billing.cashier.summary.coverInactive")}</p>
+              <p className={cn("text-xs", TONE_TEXT.warning)}>{t("billing.cashier.summary.coverInactive")}</p>
             ) : null}
           </div>
         ) : target.kind === "balance" ? (
@@ -315,7 +316,7 @@ export function CheckoutPanel({
                 : t("billing.cashier.payNothingDue")}
           </Button>
           {shift === null ? (
-            <p className="text-xs text-warning">
+            <p className={cn("text-xs", TONE_TEXT.warning)}>
               {t("billing.cashier.noShiftHint")}{" "}
               <Link href="/cashier/shift" className="font-medium text-link underline-offset-4 hover:underline">
                 {t("billing.cashier.openShiftLink")}
