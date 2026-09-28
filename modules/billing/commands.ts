@@ -1,0 +1,435 @@
+import { z } from "zod"
+
+import { defineCommand } from "@/core/engine/defineCommand"
+import type { Tx } from "@/core/engine/types"
+import type { Id, PaymentRow } from "@/core/db/schema"
+
+import { discountLimit, isMfs } from "./pricing"
+import {
+  actorBranch,
+  addPayments,
+  billablePatient,
+  checkTenders,
+  confirmPayment,
+  createInvoice,
+  loadBillLines,
+  moneyParams,
+  openShiftOf,
+  patientMayActFor,
+  refreshInvoice,
+  tenderParams,
+  type TenderInput,
+} from "./settle"
+
+/**
+ * Billing commands (plan §6 `billing.checkout`, `billing.confirmMfs` /
+ * `timeoutMfs`). Each is ONE atomic commit: the invoice, its lines, the
+ * payments and, once confirmed money covers the total, every unlock (lab,
+ * imaging, pharmacy), fee share, receipt, SMS and notification, or nothing.
+ */
+
+const tender = z.object({
+  tender: z.enum(["cash", "card", "bkash", "nagad"]),
+  amountP: z.number().int().positive(),
+  tenderedP: z.number().int().nonnegative().optional(),
+  ref: z.string().min(1).max(40).optional(),
+})
+
+const idempotencyKey = z.string().min(8).max(80)
+const smsLang = z.enum(["en", "bn"]).default("bn")
+
+/** Inline supervisor approval from the override dialog (plan §3.10). */
+const discountApproval = z.object({
+  approverStaffId: z.string(),
+  reason: z.string().trim().min(1).max(300),
+  pinVerified: z.literal(true),
+})
+
+export type CheckoutResult = {
+  invoiceId: Id
+  invoiceNo: string
+  status: "unpaid" | "partial" | "paid"
+  totalP: number
+  corporateShareP: number
+  patientDueP: number
+  changeDueP: number
+  paymentIds: Id[]
+  pendingPaymentIds: Id[]
+  receiptNo?: string
+}
+
+/**
+ * Take payment at the counter for chosen basket lines of one patient: one
+ * invoice for the branch's company, the discount (above the cashier's own
+ * authority only with a supervisor's approval, recorded in `approvals`),
+ * the company's share for covered corporate lines, and the counter tenders.
+ * Cash and an approved card count at once; bKash and Nagad wait for the
+ * customer's approval and unlock nothing until then (INV-09).
+ */
+export const checkout = defineCommand({
+  name: "billing.checkout",
+  roles: ["cashier"],
+  input: z.object({
+    patientId: z.string(),
+    basketLineIds: z.array(z.string()).min(1).max(60),
+    discountPct: z.number().int().min(0).max(100).default(0),
+    discountApproval: discountApproval.optional(),
+    tenders: z.array(tender).max(6),
+    smsLang,
+    idempotencyKey,
+  }),
+  async run(tx, input): Promise<CheckoutResult> {
+    const branch = actorBranch(tx)
+    const patient = await billablePatient(tx, input.patientId)
+    const shift = await openShiftOf(tx, tx.actor.staffId, branch)
+    if (!shift) tx.reject("NO_OPEN_SHIFT", {})
+    const { lines } = await loadBillLines(tx, {
+      patientId: patient.id,
+      lineIds: input.basketLineIds,
+      branch,
+    })
+
+    const approvalId = await recordDiscountApproval(tx, input.discountPct, input.discountApproval, {
+      patientId: patient.id,
+    })
+    const created = await createInvoice(tx, {
+      patient,
+      branch,
+      lines,
+      discountPct: input.discountPct,
+      discountApprovalId: approvalId,
+      shiftId: shift.id,
+      cashierId: tx.actor.staffId,
+    })
+    if (approvalId) {
+      await tx.update("approvals", approvalId, {
+        refs: { patientId: patient.id, invoiceId: created.invoice.id },
+        amountP: created.invoice.discountP,
+      })
+    }
+
+    const { changeDueP } = await checkTenders(tx, input.tenders, created.patientDueP, branch)
+    const payments = addPayments(tx, {
+      invoice: created.invoice,
+      tenders: input.tenders,
+      idempotencyKey: input.idempotencyKey,
+      shiftId: shift.id,
+    })
+    const { invoice, settlement } = await refreshInvoice(tx, created.invoice.id, {
+      smsLang: input.smsLang,
+    })
+    return {
+      invoiceId: invoice.id,
+      invoiceNo: invoice.invoiceNo,
+      status: invoice.status as CheckoutResult["status"],
+      totalP: invoice.totalP,
+      corporateShareP: created.corporateShareP,
+      patientDueP: created.patientDueP,
+      changeDueP,
+      paymentIds: payments.map((p) => p.id),
+      pendingPaymentIds: payments.filter((p) => p.status === "pending").map((p) => p.id),
+      receiptNo: settlement?.receiptNo,
+    }
+  },
+})
+
+/**
+ * INV-16: a discount above the cashier's own authority needs a second
+ * person who holds it. The approval is written in the same commit as the
+ * invoice, with the approver's identity, the simulated PIN check and the
+ * reason; the audit rows of this commit carry the approver too.
+ */
+async function recordDiscountApproval(
+  tx: Tx,
+  pct: number,
+  approval: z.output<typeof discountApproval> | undefined,
+  refs: { patientId: Id }
+): Promise<Id | undefined> {
+  if (pct <= discountLimit(tx.actor.authorities)) return undefined
+  if (!approval) tx.reject("DISCOUNT_APPROVAL_REQUIRED", { pct })
+  if (approval.approverStaffId === tx.actor.staffId) tx.reject("APPROVER_SAME_PERSON", {})
+  const approver = await tx.find("staff", approval.approverStaffId)
+  if (!approver) tx.reject("APPROVER_LACKS_AUTHORITY", { name: approval.approverStaffId, limit: 0 })
+  const limit = discountLimit(approver.authorities)
+  if (pct > limit) {
+    tx.reject("APPROVER_LACKS_AUTHORITY", { name: approver.nameEn, limit })
+  }
+  const row = tx.insert("approvals", {
+    kind: "discount",
+    refs,
+    requestedBy: tx.actor.staffId,
+    approverId: approver.id,
+    status: "approved",
+    pinVerified: true,
+    reason: approval.reason,
+    decidedAt: tx.now(),
+  })
+  tx.auditContext({ reason: approval.reason, approvedBy: approver.id })
+  tx.emit("DiscountApproved", {
+    refs: { ...refs, approvalId: row.id },
+    params: { pct, approver: approver.nameEn, approverBn: approver.nameBn },
+  })
+  return row.id
+}
+
+/** A pending bKash or Nagad payment the actor may act on. */
+async function pendingMfs(tx: Tx, paymentId: Id): Promise<PaymentRow> {
+  const payment = await tx.get("payments", paymentId)
+  if (!isMfs(payment.tender)) tx.reject("NOT_MFS", {})
+  if (tx.actor.role === "patient") {
+    const own =
+      payment.createdBy === tx.actor.staffId || (await patientMayActFor(tx, payment.patientId))
+    if (!own) tx.reject("NOT_YOUR_PAYMENT", {})
+  } else if (tx.actor.role === "cashier" && payment.branchId !== tx.actor.branchId) {
+    tx.reject("PAYMENT_WRONG_BRANCH", {})
+  }
+  if (payment.status !== "pending") tx.reject("PAYMENT_NOT_PENDING", {})
+  return payment
+}
+
+export type MfsResult = {
+  paymentId: Id
+  invoiceId: Id
+  invoiceNo: string
+  invoiceStatus: string
+  receiptNo?: string
+}
+
+/**
+ * The customer approved the bKash or Nagad push (simulated): the payment is
+ * confirmed and, if that completes the invoice, every unlock of checkout is
+ * applied in this commit. Allowed for the cashier and, in the patient app,
+ * for the payer or a linked family member.
+ */
+export const confirmMfs = defineCommand({
+  name: "billing.confirmMfs",
+  roles: ["cashier", "patient"],
+  input: z.object({
+    paymentId: z.string(),
+    /** Transaction id from the provider; simulated when absent */
+    trxId: z.string().min(4).max(40).optional(),
+    smsLang,
+    idempotencyKey: idempotencyKey.optional(),
+  }),
+  async run(tx, input): Promise<MfsResult> {
+    const payment = await pendingMfs(tx, input.paymentId)
+    const invoice = await tx.get("invoices", payment.invoiceId)
+    if (invoice.paidP + payment.amountP > invoice.totalP) {
+      tx.reject("INVOICE_OVERPAID", { invoiceNo: invoice.invoiceNo })
+    }
+    await confirmPayment(tx, payment, invoice, input.trxId)
+    const refreshed = await refreshInvoice(tx, invoice.id, { smsLang: input.smsLang })
+    return {
+      paymentId: payment.id,
+      invoiceId: invoice.id,
+      invoiceNo: invoice.invoiceNo,
+      invoiceStatus: refreshed.invoice.status,
+      receiptNo: refreshed.settlement?.receiptNo,
+    }
+  },
+})
+
+/**
+ * The customer did not approve in time (or the cashier gave up waiting):
+ * the payment becomes a timeout, a reconciliation item. Nothing unlocks,
+ * nothing else changes; the balance can be taken again with any tender.
+ * The sweeper runs this for pushes older than `rules.mfsPendingTimeoutMin`.
+ */
+export const timeoutMfs = defineCommand({
+  name: "billing.timeoutMfs",
+  roles: ["cashier", "patient"],
+  input: z.object({
+    paymentId: z.string(),
+    idempotencyKey: idempotencyKey.optional(),
+  }),
+  async run(tx, input) {
+    const payment = await pendingMfs(tx, input.paymentId)
+    const invoice = await tx.get("invoices", payment.invoiceId)
+    await tx.update("payments", payment.id, { status: "timeout" })
+    tx.emit("PaymentTimedOut", {
+      branchId: payment.branchId,
+      refs: { patientId: payment.patientId, invoiceId: invoice.id, paymentId: payment.id },
+      params: {
+        invoiceNo: invoice.invoiceNo,
+        ...tenderParams(payment.tender),
+        ...moneyParams(payment.amountP),
+      },
+    })
+    return { paymentId: payment.id, invoiceId: invoice.id, invoiceNo: invoice.invoiceNo }
+  },
+})
+
+/** The balance still due on an invoice, and whether a push is still waiting. */
+async function balanceOf(tx: Tx, invoiceId: Id) {
+  const invoice = await tx.get("invoices", invoiceId)
+  if (invoice.status !== "unpaid" && invoice.status !== "partial") {
+    tx.reject("INVOICE_NOT_OPEN", { invoiceNo: invoice.invoiceNo })
+  }
+  const payments = await tx.list("payments", "invoiceId", invoiceId)
+  if (payments.some((p) => p.status === "pending")) {
+    tx.reject("MFS_STILL_PENDING", { invoiceNo: invoice.invoiceNo })
+  }
+  return { invoice, dueP: invoice.totalP - invoice.paidP }
+}
+
+/**
+ * Take the rest of a partly paid invoice at the counter, typically after a
+ * bKash push timed out. Same tender rules as checkout; settling it applies
+ * the same unlocks.
+ */
+export const collectBalance = defineCommand({
+  name: "billing.collectBalance",
+  roles: ["cashier"],
+  input: z.object({
+    invoiceId: z.string(),
+    tenders: z.array(tender).min(1).max(6),
+    smsLang,
+    idempotencyKey,
+  }),
+  async run(tx, input): Promise<CheckoutResult> {
+    const branch = actorBranch(tx)
+    const shift = await openShiftOf(tx, tx.actor.staffId, branch)
+    if (!shift) tx.reject("NO_OPEN_SHIFT", {})
+    const { invoice, dueP } = await balanceOf(tx, input.invoiceId)
+    if (invoice.branchId !== branch) tx.reject("PAYMENT_WRONG_BRANCH", {})
+    const { changeDueP } = await checkTenders(tx, input.tenders, dueP, branch)
+    const payments = addPayments(tx, {
+      invoice,
+      tenders: input.tenders,
+      idempotencyKey: input.idempotencyKey,
+      shiftId: shift.id,
+    })
+    const refreshed = await refreshInvoice(tx, invoice.id, { smsLang: input.smsLang })
+    return {
+      invoiceId: invoice.id,
+      invoiceNo: invoice.invoiceNo,
+      status: refreshed.invoice.status as CheckoutResult["status"],
+      totalP: invoice.totalP,
+      corporateShareP: 0,
+      patientDueP: dueP,
+      changeDueP,
+      paymentIds: payments.map((p) => p.id),
+      pendingPaymentIds: payments.filter((p) => p.status === "pending").map((p) => p.id),
+      receiptNo: refreshed.settlement?.receiptNo,
+    }
+  },
+})
+
+export type PayOnlineResult = {
+  invoiceId: Id
+  invoiceNo: string
+  /** The pending bKash or Nagad payment to approve (absent when nothing was due) */
+  paymentId?: Id
+  amountP: number
+  invoiceStatus: string
+  receiptNo?: string
+}
+
+/**
+ * Pay from the patient app (plan §9 `/app` bills and pay): chosen open basket
+ * lines of the patient or a linked family member, at one branch, by bKash or
+ * Nagad. Creates the invoice and a PENDING payment; the app's simulated
+ * "Approve in bKash" step then calls `billing.confirmMfs`. Passing
+ * `invoiceId` instead pays the balance of an invoice whose push timed out.
+ */
+export const payOnline = defineCommand({
+  name: "billing.payOnline",
+  roles: ["patient"],
+  input: z
+    .object({
+      patientId: z.string(),
+      basketLineIds: z.array(z.string()).min(1).max(60).optional(),
+      invoiceId: z.string().optional(),
+      tender: z.enum(["bkash", "nagad"]),
+      smsLang,
+      idempotencyKey,
+    })
+    .refine((value) => !!value.basketLineIds !== !!value.invoiceId, {
+      message: "Pass either basketLineIds or invoiceId",
+    }),
+  async run(tx, input): Promise<PayOnlineResult> {
+    if (!(await patientMayActFor(tx, input.patientId))) tx.reject("NOT_YOUR_PATIENT", {})
+    const patient = await billablePatient(tx, input.patientId)
+    const push = (amountP: number): TenderInput[] =>
+      amountP > 0 ? [{ tender: input.tender, amountP }] : []
+
+    if (input.invoiceId) {
+      const { invoice, dueP } = await balanceOf(tx, input.invoiceId)
+      if (invoice.patientId !== patient.id) tx.reject("NOT_YOUR_PATIENT", {})
+      const [payment] = addPayments(tx, {
+        invoice,
+        tenders: push(dueP),
+        idempotencyKey: input.idempotencyKey,
+      })
+      return {
+        invoiceId: invoice.id,
+        invoiceNo: invoice.invoiceNo,
+        paymentId: payment?.id,
+        amountP: dueP,
+        invoiceStatus: invoice.status,
+      }
+    }
+
+    const { lines, branch } = await loadBillLines(tx, {
+      patientId: patient.id,
+      lineIds: input.basketLineIds ?? [],
+    })
+    const created = await createInvoice(tx, {
+      patient,
+      branch,
+      lines,
+      discountPct: 0,
+      cashierId: tx.actor.staffId,
+    })
+    const [payment] = addPayments(tx, {
+      invoice: created.invoice,
+      tenders: push(created.patientDueP),
+      idempotencyKey: input.idempotencyKey,
+    })
+    const refreshed = await refreshInvoice(tx, created.invoice.id, { smsLang: input.smsLang })
+    return {
+      invoiceId: created.invoice.id,
+      invoiceNo: created.invoice.invoiceNo,
+      paymentId: payment?.id,
+      amountP: created.patientDueP,
+      invoiceStatus: refreshed.invoice.status,
+      receiptNo: refreshed.settlement?.receiptNo,
+    }
+  },
+})
+
+/**
+ * Open a cash shift with a float (plan §9 `/cashier/shift`). One open shift
+ * per cashier; closing with the denomination count comes with the variance
+ * scenario (S13).
+ */
+export const openShift = defineCommand({
+  name: "billing.openShift",
+  roles: ["cashier"],
+  input: z.object({
+    floatP: z.number().int().min(0).max(10_000_000),
+    idempotencyKey: idempotencyKey.optional(),
+  }),
+  async run(tx, input) {
+    const branch = actorBranch(tx)
+    if (await openShiftOf(tx, tx.actor.staffId, branch)) tx.reject("SHIFT_ALREADY_OPEN", {})
+    const shift = tx.insert("shifts", {
+      cashierId: tx.actor.staffId,
+      branchId: branch,
+      date: tx.today(),
+      openedAt: tx.now(),
+      floatP: input.floatP,
+      status: "open",
+    })
+    const staff = await tx.find("staff", tx.actor.staffId)
+    tx.emit("ShiftOpened", {
+      refs: { shiftId: shift.id },
+      params: {
+        cashier: staff?.nameEn ?? tx.actor.name,
+        cashierBn: staff?.nameBn ?? tx.actor.name,
+        ...moneyParams(input.floatP),
+      },
+    })
+    return { shiftId: shift.id }
+  },
+})
