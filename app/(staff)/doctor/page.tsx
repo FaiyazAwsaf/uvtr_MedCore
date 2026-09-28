@@ -1,5 +1,6 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { DoctorWorklist } from "@/modules/consultation/components/worklist/doctor-worklist"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.doctor" phase={2} />
+/** "/doctor": today's queue, the KPI row and the results-inbox count (plan §9). */
+export default function DoctorPage() {
+  return <DoctorWorklist />
 }

@@ -1,5 +1,7 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { EncounterScreen } from "@/modules/consultation/components/encounter/encounter-screen"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.doctor" phase={2} />
+/** "/doctor/encounter/[id]": the consultation (plan §9). */
+export default async function EncounterPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return <EncounterScreen encounterId={id} />
 }
