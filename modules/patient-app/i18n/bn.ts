@@ -352,6 +352,9 @@ export const patientAppBn: typeof patientAppEn = {
         rxReady: "প্রেসক্রিপশন অংশে দেখুন।",
         appointmentBooked: "আপনার চেক-ইন পাস ভিজিট অংশে আছে।",
         tokenCalled: "অনুগ্রহ করে ডাক্তারের কক্ষে যান।",
+        appointmentBookedWith:
+          "{doctor}: {date}, {time}। আপনার চেক-ইন পাস ভিজিট অংশে আছে।",
+        tokenCalledRoom: "টোকেন {token}: অনুগ্রহ করে {room} নম্বর কক্ষে যান।",
         paymentReceived: "ইনভয়েস {invoiceNo}-এর রসিদ {receiptNo}।",
         paymentPlain: "বিল অংশে দেখুন।",
         sampleRecollection:

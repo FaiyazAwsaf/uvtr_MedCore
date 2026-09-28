@@ -46,6 +46,8 @@ export function notificationHref(
   if (refs.tokenId) return "/app/appointments"
   if (refs.invoiceId) return `/app/bills?focus=${refs.invoiceId}`
   if (refs.paymentId) return "/app/bills"
+  // A sample to give again (lab recollection): its results will land in Reports.
+  if (refs.labOrderId || refs.specimenId) return "/app/reports"
   return "/app/notifications"
 }
 

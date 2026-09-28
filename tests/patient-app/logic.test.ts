@@ -27,7 +27,9 @@ import {
   pendingOnlinePayments,
 } from "@/modules/patient-app/lib/bills"
 import { familyMembers, resolveMember } from "@/modules/patient-app/lib/family"
+import { bn, en, lookup } from "@/lib/i18n"
 import {
+  NOTIFICATION_KINDS,
   notificationHref,
   notificationTitleKey,
   unseenNotifications,
@@ -528,6 +530,60 @@ describe("notifications", () => {
       at: 1,
       ...patch,
     })
+
+  it("covers every writer's title key in EN and BN, whatever the row's kind spelling", () => {
+    for (const kind of NOTIFICATION_KINDS) {
+      const key = `patientApp.notifications.${kind}`
+      expect(lookup(en, key)).not.toBe(key)
+      expect(lookup(bn, key)).not.toBe(key)
+    }
+    // Scheduling and the queue write kebab-case kinds with camelCase title keys.
+    expect(
+      notificationTitleKey(
+        notification("w1", {
+          kind: "token-called",
+          titleKey: "patientApp.notifications.tokenCalled",
+        })
+      )
+    ).toBe("patientApp.notifications.tokenCalled")
+    expect(
+      notificationTitleKey(
+        notification("w2", {
+          kind: "appointment-booked",
+          titleKey: "patientApp.notifications.appointmentBooked",
+        })
+      )
+    ).toBe("patientApp.notifications.appointmentBooked")
+    const tokenRefs = {
+      patientId: "pat_x",
+      appointmentId: "apt_1",
+      sessionId: "ses_1",
+      tokenId: "tok_1",
+    }
+    expect(notificationHref(notification("w3", { refs: tokenRefs }))).toBe(
+      "/app/appointments?focus=apt_1"
+    )
+    expect(
+      notificationHref(
+        notification("w4", { refs: { rxId: "rx_1", encounterId: "enc_1" } })
+      )
+    ).toBe("/app/prescriptions?focus=rx_1")
+    expect(
+      notificationHref(
+        notification("w5", { refs: { reportId: "rpt_1", labOrderId: "lo_1" } })
+      )
+    ).toBe("/app/reports?focus=rpt_1")
+    expect(
+      notificationHref(
+        notification("w6", { refs: { labOrderId: "lo_1", specimenId: "sp_1" } })
+      )
+    ).toBe("/app/reports")
+    expect(
+      notificationHref(
+        notification("w7", { refs: { patientId: "pat_x", invoiceId: "inv_1" } })
+      )
+    ).toBe("/app/bills?focus=inv_1")
+  })
 
   it("titles known kinds only and opens the matching screen", () => {
     expect(notificationTitleKey(notification("n1", {}))).toBe(

@@ -311,6 +311,7 @@ export function CheckInButton({
         onClick={() =>
           command.run({
             appointmentId: appointment.id,
+            method: "app",
             idempotencyKey: `app-checkin:${appointment.id}`,
           })
         }

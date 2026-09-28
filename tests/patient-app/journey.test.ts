@@ -21,7 +21,10 @@ import {
   pendingOnlinePayments,
 } from "@/modules/patient-app/lib/bills"
 import { familyMembers } from "@/modules/patient-app/lib/family"
-import { notificationTitleKey } from "@/modules/patient-app/lib/notifications"
+import {
+  notificationHref,
+  notificationTitleKey,
+} from "@/modules/patient-app/lib/notifications"
 import { myQueue, nowServing } from "@/modules/patient-app/lib/queue"
 import {
   groupLabReports,
@@ -189,6 +192,33 @@ describe("the Karim family in the patient app", () => {
       token: { id: first.id },
     })
     expect(myQueue(live, tokenId)).toMatchObject({ ahead: waitingBefore - 1 })
+  })
+
+  it("notifies the family account when the booking lands and when Abdul's token is called", async () => {
+    const abdul = HERO.patient.abdulKarim
+    const byTitle = async (key: string) =>
+      (await db.notifications.where("patientId").equals(abdul).toArray()).find(
+        (n) => notificationTitleKey(n) === key
+      )
+    const booked = await byTitle("patientApp.notifications.appointmentBooked")
+    expect(booked).toBeDefined()
+    expect(notificationHref(booked!)).toBe(
+      `/app/appointments?focus=${appointmentId}`
+    )
+
+    await commit(callToken, { tokenId }, { db, actor: doctor })
+    const live = await db.queueTokens
+      .where("sessionId")
+      .equals(SESSION)
+      .toArray()
+    expect(myQueue(live, tokenId)?.state).toBe("called")
+    const called = await byTitle("patientApp.notifications.tokenCalled")
+    expect(called?.params).toMatchObject({
+      token: live.find((t) => t.id === tokenId)!.label,
+    })
+    expect(notificationHref(called!)).toBe(
+      `/app/appointments?focus=${appointmentId}`
+    )
   })
 
   it("pays Abdul's consultation fee from the app with bKash, then approves the push", async () => {

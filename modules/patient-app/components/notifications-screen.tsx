@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 
 import { DateText } from "@/components/shared/date-text"
+import { atDhaka } from "@/core/clock/dates"
 import { useDb } from "@/core/db/DbProvider"
 import type { NotificationRow } from "@/core/db/schema"
 import { cn } from "@/lib/utils"
@@ -26,6 +27,9 @@ import { notificationHref, notificationTitleKey } from "../lib/notifications"
 import { AppCard, AppLoading, ScreenTitle } from "./bits"
 import { patientName, useMember } from "./data"
 import { useAppCommand } from "./use-app-command"
+
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/
+const HHMM = /^\d{2}:\d{2}$/
 
 /** Icon per notification kind (elements, so nothing is created during render). */
 const KIND_ICON: Record<string, React.ReactNode> = {
@@ -56,27 +60,46 @@ export function useNotificationText(): (n: NotificationRow) => {
   title: string
   detail: string
 } {
-  const { t, tk } = useLocale()
+  const { t, tk, locale, dmy, time } = useLocale()
   return React.useCallback(
     (n: NotificationRow) => {
       const key = notificationTitleKey(n)
       const kind = key ? key.split(".").at(-1)! : null
       const title = key ? tk(key, n.params) : t("patientApp.push.generic")
+      const p = n.params ?? {}
       let detail = t("patientApp.inbox.detail.generic")
       if (kind === "paymentReceived") {
         detail =
-          n.params?.invoiceNo && n.params?.receiptNo
+          p.invoiceNo && p.receiptNo
             ? t("patientApp.inbox.detail.paymentReceived", {
-                invoiceNo: n.params.invoiceNo,
-                receiptNo: n.params.receiptNo,
+                invoiceNo: p.invoiceNo,
+                receiptNo: p.receiptNo,
               })
             : t("patientApp.inbox.detail.paymentPlain")
+      } else if (
+        kind === "appointmentBooked" &&
+        p.doctor &&
+        ISO_DAY.test(String(p.date)) &&
+        HHMM.test(String(p.time))
+      ) {
+        // WS-A writes { doctor, doctorBn, date: YYYY-MM-DD, time: HH:MM, source }.
+        detail = t("patientApp.inbox.detail.appointmentBookedWith", {
+          doctor: String(locale === "bn" && p.doctorBn ? p.doctorBn : p.doctor),
+          date: dmy(atDhaka(String(p.date), "12:00")),
+          time: time(atDhaka(String(p.date), String(p.time))),
+        })
+      } else if (kind === "tokenCalled" && p.token && p.room) {
+        // The queue writes { token, room }: the display label and the room code.
+        detail = t("patientApp.inbox.detail.tokenCalledRoom", {
+          token: p.token,
+          room: p.room,
+        })
       } else if (kind) {
         detail = tk(`patientApp.inbox.detail.${kind}`)
       }
       return { title, detail }
     },
-    [t, tk]
+    [t, tk, locale, dmy, time]
   )
 }
 
@@ -114,8 +137,8 @@ export function NotificationItem({
         {icon}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-2">
-          <span className="truncate text-[0.875rem] font-semibold">
+        <span className="flex items-start gap-2">
+          <span className="min-w-0 text-[0.875rem] leading-snug font-semibold">
             {text.title}
           </span>
           {isNew ? (

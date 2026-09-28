@@ -66,8 +66,8 @@ export function useAppCommand<S extends z.ZodType, O>(def: CommandDef<S, O>) {
 
 /**
  * The message for a refusal in the window's language: the app's own wording
- * first (`patientApp.rules`), then billing's (`billing.rules`), then the
- * engine's (`rules`), then a generic line naming the code.
+ * first (`patientApp.rules`), then the owning modules' (`scheduling`, `queue`,
+ * `billing`), then the engine's (`rules`), then a generic line naming the code.
  */
 export function useProblemText(): (problem: AppProblem) => string {
   const { tk, money, num, dmy, uhid } = useLocale()
@@ -81,7 +81,13 @@ export function useProblemText(): (problem: AppProblem) => string {
         else if (ISO_DAY.test(value)) params[key] = dmy(value)
         else params[key] = value
       }
-      for (const namespace of ["patientApp.rules", "billing.rules", "rules"]) {
+      for (const namespace of [
+        "patientApp.rules",
+        "scheduling.rules",
+        "queue.rules",
+        "billing.rules",
+        "rules",
+      ]) {
         const key = `${namespace}.${problem.code}`
         const text = tk(key, params)
         if (text !== key) return text

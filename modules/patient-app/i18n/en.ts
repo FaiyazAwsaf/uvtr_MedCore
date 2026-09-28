@@ -360,6 +360,9 @@ export const patientAppEn = {
         rxReady: "See it in Prescriptions.",
         appointmentBooked: "Your check-in pass is in Visits.",
         tokenCalled: "Please go to the doctor's room.",
+        appointmentBookedWith:
+          "With {doctor}: {date}, {time}. Your check-in pass is in Visits.",
+        tokenCalledRoom: "Token {token}: please go to room {room}.",
         paymentReceived: "Receipt {receiptNo} for invoice {invoiceNo}.",
         paymentPlain: "See it in Bills.",
         sampleRecollection:
