@@ -48,8 +48,14 @@ export type RxPrintData = {
  * and the Bangla dose line (always Bangla, plan §3.11), tests, advice, the
  * follow-up date and a barcode of the Rx number.
  */
-export function RxSheet({ data, catalog }: { data: RxPrintData; catalog: MedicineCatalogRows | undefined }) {
-  const { t, num, dmy, time, locale } = useLocale()
+export function RxSheet({
+  data,
+  catalog,
+}: {
+  data: RxPrintData
+  catalog: MedicineCatalogRows | undefined
+}) {
+  const { t, num, dmy, time, locale, uhid } = useLocale()
   const nameOf = useLineName(catalog)
   const { rx, patient, doctor, doctorStaff, vitals } = data
   const age = ageOf(patient.dob, rx.signedAt ?? now())
@@ -58,9 +64,15 @@ export function RxSheet({ data, catalog }: { data: RxPrintData; catalog: Medicin
   const dash = "-"
   const vitalsText = v
     ? t("prescribing.print.vitalsLine", {
-        bp: v.bpSys !== undefined && v.bpDia !== undefined ? `${num(v.bpSys)}/${num(v.bpDia)}` : dash,
+        bp:
+          v.bpSys !== undefined && v.bpDia !== undefined
+            ? `${num(v.bpSys)}/${num(v.bpDia)}`
+            : dash,
         pulse: v.pulse !== undefined ? num(v.pulse) : dash,
-        temp: v.tempC !== undefined ? num(cToF(v.tempC), { maximumFractionDigits: 1 }) : dash,
+        temp:
+          v.tempC !== undefined
+            ? num(cToF(v.tempC), { maximumFractionDigits: 1 })
+            : dash,
         spo2: v.spo2 !== undefined ? num(v.spo2) : dash,
         weight: v.weightKg !== undefined ? num(v.weightKg) : dash,
       })
@@ -74,13 +86,17 @@ export function RxSheet({ data, catalog }: { data: RxPrintData; catalog: Medicin
       docNo={rx.rxNo}
       meta={
         <>
-          {dmy(rx.signedAt ?? now())} · {t("prescribing.print.version", { version: rx.rxVersion })}
+          {dmy(rx.signedAt ?? now())} ·{" "}
+          {t("prescribing.print.version", { version: rx.rxVersion })}
         </>
       }
       footer={t("prescribing.pad.demoFooter")}
       demoFooter={false}
     >
-      <div className="relative flex flex-col gap-3 text-[0.75rem]" data-testid="rx-print-sheet">
+      <div
+        className="relative flex flex-col gap-3 text-[0.75rem]"
+        data-testid="rx-print-sheet"
+      >
         {!signed ? (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <span className="-rotate-12 rounded border-2 border-[#c0392b]/40 px-3 py-1 text-base font-bold text-[#c0392b]/50 uppercase">
@@ -92,23 +108,36 @@ export function RxSheet({ data, catalog }: { data: RxPrintData; catalog: Medicin
         <div className="flex items-start justify-between gap-4 border-b border-[#ddd] pb-2">
           <div className="min-w-0">
             <div className="text-[0.875rem] font-bold">
-              {doctorStaff ? (locale === "bn" ? doctorStaff.nameBn : doctorStaff.nameEn) : ""}
+              {doctorStaff
+                ? locale === "bn"
+                  ? doctorStaff.nameBn
+                  : doctorStaff.nameEn
+                : ""}
             </div>
             <div lang="en">{doctor?.qualifications}</div>
             <div>{doctorStaff?.designation[locale]}</div>
-            {doctor ? <div lang="en">{t("prescribing.print.bmdc", { no: doctor.bmdcNo })}</div> : null}
+            {doctor ? (
+              <div lang="en">
+                {t("prescribing.print.bmdc", { no: doctor.bmdcNo })}
+              </div>
+            ) : null}
           </div>
           <div className="shrink-0 text-right">
-            <div className="text-[0.8125rem] font-semibold">{locale === "bn" ? patient.nameBn : patient.nameEn}</div>
+            <div className="text-[0.8125rem] font-semibold">
+              {locale === "bn" ? patient.nameBn : patient.nameEn}
+            </div>
             <div>
               {t("prescribing.print.age")}:{" "}
-              {t(age.unit === "years" ? "common.years" : "common.months", { count: num(age.value) })} ·{" "}
-              {t("prescribing.print.sex")}: {t(`common.sexLong.${patient.sex}`)}
+              {t(age.unit === "years" ? "common.years" : "common.months", {
+                count: num(age.value),
+              })}{" "}
+              · {t("prescribing.print.sex")}:{" "}
+              {t(`common.sexLong.${patient.sex}`)}
             </div>
             <div>
               {t("prescribing.print.uhid")}:{" "}
               <span className="font-mono" lang="en">
-                {patient.uhid}
+                {uhid(patient.uhid)}
               </span>
             </div>
             <div>
@@ -119,14 +148,18 @@ export function RxSheet({ data, catalog }: { data: RxPrintData; catalog: Medicin
         </div>
 
         <div>
-          <span className="font-semibold">{t("prescribing.print.vitals")}: </span>
+          <span className="font-semibold">
+            {t("prescribing.print.vitals")}:{" "}
+          </span>
           {vitalsText}
         </div>
 
         <div className="grid grid-cols-[34%_1fr] gap-4">
           <div className="flex flex-col gap-3 border-r border-[#ddd] pr-3">
             <div>
-              <div className="font-semibold">{t("prescribing.print.diagnosis")}</div>
+              <div className="font-semibold">
+                {t("prescribing.print.diagnosis")}
+              </div>
               {data.diagnoses.length ? (
                 <ul className="mt-0.5 flex flex-col gap-0.5" lang="en">
                   {data.diagnoses.map((d) => (
@@ -140,9 +173,14 @@ export function RxSheet({ data, catalog }: { data: RxPrintData; catalog: Medicin
               )}
             </div>
             <div>
-              <div className="font-semibold">{t("prescribing.print.tests")}</div>
+              <div className="font-semibold">
+                {t("prescribing.print.tests")}
+              </div>
               {data.tests.length ? (
-                <ul className="mt-0.5 flex list-disc flex-col gap-0.5 pl-4" lang="en">
+                <ul
+                  className="mt-0.5 flex list-disc flex-col gap-0.5 pl-4"
+                  lang="en"
+                >
                   {data.tests.map((test) => (
                     <li key={test}>{test}</li>
                   ))}
@@ -171,7 +209,11 @@ export function RxSheet({ data, catalog }: { data: RxPrintData; catalog: Medicin
                         {n.generic} {brand.strength} {brand.form}
                       </div>
                     ) : null}
-                    <div className="mt-0.5 text-[0.8125rem]" lang="bn" data-testid="rx-print-bn">
+                    <div
+                      className="mt-0.5 text-[0.8125rem]"
+                      lang="bn"
+                      data-testid="rx-print-bn"
+                    >
                       {line.instructionsBn}
                     </div>
                     <div className="text-[0.6875rem] text-[#555]">
@@ -181,8 +223,13 @@ export function RxSheet({ data, catalog }: { data: RxPrintData; catalog: Medicin
                       · {t(`prescribing.dose.meals.${line.mealTiming}`)} ·{" "}
                       {line.durationDays === 0
                         ? t("prescribing.print.continue")
-                        : t("prescribing.print.forDays", { count: num(line.durationDays) })}{" "}
-                      · {t("prescribing.print.qty", { count: num(line.qtyPrescribed) })}
+                        : t("prescribing.print.forDays", {
+                            count: num(line.durationDays),
+                          })}{" "}
+                      ·{" "}
+                      {t("prescribing.print.qty", {
+                        count: num(line.qtyPrescribed),
+                      })}
                     </div>
                   </li>
                 )
@@ -200,16 +247,28 @@ export function RxSheet({ data, catalog }: { data: RxPrintData; catalog: Medicin
 
         {rx.followUpDate ? (
           <div data-testid="rx-print-follow-up">
-            <span className="font-semibold">{t("prescribing.print.followUp")}: </span>
+            <span className="font-semibold">
+              {t("prescribing.print.followUp")}:{" "}
+            </span>
             {t("prescribing.print.followUpOn", { date: dmy(rx.followUpDate) })}
           </div>
         ) : null}
 
         <div className="mt-2 flex items-end justify-between gap-4">
-          <Barcode value={rx.rxNo} height={34} barWidth={1.2} fontSize={10} plate={false} />
+          <Barcode
+            value={rx.rxNo}
+            height={34}
+            barWidth={1.2}
+            fontSize={10}
+            plate={false}
+          />
           <div className="min-w-[40%] border-t border-[#999] pt-1 text-center text-[0.6875rem]">
             {t("prescribing.print.signature")}
-            {doctorStaff ? <div className="font-semibold">{locale === "bn" ? doctorStaff.nameBn : doctorStaff.nameEn}</div> : null}
+            {doctorStaff ? (
+              <div className="font-semibold">
+                {locale === "bn" ? doctorStaff.nameBn : doctorStaff.nameEn}
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
@@ -231,7 +290,10 @@ export function RxPrintDialog({
   const { t } = useLocale()
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[calc(100svh-2rem)] gap-4 sm:max-w-[42rem]" data-testid="rx-print-preview">
+      <DialogContent
+        className="max-h-[calc(100svh-2rem)] gap-4 sm:max-w-[42rem]"
+        data-testid="rx-print-preview"
+      >
         <DialogHeader>
           <DialogTitle>{t("prescribing.print.preview")}</DialogTitle>
           <DialogDescription className="font-mono" lang="en">

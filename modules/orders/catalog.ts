@@ -40,7 +40,11 @@ export const COMMON_TEST_CODES = [
 ]
 
 /** Tests matching a query by code, name or Bangla gloss: relevance first, then A to Z. */
-export function searchTests(query: string, tests: LabTestRow[], limit = 12): LabTestRow[] {
+export function searchTests(
+  query: string,
+  tests: LabTestRow[],
+  limit = 12
+): LabTestRow[] {
   const q = query.trim()
   if (!q) return []
   return tests

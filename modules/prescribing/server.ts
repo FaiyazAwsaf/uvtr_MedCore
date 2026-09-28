@@ -33,7 +33,12 @@ import {
   type RxAlert,
 } from "./alerts"
 import { dispensableOnHand } from "./alternatives"
-import { instructionsFor, isDoseCode, normaliseDoseCode, quantityFor } from "./dose"
+import {
+  instructionsFor,
+  isDoseCode,
+  normaliseDoseCode,
+  quantityFor,
+} from "./dose"
 
 /** What the doctor writes for one line (the command fills the rest from the dictionary). */
 export type LineContent = {
@@ -49,14 +54,28 @@ export type LineContent = {
 
 type BuiltLine = Omit<
   NewRow<"rxLines">,
-  "rxId" | "patientId" | "branchId" | "lineNo" | "paymentCleared" | "dispensedQty" | "status"
+  | "rxId"
+  | "patientId"
+  | "branchId"
+  | "lineNo"
+  | "paymentCleared"
+  | "dispensedQty"
+  | "status"
 >
 
 /** A full line from the dictionary: generic, strength, form, flags and both instruction lines. */
-export async function buildLine(tx: Tx, content: LineContent): Promise<BuiltLine> {
+export async function buildLine(
+  tx: Tx,
+  content: LineContent
+): Promise<BuiltLine> {
   const code = normaliseDoseCode(content.dosePattern)
-  if (!isDoseCode(code)) tx.reject("DOSE_INVALID", { dose: content.dosePattern })
-  const instructions = instructionsFor(code, content.mealTiming, content.durationDays)
+  if (!isDoseCode(code))
+    tx.reject("DOSE_INVALID", { dose: content.dosePattern })
+  const instructions = instructionsFor(
+    code,
+    content.mealTiming,
+    content.durationDays
+  )
   const qty = content.qtyPrescribed ?? quantityFor(code, content.durationDays)
   const dosing = {
     dosePattern: code,
@@ -68,7 +87,8 @@ export async function buildLine(tx: Tx, content: LineContent): Promise<BuiltLine
   if (content.brandId) {
     const brand = await tx.get("brands", content.brandId)
     const generic = await tx.get("generics", brand.genericId)
-    if (qty < 1) tx.reject("QTY_REQUIRED", { item: `${brand.name} ${brand.strength}` })
+    if (qty < 1)
+      tx.reject("QTY_REQUIRED", { item: `${brand.name} ${brand.strength}` })
     return {
       brandId: brand.id,
       genericId: generic.id,
@@ -77,7 +97,8 @@ export async function buildLine(tx: Tx, content: LineContent): Promise<BuiltLine
       ...dosing,
       qtyPrescribed: qty,
       isAntibiotic: brand.isAntibiotic || generic.isAntibiotic,
-      isControlled: brand.category === "controlled" || !!generic.controlledClass,
+      isControlled:
+        brand.category === "controlled" || !!generic.controlledClass,
     }
   }
   const name = content.nonDictionaryName?.trim()
@@ -115,7 +136,8 @@ async function otherSignedLines(
   const rxCache = new Map<string, PrescriptionRow | undefined>()
   for (const line of await tx.list("rxLines", "patientId", patientId)) {
     if (ignoreRxIds.has(line.rxId)) continue
-    if (!rxCache.has(line.rxId)) rxCache.set(line.rxId, await tx.find("prescriptions", line.rxId))
+    if (!rxCache.has(line.rxId))
+      rxCache.set(line.rxId, await tx.find("prescriptions", line.rxId))
     const rx = rxCache.get(line.rxId)
     if (!rx || rx.status !== "signed") continue
     out.push({ line, rx, name: await lineName(tx, line) })
@@ -125,7 +147,10 @@ async function otherSignedLines(
 
 export type AlertScope = {
   /** Other lines on the prescription being written (drafted or revised) */
-  thisRx: Pick<RxLineRow, "id" | "genericId" | "brandId" | "nonDictionaryName" | "status" | "strength">[]
+  thisRx: Pick<
+    RxLineRow,
+    "id" | "genericId" | "brandId" | "nonDictionaryName" | "status" | "strength"
+  >[]
   /** Prescriptions that do not count as "another active Rx" (the one being revised) */
   ignoreRxIds: string[]
   exceptLineId?: string
@@ -146,9 +171,13 @@ export async function checkAlerts(
   overrides: AlertOverride[] | undefined
 ): Promise<RxAlert[]> {
   const kinds = scope.kinds ?? ["allergy", "duplicate", "critical"]
-  const brand = content.brandId ? await tx.get("brands", content.brandId) : undefined
+  const brand = content.brandId
+    ? await tx.get("brands", content.brandId)
+    : undefined
   const generic = brand ? await tx.get("generics", brand.genericId) : undefined
-  const item = brand ? `${brand.name} ${brand.strength}` : (content.nonDictionaryName ?? "")
+  const item = brand
+    ? `${brand.name} ${brand.strength}`
+    : (content.nonDictionaryName ?? "")
   const alerts: RxAlert[] = []
   if (kinds.includes("allergy")) {
     alerts.push(
@@ -161,14 +190,19 @@ export async function checkAlerts(
   }
   if (kinds.includes("duplicate")) {
     const names = new Map<string, string>()
-    for (const line of scope.thisRx) names.set(line.id, await lineName(tx, line))
+    for (const line of scope.thisRx)
+      names.set(line.id, await lineName(tx, line))
     alerts.push(
       ...duplicateAlertsFor(
         generic?.id,
         { thisRx: (id) => names.get(id) ?? "" },
         {
           thisRx: scope.thisRx,
-          otherLines: await otherSignedLines(tx, patient.id, new Set(scope.ignoreRxIds)),
+          otherLines: await otherSignedLines(
+            tx,
+            patient.id,
+            new Set(scope.ignoreRxIds)
+          ),
           currentMeds: patient.currentMeds,
           now: tx.now(),
           exceptLineId: scope.exceptLineId,
@@ -177,13 +211,19 @@ export async function checkAlerts(
     )
   }
   if (kinds.includes("critical")) {
-    alerts.push(...criticalAlertsFor(await tx.list("results", "patientId", patient.id), tx.now()))
+    alerts.push(
+      ...criticalAlertsFor(
+        await tx.list("results", "patientId", patient.id),
+        tx.now()
+      )
+    )
   }
   const missing = missingOverrides(alerts, overrides)
   if (missing.includes("allergy")) {
     tx.reject("ALLERGY_OVERRIDE_REQUIRED", { item }, { audit: true })
   }
-  if (missing.includes("duplicate")) tx.reject("DUPLICATE_ACK_REQUIRED", { item })
+  if (missing.includes("duplicate"))
+    tx.reject("DUPLICATE_ACK_REQUIRED", { item })
   if (missing.includes("critical")) tx.reject("CRITICAL_ACK_REQUIRED", { item })
   const reasons = (overrides ?? [])
     .filter((o) => alerts.some((a) => a.kind === o.kind))
@@ -196,14 +236,20 @@ export async function checkAlerts(
  * Drafts
  * ================================================================== */
 
-export async function prescriptionsOf(tx: Tx, encounterId: string): Promise<PrescriptionRow[]> {
+export async function prescriptionsOf(
+  tx: Tx,
+  encounterId: string
+): Promise<PrescriptionRow[]> {
   return (await tx.list("prescriptions", "encounterId", encounterId)).sort(
     (a, b) => b.createdAt - a.createdAt
   )
 }
 
 /** The encounter's draft Rx, created on first use. Refused once an Rx is signed (revise it instead). */
-export async function ensureDraftRx(tx: Tx, encounter: EncounterRow): Promise<PrescriptionRow> {
+export async function ensureDraftRx(
+  tx: Tx,
+  encounter: EncounterRow
+): Promise<PrescriptionRow> {
   const all = await prescriptionsOf(tx, encounter.id)
   const signed = all.find((rx) => rx.status === "signed")
   if (signed) tx.reject("RX_ALREADY_SIGNED", { rxNo: signed.rxNo })
@@ -246,7 +292,11 @@ export async function encounterTestNames(
       if (test) names.add(test.name)
     }
   }
-  for (const order of await tx.list("imagingOrders", "encounterId", encounterId)) {
+  for (const order of await tx.list(
+    "imagingOrders",
+    "encounterId",
+    encounterId
+  )) {
     if (order.status === "cancelled") continue
     const test = await tx.find("labTests", order.testId)
     if (test) names.add(test.name)
@@ -259,8 +309,15 @@ export async function encounterTestNames(
  * ================================================================== */
 
 /** Units dispensable at a branch now (FEFO-eligible batches only). */
-export async function onHandNow(tx: Tx, branch: BranchCode, brandId: string): Promise<number> {
-  const levels = await tx.list("stockLevels", "[branchId+brandId]", [branch, brandId])
+export async function onHandNow(
+  tx: Tx,
+  branch: BranchCode,
+  brandId: string
+): Promise<number> {
+  const levels = await tx.list("stockLevels", "[branchId+brandId]", [
+    branch,
+    brandId,
+  ])
   const batches = new Map<string, BatchRow>()
   for (const level of levels) {
     const batch = await tx.find("batches", level.batchId)
@@ -283,7 +340,10 @@ export async function basketLineFor(
 ): Promise<BasketLineRow | undefined> {
   if (!line.brandId || line.status === "cancelled") return undefined
   const brand = await tx.get("brands", line.brandId)
-  const qty = Math.min(line.qtyPrescribed, await onHandNow(tx, rx.branchId, brand.id))
+  const qty = Math.min(
+    line.qtyPrescribed,
+    await onHandNow(tx, rx.branchId, brand.id)
+  )
   if (qty <= 0) return undefined
   return tx.insert("basketLines", {
     patientId: rx.patientId,
@@ -319,7 +379,8 @@ export function queueFollowUpSms(
   lang: Locale
 ): boolean {
   const consent = patient.consents.find((c) => c.purpose === "sms")
-  if (!patient.phone || !patient.phoneVerified || consent?.granted === false) return false
+  if (!patient.phone || !patient.phoneVerified || consent?.granted === false)
+    return false
   const date = dmyLatin(followUpDate)
   queueSms(tx, {
     to: patient.phone,
@@ -354,9 +415,13 @@ const CONTENT_FIELDS = [
   "qtyPrescribed",
 ] as const
 
-function sameContent(a: Pick<RxLineRow, (typeof CONTENT_FIELDS)[number]>, b: BuiltLine): boolean {
+function sameContent(
+  a: Pick<RxLineRow, (typeof CONTENT_FIELDS)[number]>,
+  b: BuiltLine
+): boolean {
   return CONTENT_FIELDS.every(
-    (field) => (a[field] ?? "") === ((b as Record<string, unknown>)[field] ?? "")
+    (field) =>
+      (a[field] ?? "") === ((b as Record<string, unknown>)[field] ?? "")
   )
 }
 
@@ -377,10 +442,15 @@ export async function reviseRx(
     employee: CorporateEmployeeRow | undefined
     encounter?: EncounterRow
   }
-): Promise<{ rx: PrescriptionRow; lines: RxLineRow[]; mode: "revised" | "replaced" }> {
+): Promise<{
+  rx: PrescriptionRow
+  lines: RxLineRow[]
+  mode: "revised" | "replaced"
+}> {
   const oldLines = await liveLinesOf(tx, old.id)
   const dispenses = await tx.list("dispenses", "rxId", old.id)
-  const dispensed = dispenses.length > 0 || oldLines.some((l) => l.dispensedQty > 0)
+  const dispensed =
+    dispenses.length > 0 || oldLines.some((l) => l.dispensedQty > 0)
   const tests = await encounterTestNames(tx, old.encounterId, old.tests)
   const header = {
     encounterId: old.encounterId,
@@ -422,14 +492,16 @@ export async function reviseRx(
     const prev = input.keepLineId ? oldById.get(input.keepLineId) : undefined
     const carryable = !!prev && prev.dispensedQty === 0 && !carried.has(prev.id)
     const unchanged = carryable && sameContent(prev!, content)
-    const paidSwap = carryable && !unchanged && !!input.carryPayment && prev!.paymentCleared
+    const paidSwap =
+      carryable && !unchanged && !!input.carryPayment && prev!.paymentCleared
     const row = tx.insert("rxLines", {
       rxId: rx.id,
       patientId: rx.patientId,
       branchId: rx.branchId,
       lineNo: index + 1,
       ...content,
-      paymentCleared: unchanged || paidSwap ? prev!.paymentCleared : !!opts.employee,
+      paymentCleared:
+        unchanged || paidSwap ? prev!.paymentCleared : !!opts.employee,
       dispensedQty: 0,
       status: "open",
       substitutedFromLineId: input.substitutedFromLineId,

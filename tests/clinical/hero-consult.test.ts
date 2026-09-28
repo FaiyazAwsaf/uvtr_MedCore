@@ -61,15 +61,25 @@ describe("the hero consultation", () => {
       status: "open",
       templateId: "tpl_medicine",
     })
-    expect((await db.appointments.get(appointmentId))?.status).toBe("in-consult")
+    expect((await db.appointments.get(appointmentId))?.status).toBe(
+      "in-consult"
+    )
     expect((await db.queueTokens.get(tokenId))?.status).toBe("in-consult")
-    const started = (await db.events.toArray()).filter((e) => e.type === "EncounterStarted")
+    const started = (await db.events.toArray()).filter(
+      (e) => e.type === "EncounterStarted"
+    )
     expect(started).toHaveLength(1)
-    expect(started[0].consumers).toEqual(EVENT_CATALOG.EncounterStarted.consumers)
+    expect(started[0].consumers).toEqual(
+      EVENT_CATALOG.EncounterStarted.consumers
+    )
   })
 
   it("records the scribe draft with every line linked to the transcript, no medicines or diagnoses", async () => {
-    const { result: rec } = await commit(startScribe, { encounterId }, { db, actor: kamal })
+    const { result: rec } = await commit(
+      startScribe,
+      { encounterId },
+      { db, actor: kamal }
+    )
     expect(rec.scriptId).toBe("scr_hero_fever_cough")
     expect((await db.scribeDrafts.get(rec.draftId))?.status).toBe("recording")
     await commit(completeScribe, { draftId: rec.draftId }, { db, actor: kamal })
@@ -83,24 +93,35 @@ describe("the hero consultation", () => {
     for (const section of draft.draft) {
       for (const line of section.lines) {
         expect(line.transcriptLineIds.length).toBeGreaterThan(0)
-        for (const id of line.transcriptLineIds) expect(lineIds.has(id)).toBe(true)
+        for (const id of line.transcriptLineIds)
+          expect(lineIds.has(id)).toBe(true)
         const words = line.text.toLowerCase().split(/[^a-z]+/)
         expect(brands.some((b) => words.includes(b))).toBe(false)
       }
     }
 
-    const { result } = await commit(acceptScribe, { draftId: rec.draftId }, { db, actor: kamal })
+    const { result } = await commit(
+      acceptScribe,
+      { draftId: rec.draftId },
+      { db, actor: kamal }
+    )
     expect(result.added).toBe(11)
     const note = (await db.notes.get(result.noteId))!
     expect(note.status).toBe("draft")
     expect(note.scribeDraftId).toBe(rec.draftId)
     expect(note.sections.chiefComplaint).toBe("Fever for 5 days with cough.")
-    expect(note.sections.examination).toContain("Crackles heard at the right lung base.")
+    expect(note.sections.examination).toContain(
+      "Crackles heard at the right lung base."
+    )
     expect(note.diagnoses).toEqual([])
     expect((await db.scribeDrafts.get(rec.draftId))?.status).toBe("accepted")
 
     // Accepting again adds nothing twice.
-    const again = await commit(acceptScribe, { draftId: rec.draftId }, { db, actor: kamal })
+    const again = await commit(
+      acceptScribe,
+      { draftId: rec.draftId },
+      { db, actor: kamal }
+    )
     expect(again.result.added).toBe(0)
   })
 
@@ -111,7 +132,14 @@ describe("the hero consultation", () => {
       {
         encounterId,
         expectedVersion: encounter.version,
-        vitals: { bpSys: 138, bpDia: 86, pulse: 96, tempC: 38.2, spo2: 96, weightKg: 70 },
+        vitals: {
+          bpSys: 138,
+          bpDia: 86,
+          pulse: 96,
+          tempC: 38.2,
+          spo2: 96,
+          weightKg: 70,
+        },
       },
       { db, actor: kamal }
     )
@@ -121,14 +149,26 @@ describe("the hero consultation", () => {
       recordedBy: kamal.staffId,
     })
 
-    const draft = (await db.notes.where("encounterId").equals(encounterId).first())!
-    const sections = { ...draft.sections, assessment: "Lower respiratory tract infection." }
+    const draft = (await db.notes
+      .where("encounterId")
+      .equals(encounterId)
+      .first())!
+    const sections = {
+      ...draft.sections,
+      assessment: "Lower respiratory tract infection.",
+    }
     const { result } = await commit(
       signNote,
       {
         encounterId,
         sections,
-        diagnoses: [{ icd10: "J22", label: "Unspecified acute lower respiratory infection", primary: true }],
+        diagnoses: [
+          {
+            icd10: "J22",
+            label: "Unspecified acute lower respiratory infection",
+            primary: true,
+          },
+        ],
         templateId: "tpl_medicine",
         lang: "en",
         expectedVersion: draft.version,
@@ -138,7 +178,8 @@ describe("the hero consultation", () => {
     const note = (await db.notes.get(result.noteId))!
     expect(note).toMatchObject({ status: "signed", noteVersion: 1 })
     expect(note.signedAt).toBeDefined()
-    for (const key of NOTE_SECTION_KEYS) expect(typeof note.sections[key]).toBe("string")
+    for (const key of NOTE_SECTION_KEYS)
+      expect(typeof note.sections[key]).toBe("string")
     expect((await db.encounters.get(encounterId))?.status).toBe("signed")
   })
 
@@ -158,10 +199,20 @@ describe("the hero consultation", () => {
         { db, actor: kamal }
       )
     ).rejects.toMatchObject({ code: "ALLERGY_OVERRIDE_REQUIRED" })
-    const blocked = (await db.audit.toArray()).filter((a) => a.action === "blocked")
-    expect(blocked.at(-1)).toMatchObject({ code: "ALLERGY_OVERRIDE_REQUIRED", command: "rx.addLine" })
-    const abdulLines = await db.rxLines.where("patientId").equals(HERO.patient.abdulKarim).toArray()
-    expect(abdulLines.some((l) => l.brandId === SEED_REFS.brand.moxacil500)).toBe(false)
+    const blocked = (await db.audit.toArray()).filter(
+      (a) => a.action === "blocked"
+    )
+    expect(blocked.at(-1)).toMatchObject({
+      code: "ALLERGY_OVERRIDE_REQUIRED",
+      command: "rx.addLine",
+    })
+    const abdulLines = await db.rxLines
+      .where("patientId")
+      .equals(HERO.patient.abdulKarim)
+      .toArray()
+    expect(
+      abdulLines.some((l) => l.brandId === SEED_REFS.brand.moxacil500)
+    ).toBe(false)
   })
 
   it("shows Zimax 500 out at B1 with alphabetical alternatives, and asks B3 for a transfer", async () => {
@@ -184,7 +235,10 @@ describe("the hero consultation", () => {
     expect([...names].sort((a, b) => a.localeCompare(b))).toEqual(names)
     expect(alts.otherBranches.map((b) => b.branch)).toEqual(["B2", "B3", "B5"])
     // Offline, other branches are unknown (HAZ-15).
-    expect(alternativesFor(zimax, brands, byBranch, "B1", { offline: true }).otherBranches).toEqual([])
+    expect(
+      alternativesFor(zimax, brands, byBranch, "B1", { offline: true })
+        .otherBranches
+    ).toEqual([])
 
     const { result } = await commit(
       requestTransfer,
@@ -257,7 +311,12 @@ describe("the hero consultation", () => {
         addRxLine,
         {
           encounterId,
-          line: { brandId: "brd_napa_500mg", dosePattern: "1+1+1", mealTiming: "after", durationDays: 3 },
+          line: {
+            brandId: "brd_napa_500mg",
+            dosePattern: "1+1+1",
+            mealTiming: "after",
+            durationDays: 3,
+          },
         },
         { db, actor: kamal }
       )
@@ -266,7 +325,12 @@ describe("the hero consultation", () => {
     // Dose edits recompute the instructions and quantity.
     await commit(
       updateRxLine,
-      { lineId: azi.result.lineId, dosePattern: "1+0+0", mealTiming: "before", durationDays: 3 },
+      {
+        lineId: azi.result.lineId,
+        dosePattern: "1+0+0",
+        mealTiming: "before",
+        durationDays: 3,
+      },
       { db, actor: kamal }
     )
     expect((await db.rxLines.get(azi.result.lineId))?.qtyPrescribed).toBe(3)
@@ -283,9 +347,16 @@ describe("the hero consultation", () => {
       { db, actor: kamal }
     )
     const order = (await db.labOrders.get(lab.labOrderId))!
-    expect(order).toMatchObject({ status: "ordered", source: "doctor", doctorId: HERO.doctor.kamal })
+    expect(order).toMatchObject({
+      status: "ordered",
+      source: "doctor",
+      doctorId: HERO.doctor.kamal,
+    })
     expect(order.orderNo).toMatch(/^LO-B1-\d{6}$/)
-    const items = await db.labOrderItems.where("labOrderId").equals(order.id).toArray()
+    const items = await db.labOrderItems
+      .where("labOrderId")
+      .equals(order.id)
+      .toArray()
     expect(items).toHaveLength(2)
     for (const item of items) {
       expect(item).toMatchObject({ status: "ordered", paymentCleared: false })
@@ -329,7 +400,11 @@ describe("the hero consultation", () => {
     await expect(
       commit(
         placeTests,
-        { patientId: HERO.patient.abdulKarim, encounterId, testIds: [SEED_REFS.test.cbc] },
+        {
+          patientId: HERO.patient.abdulKarim,
+          encounterId,
+          testIds: [SEED_REFS.test.cbc],
+        },
         { db, actor: kamal }
       )
     ).rejects.toMatchObject({ code: "DUPLICATE_TEST" })
@@ -340,11 +415,18 @@ describe("the hero consultation", () => {
   })
 
   it("signs the Rx: immutable, in the pharmacy queue, lines in the basket, patient app and SMS", async () => {
-    const rx = (await db.prescriptions.where("encounterId").equals(encounterId).first())!
+    const rx = (await db.prescriptions
+      .where("encounterId")
+      .equals(encounterId)
+      .first())!
     const followUp = addDaysISO(dhakaDate(now()), 7)
     await commit(
       saveRxDraft,
-      { encounterId, advice: "Drink plenty of fluids.", followUpDate: followUp },
+      {
+        encounterId,
+        advice: "Drink plenty of fluids.",
+        followUpDate: followUp,
+      },
       { db, actor: kamal }
     )
     const before = (await db.prescriptions.get(rx.id))!
@@ -375,12 +457,18 @@ describe("the hero consultation", () => {
 
     const queue = await db.pharmacyQueue.where("rxId").equals(rx.id).toArray()
     expect(queue).toHaveLength(1)
-    expect(queue[0]).toMatchObject({ status: "waiting", branchId: "B1", rxNo: signed.rxNo })
+    expect(queue[0]).toMatchObject({
+      status: "waiting",
+      branchId: "B1",
+      rxNo: signed.rxNo,
+    })
 
     const lines = await db.rxLines.where("rxId").equals(rx.id).toArray()
     expect(result.basketLineIds).toHaveLength(2)
     for (const line of lines) {
-      const basket = (await db.basketLines.where("sourceId").equals(line.id).toArray())[0]
+      const basket = (
+        await db.basketLines.where("sourceId").equals(line.id).toArray()
+      )[0]
       const brand = (await db.brands.get(line.brandId!))!
       expect(basket).toMatchObject({
         sourceType: "rx-line",
@@ -395,25 +483,34 @@ describe("the hero consultation", () => {
       expect(basket.unitPriceP).toBeLessThanOrEqual(basket.mrpP!)
     }
 
-    const notification = (await db.notifications.where("patientId").equals(HERO.patient.abdulKarim).toArray()).find(
-      (n) => n.refs.rxId === rx.id
-    )
+    const notification = (
+      await db.notifications
+        .where("patientId")
+        .equals(HERO.patient.abdulKarim)
+        .toArray()
+    ).find((n) => n.refs.rxId === rx.id)
     expect(notification).toMatchObject({
       kind: "rxReady",
       titleKey: "patientApp.notifications.rxReady",
       read: false,
     })
 
-    const sms = (await db.sms.where("patientId").equals(HERO.patient.abdulKarim).toArray()).find(
-      (s) => s.templateId === "follow-up-reminder"
-    )
-    expect(sms).toMatchObject({ to: HERO.karimPhone, lang: "bn", status: "queued" })
+    const sms = (
+      await db.sms.where("patientId").equals(HERO.patient.abdulKarim).toArray()
+    ).find((s) => s.templateId === "follow-up-reminder")
+    expect(sms).toMatchObject({
+      to: HERO.karimPhone,
+      lang: "bn",
+      status: "queued",
+    })
     // No medicine names or clinical content in the SMS.
     for (const word of ["Ace", "Azithrocin", "Paracetamol", "fever", "CBC"]) {
       expect(sms!.text).not.toContain(word)
     }
 
-    const event = (await db.events.toArray()).find((e) => e.type === "PrescriptionSigned")
+    const event = (await db.events.toArray()).find(
+      (e) => e.type === "PrescriptionSigned"
+    )
     expect(event).toMatchObject({
       refs: { rxId: rx.id, patientId: HERO.patient.abdulKarim, encounterId },
       params: { rxNo: signed.rxNo, lines: 2 },
@@ -429,7 +526,12 @@ describe("the hero consultation", () => {
     await expect(
       commit(
         updateRxLine,
-        { lineId: lines[0].id, dosePattern: "1+1+1", mealTiming: "after", durationDays: 5 },
+        {
+          lineId: lines[0].id,
+          dosePattern: "1+1+1",
+          mealTiming: "after",
+          durationDays: 5,
+        },
         { db, actor: kamal }
       )
     ).rejects.toMatchObject({ code: "RX_NOT_DRAFT" })
@@ -438,7 +540,12 @@ describe("the hero consultation", () => {
         addRxLine,
         {
           encounterId,
-          line: { brandId: SEED_REFS.brand.fexo120, dosePattern: "0+0+1", mealTiming: "after", durationDays: 7 },
+          line: {
+            brandId: SEED_REFS.brand.fexo120,
+            dosePattern: "0+0+1",
+            mealTiming: "after",
+            durationDays: 7,
+          },
         },
         { db, actor: kamal }
       )
@@ -450,12 +557,20 @@ describe("the hero consultation", () => {
 
   it("finishes the consultation: encounter closed, appointment and token done", async () => {
     await commit(finishConsultation, { encounterId }, { db, actor: kamal })
-    expect(await db.encounters.get(encounterId)).toMatchObject({ status: "closed" })
+    expect(await db.encounters.get(encounterId)).toMatchObject({
+      status: "closed",
+    })
     expect((await db.encounters.get(encounterId))?.endedAt).toBeDefined()
     expect((await db.appointments.get(appointmentId))?.status).toBe("done")
     expect((await db.queueTokens.get(tokenId))?.status).toBe("done")
-    const finished = (await db.events.toArray()).find((e) => e.type === "ConsultationFinished")
-    expect(finished?.refs).toMatchObject({ encounterId, tokenId, appointmentId })
+    const finished = (await db.events.toArray()).find(
+      (e) => e.type === "ConsultationFinished"
+    )
+    expect(finished?.refs).toMatchObject({
+      encounterId,
+      tokenId,
+      appointmentId,
+    })
     await expect(
       commit(finishConsultation, { encounterId }, { db, actor: kamal })
     ).rejects.toMatchObject({ code: "ENCOUNTER_CLOSED" })

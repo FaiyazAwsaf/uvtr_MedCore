@@ -48,7 +48,10 @@ export function normaliseDiagnoses(list: Diagnosis[]): Diagnosis[] {
     out.push({ icd10: d.icd10, label: d.label, primary: d.primary })
   }
   const primary = out.findIndex((d) => d.primary)
-  return out.map((d, i) => ({ ...d, primary: primary === -1 ? i === 0 : i === primary }))
+  return out.map((d, i) => ({
+    ...d,
+    primary: primary === -1 ? i === 0 : i === primary,
+  }))
 }
 
 /* ================================================================== *
@@ -70,18 +73,20 @@ export const startConsultation = defineCommand({
   async run(tx, input) {
     const appointment = await tx.get("appointments", input.appointmentId)
     const doctor = await actorDoctor(tx)
-    if (!doctor || doctor.id !== appointment.doctorId) tx.reject("NOT_YOUR_PATIENT", {})
+    if (!doctor || doctor.id !== appointment.doctorId)
+      tx.reject("NOT_YOUR_PATIENT", {})
     if (!["checked-in", "in-consult", "done"].includes(appointment.status)) {
       tx.reject("NOT_CHECKED_IN", { status: appointment.status })
     }
     const token = appointment.tokenId
       ? await tx.find("queueTokens", appointment.tokenId)
       : undefined
-    if (token?.status === "skipped") tx.reject("TOKEN_SKIPPED", { token: token.label })
+    if (token?.status === "skipped")
+      tx.reject("TOKEN_SKIPPED", { token: token.label })
 
-    const existing = (await tx.list("encounters", "appointmentId", appointment.id)).sort(
-      (a, b) => b.startedAt - a.startedAt
-    )[0]
+    const existing = (
+      await tx.list("encounters", "appointmentId", appointment.id)
+    ).sort((a, b) => b.startedAt - a.startedAt)[0]
     const refs = {
       patientId: appointment.patientId,
       appointmentId: appointment.id,
@@ -96,7 +101,10 @@ export const startConsultation = defineCommand({
     if (existing && existing.status !== "closed") {
       encounterId = existing.id
     } else if (existing) {
-      await tx.update("encounters", existing.id, { status: "open", endedAt: undefined })
+      await tx.update("encounters", existing.id, {
+        status: "open",
+        endedAt: undefined,
+      })
       encounterId = existing.id
       reopened = true
       tx.emit("EncounterReopened", {
@@ -152,14 +160,21 @@ export const finishConsultation = defineCommand({
     const encounter = await writableEncounter(tx, input.encounterId)
     const [latest] = await notesOf(tx, encounter.id)
     if (!latest || latest.status === "draft") tx.reject("NOTE_NOT_SIGNED", {})
-    for (const rx of await tx.list("prescriptions", "encounterId", encounter.id)) {
+    for (const rx of await tx.list(
+      "prescriptions",
+      "encounterId",
+      encounter.id
+    )) {
       if (rx.status !== "draft") continue
       const lines = await tx.list("rxLines", "rxId", rx.id)
       if (lines.some((l) => l.status !== "cancelled")) {
         tx.reject("RX_DRAFT_OPEN", { rxNo: rx.rxNo })
       }
     }
-    await tx.update("encounters", encounter.id, { status: "closed", endedAt: tx.now() })
+    await tx.update("encounters", encounter.id, {
+      status: "closed",
+      endedAt: tx.now(),
+    })
 
     const appointment = encounter.appointmentId
       ? await tx.find("appointments", encounter.appointmentId)
@@ -184,7 +199,10 @@ export const finishConsultation = defineCommand({
       },
       params: {
         token: token?.label ?? "",
-        minutes: Math.max(1, Math.round((tx.now() - encounter.startedAt) / 60_000)),
+        minutes: Math.max(
+          1,
+          Math.round((tx.now() - encounter.startedAt) / 60_000)
+        ),
       },
     })
     return { encounterId: encounter.id }
@@ -220,7 +238,8 @@ export const saveVitals = defineCommand({
   async run(tx, input) {
     const encounter = await writableEncounter(tx, input.encounterId)
     const v = input.vitals
-    if (!Object.values(v).some((value) => value !== undefined)) tx.reject("VITALS_EMPTY", {})
+    if (!Object.values(v).some((value) => value !== undefined))
+      tx.reject("VITALS_EMPTY", {})
     if (v.bpSys !== undefined && v.bpDia !== undefined && v.bpDia >= v.bpSys) {
       tx.reject("VITALS_BP", {})
     }
@@ -234,7 +253,10 @@ export const saveVitals = defineCommand({
       branchId: encounter.branchId,
       refs: { patientId: encounter.patientId, encounterId: encounter.id },
       params: {
-        bp: v.bpSys !== undefined && v.bpDia !== undefined ? `${v.bpSys}/${v.bpDia}` : "-",
+        bp:
+          v.bpSys !== undefined && v.bpDia !== undefined
+            ? `${v.bpSys}/${v.bpDia}`
+            : "-",
       },
     })
     return { encounterId: encounter.id }
@@ -339,11 +361,16 @@ export const amendNote = defineCommand({
     reason: z.string().trim().min(3).max(500),
   }),
   async run(tx, input) {
-    const old = await tx.get("notes", input.noteId, { expectedVersion: input.expectedVersion })
-    const encounter = await writableEncounter(tx, old.encounterId, { allowClosed: true })
+    const old = await tx.get("notes", input.noteId, {
+      expectedVersion: input.expectedVersion,
+    })
+    const encounter = await writableEncounter(tx, old.encounterId, {
+      allowClosed: true,
+    })
     if (old.status !== "signed") tx.reject("NOTE_NOT_SIGNED", {})
     const [latest] = await notesOf(tx, encounter.id)
-    if (latest.id !== old.id) tx.reject("NOTE_SUPERSEDED", { version: latest.noteVersion })
+    if (latest.id !== old.id)
+      tx.reject("NOTE_SUPERSEDED", { version: latest.noteVersion })
     const sections = cleanSections(input.sections)
     if (isNoteEmpty(sections)) tx.reject("NOTE_EMPTY", {})
 
@@ -390,7 +417,11 @@ export const startScribe = defineCommand({
       specialtyCode: specialty?.code,
       scriptId: input.scriptId,
     })
-    for (const earlier of await tx.list("scribeDrafts", "encounterId", encounter.id)) {
+    for (const earlier of await tx.list(
+      "scribeDrafts",
+      "encounterId",
+      encounter.id
+    )) {
       if (earlier.status === "recording" || earlier.status === "drafted") {
         await tx.update("scribeDrafts", earlier.id, { status: "discarded" })
       }
@@ -414,11 +445,13 @@ export const completeScribe = defineCommand({
   async run(tx, input) {
     const draft = await tx.get("scribeDrafts", input.draftId)
     const encounter = await writableEncounter(tx, draft.encounterId)
-    const count = (d: typeof draft.draft) => d.reduce((n, s) => n + s.lines.length, 0)
+    const count = (d: typeof draft.draft) =>
+      d.reduce((n, s) => n + s.lines.length, 0)
     if (draft.status === "drafted" || draft.status === "accepted") {
       return { draftId: draft.id, lines: count(draft.draft) }
     }
-    if (draft.status !== "recording") tx.reject("SCRIBE_STATE", { status: draft.status })
+    if (draft.status !== "recording")
+      tx.reject("SCRIBE_STATE", { status: draft.status })
     const script =
       SCRIBE_SCRIPTS.find((s) => s.id === draft.scriptId) ??
       scriptFor({ patientId: encounter.patientId })
@@ -446,7 +479,9 @@ export const acceptScribe = defineCommand({
   roles: ["doctor"],
   input: z.object({
     draftId: z.string(),
-    lines: z.array(z.object({ section: sectionKey, index: z.number().int().min(0) })).optional(),
+    lines: z
+      .array(z.object({ section: sectionKey, index: z.number().int().min(0) }))
+      .optional(),
     lang: lang.default("en"),
   }),
   async run(tx, input) {
@@ -459,10 +494,14 @@ export const acceptScribe = defineCommand({
     if (latest && latest.status !== "draft") {
       tx.reject("NOTE_SIGNED", { version: latest.noteVersion })
     }
-    let sections: NoteSections = latest ? { ...latest.sections } : emptySections()
+    let sections: NoteSections = latest
+      ? { ...latest.sections }
+      : emptySections()
     let added = 0
     for (const ref of input.lines ?? allDraftLines(draft.draft)) {
-      const line = draft.draft.find((s) => s.section === ref.section)?.lines[ref.index]
+      const line = draft.draft.find((s) => s.section === ref.section)?.lines[
+        ref.index
+      ]
       if (!line) continue
       const next = appendLine(sections[ref.section], line.text)
       if (next !== sections[ref.section]) {
@@ -535,7 +574,8 @@ export const readInboxItem = defineCommand({
   input: z.object({ inboxItemId: z.string() }),
   async run(tx, input) {
     const item = await ownInboxItem(tx, input.inboxItemId)
-    if (item.status === "unread") await tx.update("inboxItems", item.id, { status: "read" })
+    if (item.status === "unread")
+      await tx.update("inboxItems", item.id, { status: "read" })
     return { inboxItemId: item.id }
   },
 })
@@ -551,7 +591,10 @@ export const acknowledgeInboxItem = defineCommand({
       return { inboxItemId: item.id, ackAt: item.ackAt }
     }
     if (item.kind === "substitution") tx.reject("INBOX_NEEDS_DECISION", {})
-    await tx.update("inboxItems", item.id, { status: "acknowledged", ackAt: tx.now() })
+    await tx.update("inboxItems", item.id, {
+      status: "acknowledged",
+      ackAt: tx.now(),
+    })
     tx.emit("InboxAcknowledged", {
       refs: { ...item.refs, patientId: item.patientId ?? item.refs.patientId },
       params: {},

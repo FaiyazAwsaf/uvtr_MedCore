@@ -6,9 +6,11 @@ export const prescribingEn = {
       draft: "Draft",
       signedV: "Signed · v{version}",
       noLines: "No medicines yet",
-      noLinesHint: "Search a brand or generic above. Offers and stock show once you pick one.",
+      noLinesHint:
+        "Search a brand or generic above. Offers and stock show once you pick one.",
       advice: "Advice",
-      advicePlaceholder: "Advice for the patient (quick texts work here, e.g. .fluids)",
+      advicePlaceholder:
+        "Advice for the patient (quick texts work here, e.g. .fluids)",
       followUp: "Follow-up",
       followUpNone: "No follow-up",
       followUpIn: "In {count} days",
@@ -19,14 +21,16 @@ export const prescribingEn = {
       testsHint: "Tests ordered below are written on the prescription.",
       sign: "Sign prescription",
       signing: "Signing…",
-      signed: "{rxNo} signed: sent to the pharmacy queue and the billing basket",
+      signed:
+        "{rxNo} signed: sent to the pharmacy queue and the billing basket",
       signHint: "Signing makes it permanent. Changes later make a new version.",
       print: "Print preview",
       revise: "Revise",
       revising: "Revising {rxNo}",
       reviseReason: "Reason for the change",
       reviseReasonPlaceholder: "Why the prescription changes",
-      reviseHint: "Before any medicine is handed over this makes v{next} of {rxNo}; after a dispense it makes a new prescription.",
+      reviseHint:
+        "Before any medicine is handed over this makes v{next} of {rxNo}; after a dispense it makes a new prescription.",
       signRevision: "Sign revision",
       cancelRevision: "Cancel",
       revised: "{rxNo} v{version} signed",
@@ -41,13 +45,14 @@ export const prescribingEn = {
       },
       queue: {
         label: "Pharmacy",
-        waiting: "In the pharmacy queue",
+        waiting: "Waiting",
         "in-progress": "Being dispensed",
         partial: "Partly dispensed",
         done: "Dispensed",
         cancelled: "Withdrawn",
       },
-      sentTo: "Sent to the pharmacy queue, the billing basket and the patient app",
+      sentTo:
+        "Sent to the pharmacy queue, the billing basket and the patient app",
       demoFooter: "Demo data: not for clinical use",
     },
     search: {
@@ -66,7 +71,8 @@ export const prescribingEn = {
     pick: {
       clear: "Choose another medicine",
       nonDictionary: "Not in the dictionary",
-      nonDictionaryHint: "Flagged on the prescription and not stock-checked. The patient buys it outside.",
+      nonDictionaryHint:
+        "Flagged on the prescription and not stock-checked. The patient buys it outside.",
       strength: "Strength",
       form: "Form",
       offer: "Offer",
@@ -87,21 +93,26 @@ export const prescribingEn = {
     },
     alerts: {
       allergyTitle: "Allergy alert",
-      allergyBody: "{patient} is allergic to {substance}. {generic} is in the same class ({klass}).",
-      allergyBodyName: "{patient} is allergic to {substance}, which matches this medicine's name.",
+      allergyBody:
+        "{patient} is allergic to {substance}. {generic} is in the same class ({klass}).",
+      allergyBodyName:
+        "{patient} is allergic to {substance}, which matches this medicine's name.",
       reaction: "Recorded reaction: {reaction} ({severity})",
       override: "Override with a reason",
       reason: "Reason for overriding the allergy",
       reasonPlaceholder: "Required: why this medicine is still right",
       duplicateTitle: "Duplicate order",
       duplicateThisRx: "{generic} is already on this prescription as {name}.",
-      duplicateActiveRx: "{generic} is on an active prescription {rxNo} ({date}) as {name}.",
+      duplicateActiveRx:
+        "{generic} is on an active prescription {rxNo} ({date}) as {name}.",
       duplicateCurrentMeds: "{generic} is already a current medicine: {name}.",
       duplicateAck: "I have checked this; add it anyway",
       criticalTitle: "Critical result on file",
-      criticalBody: "{test}: {value} {unit} ({flag}) on {date}. Review it before prescribing.",
+      criticalBody:
+        "{test}: {value} {unit} ({flag}) on {date}. Review it before prescribing.",
       criticalAck: "I have reviewed the critical result",
-      onlyThree: "Only allergy, duplicate order and critical value alerts interrupt prescribing.",
+      onlyThree:
+        "Only allergy, duplicate order and critical value alerts interrupt prescribing.",
     },
     alternatives: {
       title: "Alternatives",
@@ -120,7 +131,8 @@ export const prescribingEn = {
     dose: {
       pattern: "Dose",
       patternPlaceholder: "1+0+1 pc 5",
-      patternHint: "Type a pattern, then AC or PC and the days, e.g. 1+0+1 pc 5",
+      patternHint:
+        "Type a pattern, then AC or PC and the days, e.g. 1+0+1 pc 5",
       invalid: "Not a dose pattern. Use one like 1+0+1.",
       meal: "When",
       meals: {
@@ -186,7 +198,8 @@ export const prescribingEn = {
       version: "v{version}",
       draftWatermark: "Draft: not valid until signed",
       noVitals: "Not recorded",
-      vitalsLine: "BP {bp} mmHg · Pulse {pulse}/min · Temp {temp} °F · SpO2 {spo2}% · Wt {weight} kg",
+      vitalsLine:
+        "BP {bp} mmHg · Pulse {pulse}/min · Temp {temp} °F · SpO2 {spo2}% · Wt {weight} kg",
       forDays: "{count} days",
       continue: "continue",
       qty: "Qty {count}",
@@ -218,16 +231,22 @@ export const prescribingEn = {
       doctorInbox: "Doctor inbox",
     },
     rules: {
-      RX_NOT_DRAFT: "Prescription {rxNo} is signed and can't be edited. Revise it instead.",
+      RX_NOT_DRAFT:
+        "Prescription {rxNo} is signed and can't be edited. Revise it instead.",
       RX_EMPTY: "Add at least one medicine before signing.",
-      RX_ALREADY_SIGNED: "Prescription {rxNo} is already signed. Revise it to add or change medicines.",
+      RX_ALREADY_SIGNED:
+        "Prescription {rxNo} is already signed. Revise it to add or change medicines.",
       RX_NOT_SIGNED: "Prescription {rxNo} is not the current signed version.",
-      QTY_REQUIRED: "Enter the quantity for {item} (when needed or continuing).",
+      QTY_REQUIRED:
+        "Enter the quantity for {item} (when needed or continuing).",
       DOSE_INVALID: "“{dose}” is not a dose pattern. Use one like 1+0+1.",
       MEDICINE_REQUIRED: "Pick a medicine or type its name.",
-      ALLERGY_OVERRIDE_REQUIRED: "{item} matches a recorded allergy. Give a reason to override, or choose another medicine.",
-      DUPLICATE_ACK_REQUIRED: "{item} duplicates a medicine already prescribed. Confirm the duplicate to continue.",
-      CRITICAL_ACK_REQUIRED: "A critical result is on file. Acknowledge it before prescribing {item}.",
+      ALLERGY_OVERRIDE_REQUIRED:
+        "{item} matches a recorded allergy. Give a reason to override, or choose another medicine.",
+      DUPLICATE_ACK_REQUIRED:
+        "{item} duplicates a medicine already prescribed. Confirm the duplicate to continue.",
+      CRITICAL_ACK_REQUIRED:
+        "A critical result is on file. Acknowledge it before prescribing {item}.",
       FOLLOW_UP_PAST: "The follow-up date {date} must be after today.",
       SUBSTITUTION_DECIDED: "This substitution request was already decided.",
       TRANSFER_SAME_BRANCH: "Pick a different branch to transfer from.",

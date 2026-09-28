@@ -17,8 +17,7 @@ import { useLocale } from "@/lib/i18n/provider"
 const RULE_NAMESPACES = ["consultation", "prescribing", "orders"]
 
 export type CommandOutcome<O> =
-  | { ok: true; result: O }
-  | { ok: false; error: unknown; conflict: boolean }
+  { ok: true; result: O } | { ok: false; error: unknown; conflict: boolean }
 
 /**
  * Runs a clinical command as this window's persona. Rule codes the clinical
@@ -26,7 +25,9 @@ export type CommandOutcome<O> =
  * in the shared `rules` namespace); everything else (conflicts, denials,
  * shared rules) goes to the engine's standard dialogs.
  */
-export function useClinicalCommand<S extends z.ZodType, O>(def: CommandDef<S, O>) {
+export function useClinicalCommand<S extends z.ZodType, O>(
+  def: CommandDef<S, O>
+) {
   const db = useDb()
   const actor = useActor()
   const show = useEngineFeedback((state) => state.show)
@@ -41,7 +42,8 @@ export function useClinicalCommand<S extends z.ZodType, O>(def: CommandDef<S, O>
       if (!key) return undefined
       return ruleMessage(error.code, error.params, {
         locale,
-        tk: (k, params) => (k === `rules.${error.code}` ? tk(key, params) : tk(k, params)),
+        tk: (k, params) =>
+          k === `rules.${error.code}` ? tk(key, params) : tk(k, params),
         num: (value) => num(value),
         money,
         dmy,
@@ -52,7 +54,10 @@ export function useClinicalCommand<S extends z.ZodType, O>(def: CommandDef<S, O>
   )
 
   const run = React.useCallback(
-    async (input: z.input<S>, opts?: { quiet?: boolean }): Promise<CommandOutcome<O>> => {
+    async (
+      input: z.input<S>,
+      opts?: { quiet?: boolean }
+    ): Promise<CommandOutcome<O>> => {
       if (!actor) {
         show({ kind: "no-persona", command: def.name })
         return { ok: false, error: null, conflict: false }
@@ -68,7 +73,9 @@ export function useClinicalCommand<S extends z.ZodType, O>(def: CommandDef<S, O>
           if (message) {
             if (!opts?.quiet) {
               toast.error(message, {
-                description: error.audit ? t("shell.feedback.audited") : undefined,
+                description: error.audit
+                  ? t("shell.feedback.audited")
+                  : undefined,
               })
             }
             return { ok: false, error, conflict }

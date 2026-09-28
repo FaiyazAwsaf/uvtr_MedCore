@@ -3,7 +3,8 @@ export const ordersEn = {
     title: "Orders",
     card: {
       title: "Tests and imaging",
-      subtitle: "Orders reach the lab worklist and the billing basket at the same time",
+      subtitle:
+        "Orders reach the lab worklist and the billing basket at the same time",
       search: "Search tests by name or code, e.g. CBC, chest",
       noMatch: "No test matches",
       common: "Common",
@@ -55,7 +56,8 @@ export const ordersEn = {
       audit: "Audit",
     },
     rules: {
-      TEST_KIND: "{test} can't be ordered here: lab tests and imaging are ordered separately.",
+      TEST_KIND:
+        "{test} can't be ordered here: lab tests and imaging are ordered separately.",
       DUPLICATE_TEST: "{test} is already ordered in this consultation.",
       WRONG_PATIENT: "This order does not match the consultation's patient.",
       BRANCH_REQUIRED: "Orders need a branch.",

@@ -70,7 +70,10 @@ export function EncounterScreen({ encounterId }: { encounterId: string }) {
         icon={FileQuestion}
         title={t("consultation.encounter.notFound")}
         description={t("consultation.encounter.notFoundHint")}
-        action={{ label: t("consultation.encounter.backToWorklist"), href: "/doctor" }}
+        action={{
+          label: t("consultation.encounter.backToWorklist"),
+          href: "/doctor",
+        }}
       />
     )
   }
@@ -115,9 +118,17 @@ export function EncounterScreen({ encounterId }: { encounterId: string }) {
           "@min-[78rem]/enc:[grid-template-areas:'work_profile'_'work_history']"
         )}
       >
-        <div className="flex min-w-0 flex-col gap-4 [grid-area:profile]" id="enc-summary">
+        <div
+          className="flex min-w-0 scroll-mt-14 flex-col gap-4 [grid-area:profile]"
+          id="enc-summary"
+        >
           <VitalsCard encounter={encounter} readOnly={closed} />
-          <PatientSummary patient={patient} encounterId={encounter.id} tests={labs?.byId} part="profile" />
+          <PatientSummary
+            patient={patient}
+            encounterId={encounter.id}
+            tests={labs?.byId}
+            part="profile"
+          />
         </div>
 
         <div className="@container/work flex min-w-0 flex-col gap-4 [grid-area:work]">
@@ -129,34 +140,45 @@ export function EncounterScreen({ encounterId }: { encounterId: string }) {
               readOnly={closed}
               flushNote={flushNote}
             />
-            <NoteEditor
+            <div id="enc-note" className="min-w-0 scroll-mt-14">
+              <NoteEditor
+                encounter={encounter}
+                notes={notes}
+                specialtyCode={core.specialty?.code}
+                readOnly={closed}
+                registerFlush={registerFlush}
+              />
+            </div>
+          </div>
+          <div id="enc-rx" className="min-w-0 scroll-mt-14">
+            <RxPad
               encounter={encounter}
-              notes={notes}
-              specialtyCode={core.specialty?.code}
+              patient={patient}
+              doctor={core.doctor}
+              doctorStaff={core.doctorStaff}
+              catalog={catalog}
+              labTestName={labTestName}
+              diagnoses={diagnoses}
               readOnly={closed}
-              registerFlush={registerFlush}
             />
           </div>
-          <RxPad
-            encounter={encounter}
-            patient={patient}
-            doctor={core.doctor}
-            doctorStaff={core.doctorStaff}
-            catalog={catalog}
-            labTestName={labTestName}
-            diagnoses={diagnoses}
-            readOnly={closed}
-          />
-          <OrdersCard
-            encounter={encounter}
-            tests={labs}
-            indicationHint={latest?.sections.chiefComplaint ?? ""}
-            readOnly={closed}
-          />
+          <div id="enc-tests" className="min-w-0 scroll-mt-14">
+            <OrdersCard
+              encounter={encounter}
+              tests={labs}
+              indicationHint={latest?.sections.chiefComplaint ?? ""}
+              readOnly={closed}
+            />
+          </div>
         </div>
 
         <div className="min-w-0 [grid-area:history]">
-          <PatientSummary patient={patient} encounterId={encounter.id} tests={labs?.byId} part="history" />
+          <PatientSummary
+            patient={patient}
+            encounterId={encounter.id}
+            tests={labs?.byId}
+            part="history"
+          />
         </div>
       </div>
     </div>

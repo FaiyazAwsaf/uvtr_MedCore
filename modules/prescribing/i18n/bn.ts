@@ -8,7 +8,8 @@ export const prescribingBn: typeof prescribingEn = {
       draft: "খসড়া",
       signedV: "স্বাক্ষরিত · v{version}",
       noLines: "এখনো কোনো ওষুধ নেই",
-      noLinesHint: "উপরে ব্র্যান্ড বা জেনেরিক খুঁজুন। বেছে নিলে অফার ও মজুদ দেখা যাবে।",
+      noLinesHint:
+        "উপরে ব্র্যান্ড বা জেনেরিক খুঁজুন। বেছে নিলে অফার ও মজুদ দেখা যাবে।",
       advice: "পরামর্শ",
       advicePlaceholder: "রোগীর জন্য পরামর্শ (কুইক টেক্সট চলবে, যেমন .fluids)",
       followUp: "ফলো-আপ",
@@ -21,14 +22,16 @@ export const prescribingBn: typeof prescribingEn = {
       testsHint: "নিচে দেওয়া পরীক্ষাগুলো প্রেসক্রিপশনে লেখা হবে।",
       sign: "প্রেসক্রিপশন স্বাক্ষর",
       signing: "স্বাক্ষর হচ্ছে…",
-      signed: "{rxNo} স্বাক্ষরিত: ফার্মেসির সারি ও বিলিং বাস্কেটে পাঠানো হয়েছে",
+      signed:
+        "{rxNo} স্বাক্ষরিত: ফার্মেসির সারি ও বিলিং বাস্কেটে পাঠানো হয়েছে",
       signHint: "স্বাক্ষরের পর এটি স্থায়ী। পরে বদলালে নতুন সংস্করণ হবে।",
       print: "প্রিন্ট প্রিভিউ",
       revise: "পরিবর্তন",
       revising: "{rxNo} পরিবর্তন করা হচ্ছে",
       reviseReason: "পরিবর্তনের কারণ",
       reviseReasonPlaceholder: "প্রেসক্রিপশন কেন বদলাচ্ছে",
-      reviseHint: "কোনো ওষুধ দেওয়ার আগে এটি {rxNo}-এর v{next} তৈরি করবে; ওষুধ দেওয়ার পরে নতুন প্রেসক্রিপশন হবে।",
+      reviseHint:
+        "কোনো ওষুধ দেওয়ার আগে এটি {rxNo}-এর v{next} তৈরি করবে; ওষুধ দেওয়ার পরে নতুন প্রেসক্রিপশন হবে।",
       signRevision: "পরিবর্তন স্বাক্ষর",
       cancelRevision: "বাতিল",
       revised: "{rxNo} v{version} স্বাক্ষরিত",
@@ -43,7 +46,7 @@ export const prescribingBn: typeof prescribingEn = {
       },
       queue: {
         label: "ফার্মেসি",
-        waiting: "ফার্মেসির সারিতে",
+        waiting: "অপেক্ষায়",
         "in-progress": "ওষুধ দেওয়া হচ্ছে",
         partial: "আংশিক দেওয়া হয়েছে",
         done: "দেওয়া হয়েছে",
@@ -68,7 +71,8 @@ export const prescribingBn: typeof prescribingEn = {
     pick: {
       clear: "অন্য ওষুধ বাছুন",
       nonDictionary: "তালিকায় নেই",
-      nonDictionaryHint: "প্রেসক্রিপশনে চিহ্নিত থাকবে, মজুদ যাচাই হবে না। রোগী বাইরে থেকে কিনবেন।",
+      nonDictionaryHint:
+        "প্রেসক্রিপশনে চিহ্নিত থাকবে, মজুদ যাচাই হবে না। রোগী বাইরে থেকে কিনবেন।",
       strength: "মাত্রা",
       form: "ধরন",
       offer: "অফার",
@@ -89,21 +93,26 @@ export const prescribingBn: typeof prescribingEn = {
     },
     alerts: {
       allergyTitle: "অ্যালার্জি সতর্কতা",
-      allergyBody: "{patient}-এর {substance}-এ অ্যালার্জি আছে। {generic} একই শ্রেণির ({klass})।",
-      allergyBodyName: "{patient}-এর {substance}-এ অ্যালার্জি আছে, যা এই ওষুধের নামের সাথে মেলে।",
+      allergyBody:
+        "{patient}-এর {substance}-এ অ্যালার্জি আছে। {generic} একই শ্রেণির ({klass})।",
+      allergyBodyName:
+        "{patient}-এর {substance}-এ অ্যালার্জি আছে, যা এই ওষুধের নামের সাথে মেলে।",
       reaction: "রেকর্ড করা প্রতিক্রিয়া: {reaction} ({severity})",
       override: "কারণ দিয়ে ওভাররাইড করুন",
       reason: "অ্যালার্জি ওভাররাইডের কারণ",
       reasonPlaceholder: "আবশ্যিক: কেন এই ওষুধই ঠিক",
       duplicateTitle: "দ্বৈত অর্ডার",
       duplicateThisRx: "{generic} এই প্রেসক্রিপশনে আগেই {name} হিসেবে আছে।",
-      duplicateActiveRx: "{generic} চলমান প্রেসক্রিপশন {rxNo} ({date})-এ {name} হিসেবে আছে।",
+      duplicateActiveRx:
+        "{generic} চলমান প্রেসক্রিপশন {rxNo} ({date})-এ {name} হিসেবে আছে।",
       duplicateCurrentMeds: "{generic} ইতিমধ্যে বর্তমান ওষুধ: {name}।",
       duplicateAck: "যাচাই করেছি; তবুও যোগ করুন",
       criticalTitle: "জরুরি ফলাফল রয়েছে",
-      criticalBody: "{test}: {value} {unit} ({flag}), {date}। প্রেসক্রিপশনের আগে দেখে নিন।",
+      criticalBody:
+        "{test}: {value} {unit} ({flag}), {date}। প্রেসক্রিপশনের আগে দেখে নিন।",
       criticalAck: "জরুরি ফলাফল দেখে নিয়েছি",
-      onlyThree: "কেবল অ্যালার্জি, দ্বৈত অর্ডার ও জরুরি ফলাফলের সতর্কতা প্রেসক্রিপশন থামায়।",
+      onlyThree:
+        "কেবল অ্যালার্জি, দ্বৈত অর্ডার ও জরুরি ফলাফলের সতর্কতা প্রেসক্রিপশন থামায়।",
     },
     alternatives: {
       title: "বিকল্প",
@@ -188,7 +197,8 @@ export const prescribingBn: typeof prescribingEn = {
       version: "v{version}",
       draftWatermark: "খসড়া: স্বাক্ষর ছাড়া বৈধ নয়",
       noVitals: "রেকর্ড করা হয়নি",
-      vitalsLine: "রক্তচাপ {bp} mmHg · নাড়ি {pulse}/মিনিট · তাপমাত্রা {temp} °F · SpO2 {spo2}% · ওজন {weight} কেজি",
+      vitalsLine:
+        "রক্তচাপ {bp} mmHg · নাড়ি {pulse}/মিনিট · তাপমাত্রা {temp} °F · SpO2 {spo2}% · ওজন {weight} কেজি",
       forDays: "{count} দিন",
       continue: "চলবে",
       qty: "পরিমাণ {count}",
@@ -220,16 +230,21 @@ export const prescribingBn: typeof prescribingEn = {
       doctorInbox: "ডাক্তারের ইনবক্স",
     },
     rules: {
-      RX_NOT_DRAFT: "প্রেসক্রিপশন {rxNo} স্বাক্ষরিত, সম্পাদনা করা যাবে না। এর বদলে পরিবর্তন করুন।",
+      RX_NOT_DRAFT:
+        "প্রেসক্রিপশন {rxNo} স্বাক্ষরিত, সম্পাদনা করা যাবে না। এর বদলে পরিবর্তন করুন।",
       RX_EMPTY: "স্বাক্ষরের আগে অন্তত একটি ওষুধ যোগ করুন।",
-      RX_ALREADY_SIGNED: "প্রেসক্রিপশন {rxNo} আগেই স্বাক্ষরিত। ওষুধ যোগ বা বদলাতে পরিবর্তন করুন।",
+      RX_ALREADY_SIGNED:
+        "প্রেসক্রিপশন {rxNo} আগেই স্বাক্ষরিত। ওষুধ যোগ বা বদলাতে পরিবর্তন করুন।",
       RX_NOT_SIGNED: "প্রেসক্রিপশন {rxNo} বর্তমান স্বাক্ষরিত সংস্করণ নয়।",
       QTY_REQUIRED: "{item}-এর পরিমাণ লিখুন (প্রয়োজনে বা চলমান হলে)।",
       DOSE_INVALID: "“{dose}” মাত্রার প্যাটার্ন নয়। 1+0+1 এর মতো লিখুন।",
       MEDICINE_REQUIRED: "একটি ওষুধ বাছুন বা তার নাম লিখুন।",
-      ALLERGY_OVERRIDE_REQUIRED: "{item} রেকর্ড করা অ্যালার্জির সাথে মেলে। ওভাররাইডের কারণ দিন, অথবা অন্য ওষুধ বাছুন।",
-      DUPLICATE_ACK_REQUIRED: "{item} ইতিমধ্যে লেখা একটি ওষুধের পুনরাবৃত্তি। এগোতে নিশ্চিত করুন।",
-      CRITICAL_ACK_REQUIRED: "একটি জরুরি ফলাফল রয়েছে। {item} লেখার আগে তা স্বীকার করুন।",
+      ALLERGY_OVERRIDE_REQUIRED:
+        "{item} রেকর্ড করা অ্যালার্জির সাথে মেলে। ওভাররাইডের কারণ দিন, অথবা অন্য ওষুধ বাছুন।",
+      DUPLICATE_ACK_REQUIRED:
+        "{item} ইতিমধ্যে লেখা একটি ওষুধের পুনরাবৃত্তি। এগোতে নিশ্চিত করুন।",
+      CRITICAL_ACK_REQUIRED:
+        "একটি জরুরি ফলাফল রয়েছে। {item} লেখার আগে তা স্বীকার করুন।",
       FOLLOW_UP_PAST: "ফলো-আপের তারিখ {date} আজকের পরে হতে হবে।",
       SUBSTITUTION_DECIDED: "এই বদলের অনুরোধের সিদ্ধান্ত আগেই হয়ে গেছে।",
       TRANSFER_SAME_BRANCH: "স্থানান্তরের জন্য অন্য শাখা বাছুন।",

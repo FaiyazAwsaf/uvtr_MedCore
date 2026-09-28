@@ -68,7 +68,9 @@ export function OrdersCard({
   const [open, setOpen] = React.useState(false)
   const [active, setActive] = React.useState(0)
   const [selected, setSelected] = React.useState<string[]>([])
-  const [priority, setPriority] = React.useState<"routine" | "urgent">("routine")
+  const [priority, setPriority] = React.useState<"routine" | "urgent">(
+    "routine"
+  )
   const [indication, setIndication] = React.useState("")
 
   const placed = useLiveQuery(async (): Promise<Placed[]> => {
@@ -77,7 +79,10 @@ export function OrdersCard({
       db.imagingOrders.where("encounterId").equals(encounter.id).toArray(),
     ])
     const items = orders.length
-      ? await db.labOrderItems.where("labOrderId").anyOf(orders.map((o) => o.id)).toArray()
+      ? await db.labOrderItems
+          .where("labOrderId")
+          .anyOf(orders.map((o) => o.id))
+          .toArray()
       : []
     const orderNo = new Map(orders.map((o) => [o.id, o.orderNo]))
     return [
@@ -100,9 +105,13 @@ export function OrdersCard({
     ]
   }, [db, encounter.id])
 
-  const ordered = new Set((placed ?? []).filter((p) => p.status !== "cancelled").map((p) => p.testId))
+  const ordered = new Set(
+    (placed ?? []).filter((p) => p.status !== "cancelled").map((p) => p.testId)
+  )
   const catalog = tests?.tests ?? []
-  const hits = searchTests(query, catalog).filter((test) => !selected.includes(test.id))
+  const hits = searchTests(query, catalog).filter(
+    (test) => !selected.includes(test.id)
+  )
   const common = COMMON_TEST_CODES.flatMap((code) => {
     const test = catalog.find((x) => x.code === code)
     return test ? [test] : []
@@ -141,20 +150,29 @@ export function OrdersCard({
         patientId: encounter.patientId,
         encounterId: encounter.id,
         testIds: img.map((test) => test.id),
-        indication: indication.trim() || indicationHint.trim() || t("orders.card.indicationPlaceholder"),
+        indication:
+          indication.trim() ||
+          indicationHint.trim() ||
+          t("orders.card.indicationPlaceholder"),
       })
       if (!out.ok) return
       names.push(...img.map((test) => test.code))
       setSelected((s) => s.filter((id) => !img.some((test) => test.id === id)))
     }
-    if (names.length) toast.success(t("orders.card.placed", { tests: names.join(", ") }))
+    if (names.length)
+      toast.success(t("orders.card.placed", { tests: names.join(", ") }))
   }
 
   const busy = labCmd.pending || imgCmd.pending
 
   return (
-    <SectionCard size="sm" icon={FlaskConical} title={t("orders.card.title")} subtitle={t("orders.card.subtitle")}>
-      <div id="enc-tests" className="@container/ord flex flex-col gap-4" data-testid="orders-card">
+    <SectionCard
+      size="sm"
+      icon={FlaskConical}
+      title={t("orders.card.title")}
+      subtitle={t("orders.card.subtitle")}
+    >
+      <div className="flex flex-col gap-4" data-testid="orders-card">
         {!readOnly ? (
           <div className="flex flex-col gap-3">
             <div className="relative">
@@ -219,7 +237,10 @@ export function OrdersCard({
                             <FlaskConical className="size-4 shrink-0 text-muted-foreground" />
                           )}
                           <div className="min-w-0 flex-1">
-                            <div className="truncate text-[0.8125rem] font-medium" lang="en">
+                            <div
+                              className="truncate text-[0.8125rem] font-medium"
+                              lang="en"
+                            >
                               {test.name}
                             </div>
                             <div className="truncate text-xs text-muted-foreground">
@@ -230,17 +251,25 @@ export function OrdersCard({
                             </div>
                           </div>
                           {done ? (
-                            <StatusPill tone="muted" className="h-5 px-2 text-[0.625rem]">
+                            <StatusPill
+                              tone="muted"
+                              className="h-5 px-2 text-[0.625rem]"
+                            >
                               {t("orders.card.already")}
                             </StatusPill>
                           ) : (
-                            <MoneyText poisha={test.priceP} className="text-xs text-muted-foreground" />
+                            <MoneyText
+                              poisha={test.priceP}
+                              className="text-xs text-muted-foreground"
+                            />
                           )}
                         </li>
                       )
                     })
                   ) : (
-                    <li className="px-2.5 py-2 text-[0.8125rem] text-muted-foreground">{t("orders.card.noMatch")}</li>
+                    <li className="px-2.5 py-2 text-[0.8125rem] text-muted-foreground">
+                      {t("orders.card.noMatch")}
+                    </li>
                   )}
                 </ul>
               ) : null}
@@ -259,11 +288,15 @@ export function OrdersCard({
                     data-testid="order-quick"
                     data-test-code={test.code}
                     onClick={() =>
-                      picked ? setSelected((s) => s.filter((id) => id !== test.id)) : choose(test)
+                      picked
+                        ? setSelected((s) => s.filter((id) => id !== test.id))
+                        : choose(test)
                     }
                     className={cn(
                       "h-7 rounded-full px-3 font-mono text-[0.6875rem] transition-colors disabled:opacity-40",
-                      picked ? "bg-primary text-primary-foreground" : "bg-surface-raised text-foreground/85 hover:text-foreground"
+                      picked
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-surface-raised text-foreground/85 hover:text-foreground"
                     )}
                     lang="en"
                   >
@@ -278,17 +311,28 @@ export function OrdersCard({
               {chosen.length ? (
                 <ul className="flex flex-col" data-testid="orders-selected">
                   {chosen.map((test) => (
-                    <li key={test.id} className="flex items-center gap-2 border-b border-hairline py-1.5 last:border-0">
+                    <li
+                      key={test.id}
+                      className="flex items-center gap-2 border-b border-hairline py-1.5 last:border-0"
+                    >
                       {test.kind === "imaging" ? (
                         <ScanLine className="size-4 shrink-0 text-muted-foreground" />
                       ) : (
                         <FlaskConical className="size-4 shrink-0 text-muted-foreground" />
                       )}
-                      <span className="min-w-0 flex-1 truncate text-[0.8125rem]" lang="en">
+                      <span
+                        className="min-w-0 flex-1 truncate text-[0.8125rem]"
+                        lang="en"
+                      >
                         {test.name}
                       </span>
-                      <StatusPill tone="muted" className="h-5 px-2 text-[0.625rem]">
-                        {test.kind === "imaging" ? t("orders.card.imaging") : t("orders.card.lab")}
+                      <StatusPill
+                        tone="muted"
+                        className="h-5 px-2 text-[0.625rem]"
+                      >
+                        {test.kind === "imaging"
+                          ? t("orders.card.imaging")
+                          : t("orders.card.lab")}
                       </StatusPill>
                       <MoneyText poisha={test.priceP} className="text-xs" />
                       <Button
@@ -296,7 +340,9 @@ export function OrdersCard({
                         variant="ghost"
                         aria-label={t("orders.card.remove")}
                         title={t("orders.card.remove")}
-                        onClick={() => setSelected((s) => s.filter((id) => id !== test.id))}
+                        onClick={() =>
+                          setSelected((s) => s.filter((id) => id !== test.id))
+                        }
                       >
                         <X />
                       </Button>
@@ -304,31 +350,45 @@ export function OrdersCard({
                   ))}
                 </ul>
               ) : (
-                <p className="text-[0.8125rem] text-muted-foreground">{t("orders.card.none")}</p>
+                <p className="text-[0.8125rem] text-muted-foreground">
+                  {t("orders.card.none")}
+                </p>
               )}
             </div>
 
             <div className="flex flex-wrap items-end gap-3">
               <div className="flex flex-col gap-1.5">
-                <span className="text-xs font-semibold text-muted-foreground">{t("orders.card.priority")}</span>
+                <span className="text-xs font-semibold text-muted-foreground">
+                  {t("orders.card.priority")}
+                </span>
                 <SegmentedPills
                   size="sm"
                   value={priority}
                   onChange={setPriority}
                   options={[
-                    { value: "routine", label: t("orders.card.priorities.routine") },
-                    { value: "urgent", label: t("orders.card.priorities.urgent") },
+                    {
+                      value: "routine",
+                      label: t("orders.card.priorities.routine"),
+                    },
+                    {
+                      value: "urgent",
+                      label: t("orders.card.priorities.urgent"),
+                    },
                   ]}
                 />
               </div>
               {imagingChosen ? (
                 <label className="flex min-w-[14rem] flex-1 flex-col gap-1.5">
-                  <span className="text-xs font-semibold text-muted-foreground">{t("orders.card.indication")}</span>
+                  <span className="text-xs font-semibold text-muted-foreground">
+                    {t("orders.card.indication")}
+                  </span>
                   <Input
                     className="h-8"
                     value={indication}
                     data-testid="orders-indication"
-                    placeholder={indicationHint || t("orders.card.indicationPlaceholder")}
+                    placeholder={
+                      indicationHint || t("orders.card.indicationPlaceholder")
+                    }
                     onChange={(e) => setIndication(e.target.value)}
                   />
                 </label>
@@ -373,25 +433,42 @@ export function OrdersCard({
                       <FlaskConical className="size-4 shrink-0 text-muted-foreground" />
                     )}
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-[0.8125rem] font-medium" lang="en">
+                      <div
+                        className="truncate text-[0.8125rem] font-medium"
+                        lang="en"
+                      >
                         {test?.name}
                       </div>
-                      <div className="font-mono text-[0.6875rem] text-muted-foreground" lang="en">
+                      <div
+                        className="font-mono text-[0.6875rem] text-muted-foreground"
+                        lang="en"
+                      >
                         {p.orderNo}
                       </div>
                     </div>
-                    <StatusText tone={STATUS_TONE[p.status] ?? "muted"} dot className="text-xs">
+                    <StatusText
+                      tone={STATUS_TONE[p.status] ?? "muted"}
+                      dot
+                      className="text-xs"
+                    >
                       {tk(`orders.card.status.${p.status}`)}
                     </StatusText>
-                    <StatusPill tone={p.paymentCleared ? "success" : "warning"} className="h-5 px-2 text-[0.625rem]">
-                      {p.paymentCleared ? t("orders.card.paid") : t("orders.card.unpaid")}
+                    <StatusPill
+                      tone={p.paymentCleared ? "success" : "warning"}
+                      className="h-5 px-2 text-[0.625rem]"
+                    >
+                      {p.paymentCleared
+                        ? t("orders.card.paid")
+                        : t("orders.card.unpaid")}
                     </StatusPill>
                   </li>
                 )
               })}
             </ul>
           ) : (
-            <p className="text-[0.8125rem] text-muted-foreground">{t("orders.card.nothingOrdered")}</p>
+            <p className="text-[0.8125rem] text-muted-foreground">
+              {t("orders.card.nothingOrdered")}
+            </p>
           )}
         </div>
       </div>

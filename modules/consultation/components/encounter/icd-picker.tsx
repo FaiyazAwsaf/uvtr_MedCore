@@ -12,7 +12,11 @@ import { cn } from "@/lib/utils"
 import { useLocale } from "@/lib/i18n/provider"
 
 /** ICD-10 entries for a query: code, label or Bangla gloss; the doctor's specialty breaks ties. */
-export function searchIcd(query: string, specialty: string | undefined, limit = 8): Icd10Entry[] {
+export function searchIcd(
+  query: string,
+  specialty: string | undefined,
+  limit = 8
+): Icd10Entry[] {
   const q = query.trim()
   if (!q) return []
   return ICD10.map((entry) => ({
@@ -56,18 +60,25 @@ export function IcdPicker({
   const [open, setOpen] = React.useState(false)
   const listId = React.useId()
   const hits = React.useMemo(
-    () => searchIcd(query, specialty).filter((e) => !value.some((d) => d.icd10 === e.code)),
+    () =>
+      searchIcd(query, specialty).filter(
+        (e) => !value.some((d) => d.icd10 === e.code)
+      ),
     [query, specialty, value]
   )
 
   const add = (entry: Icd10Entry) => {
-    onChange([...value, { icd10: entry.code, label: entry.label, primary: value.length === 0 }])
+    onChange([
+      ...value,
+      { icd10: entry.code, label: entry.label, primary: value.length === 0 },
+    ])
     setQuery("")
     setActive(0)
   }
   const remove = (code: string) => {
     const next = value.filter((d) => d.icd10 !== code)
-    if (next.length && !next.some((d) => d.primary)) next[0] = { ...next[0], primary: true }
+    if (next.length && !next.some((d) => d.primary))
+      next[0] = { ...next[0], primary: true }
     onChange(next)
   }
   const makePrimary = (code: string) =>
@@ -84,7 +95,9 @@ export function IcdPicker({
               data-code={d.icd10}
               className={cn(
                 "inline-flex max-w-full items-center gap-1.5 rounded-full py-1 pr-1 pl-2.5 text-xs",
-                d.primary ? "bg-primary-soft text-foreground ring-1 ring-primary/40" : "bg-surface-raised"
+                d.primary
+                  ? "bg-primary-soft text-foreground ring-1 ring-primary/40"
+                  : "bg-surface-raised"
               )}
             >
               <span className="font-mono font-semibold" lang="en">
@@ -94,7 +107,9 @@ export function IcdPicker({
                 {d.label}
               </span>
               {d.primary ? (
-                <span className="text-[0.6875rem] font-semibold text-link">{t("consultation.icd.primary")}</span>
+                <span className="text-[0.6875rem] font-semibold text-link">
+                  {t("consultation.icd.primary")}
+                </span>
               ) : null}
               {!readOnly ? (
                 <>
@@ -126,7 +141,9 @@ export function IcdPicker({
           ))}
         </ul>
       ) : (
-        <p className="text-[0.8125rem] text-muted-foreground">{t("consultation.icd.none")}</p>
+        <p className="text-[0.8125rem] text-muted-foreground">
+          {t("consultation.icd.none")}
+        </p>
       )}
 
       {!readOnly ? (
@@ -186,25 +203,34 @@ export function IcdPicker({
                       i === active && "bg-primary-soft"
                     )}
                   >
-                    <span className="w-14 shrink-0 font-mono font-semibold" lang="en">
+                    <span
+                      className="w-14 shrink-0 font-mono font-semibold"
+                      lang="en"
+                    >
                       {entry.code}
                     </span>
                     <span className="min-w-0 flex-1">
                       <span lang="en">{entry.label}</span>
                       {locale === "bn" ? (
-                        <span className="ml-1.5 text-xs text-muted-foreground">{entry.glossBn}</span>
+                        <span className="ml-1.5 text-xs text-muted-foreground">
+                          {entry.glossBn}
+                        </span>
                       ) : null}
                     </span>
                   </li>
                 ))
               ) : (
-                <li className="px-2.5 py-2 text-[0.8125rem] text-muted-foreground">{t("consultation.icd.noMatch")}</li>
+                <li className="px-2.5 py-2 text-[0.8125rem] text-muted-foreground">
+                  {t("consultation.icd.noMatch")}
+                </li>
               )}
             </ul>
           ) : null}
         </div>
       ) : null}
-      <p className="text-[0.6875rem] text-muted-foreground">{t("consultation.icd.doctorOnly")}</p>
+      <p className="text-[0.6875rem] text-muted-foreground">
+        {t("consultation.icd.doctorOnly")}
+      </p>
     </div>
   )
 }

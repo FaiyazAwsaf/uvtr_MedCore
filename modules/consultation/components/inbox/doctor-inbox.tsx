@@ -50,10 +50,26 @@ import { useDoctor, useLabCatalog } from "../data"
 import { analyteName, FLAG_TONE } from "../encounter/patient-summary"
 import { useClinicalCommand } from "../use-clinical-command"
 
-type Filter = "all" | "unread" | "results" | "critical" | "corrected" | "substitution" | "transfers"
-const RESULT_KINDS: InboxItemRow["kind"][] = ["result", "abnormal", "critical", "corrected", "add-on"]
+type Filter =
+  | "all"
+  | "unread"
+  | "results"
+  | "critical"
+  | "corrected"
+  | "substitution"
+  | "transfers"
+const RESULT_KINDS: InboxItemRow["kind"][] = [
+  "result",
+  "abnormal",
+  "critical",
+  "corrected",
+  "add-on",
+]
 
-const KIND_META: Record<InboxItemRow["kind"], { icon: LucideIcon; tone: Tone }> = {
+const KIND_META: Record<
+  InboxItemRow["kind"],
+  { icon: LucideIcon; tone: Tone }
+> = {
   result: { icon: FlaskConical, tone: "muted" },
   abnormal: { icon: FileWarning, tone: "warning" },
   critical: { icon: Siren, tone: "destructive" },
@@ -89,16 +105,23 @@ export function DoctorInbox() {
 
   const data = useLiveQuery(async () => {
     if (!doctor) return null
-    const items = (await db.inboxItems.where("doctorId").equals(doctor.id).toArray()).sort(
-      (a, b) => b.createdAt - a.createdAt
-    )
-    const patientIds = [...new Set(items.map((i) => i.patientId).filter(Boolean) as string[])]
+    const items = (
+      await db.inboxItems.where("doctorId").equals(doctor.id).toArray()
+    ).sort((a, b) => b.createdAt - a.createdAt)
+    const patientIds = [
+      ...new Set(items.map((i) => i.patientId).filter(Boolean) as string[]),
+    ]
     const patients = new Map(
-      (await db.patients.bulkGet(patientIds)).filter(Boolean).map((p) => [p!.id, p!])
+      (await db.patients.bulkGet(patientIds))
+        .filter(Boolean)
+        .map((p) => [p!.id, p!])
     )
     const transfers = staffId
       ? (await db.transfers.toArray())
-          .filter((tr) => tr.requestedBy === staffId && tr.requestedFrom === "doctor-prompt")
+          .filter(
+            (tr) =>
+              tr.requestedBy === staffId && tr.requestedFrom === "doctor-prompt"
+          )
           .sort((a, b) => b.createdAt - a.createdAt)
       : []
     return { items, patients, transfers }
@@ -112,7 +135,15 @@ export function DoctorInbox() {
   const count = (f: Filter) => items.filter((i) => matches(i, f)).length
   const shown = items.filter((i) => matches(i, filter))
   const options: { value: Filter; label: string; count?: string }[] = (
-    ["all", "unread", "results", "critical", "corrected", "substitution", "transfers"] as Filter[]
+    [
+      "all",
+      "unread",
+      "results",
+      "critical",
+      "corrected",
+      "substitution",
+      "transfers",
+    ] as Filter[]
   ).map((value) => ({
     value,
     label: t(`consultation.inbox.filters.${value}`),
@@ -122,8 +153,12 @@ export function DoctorInbox() {
   return (
     <div className="flex flex-col gap-5" data-testid="doctor-inbox">
       <header>
-        <h1 className="text-[1.375rem] leading-tight font-semibold">{t("consultation.inbox.title")}</h1>
-        <p className="mt-1 text-[0.8125rem] text-muted-foreground">{t("consultation.inbox.subtitle")}</p>
+        <h1 className="text-[1.375rem] leading-tight font-semibold">
+          {t("consultation.inbox.title")}
+        </h1>
+        <p className="mt-1 text-[0.8125rem] text-muted-foreground">
+          {t("consultation.inbox.subtitle")}
+        </p>
       </header>
 
       <SegmentedPills
@@ -134,29 +169,39 @@ export function DoctorInbox() {
         className="flex-wrap"
       />
 
-      <div className="@container/inbox grid items-start gap-5 @min-[74rem]/inbox:grid-cols-[minmax(0,1fr)_20rem]">
-        <SectionCard size="sm" icon={Inbox} title={t(`consultation.inbox.filters.${filter}`)}>
-          {shown.length ? (
-            <ul className="flex flex-col" data-testid="inbox-list">
-              {shown.map((item) => (
-                <InboxRow
-                  key={item.id}
-                  item={item}
-                  patient={item.patientId ? data.patients.get(item.patientId) : undefined}
-                  tests={labs?.byId}
-                />
-              ))}
-            </ul>
-          ) : (
-            <EmptyState
-              size="sm"
-              icon={Inbox}
-              title={t("consultation.inbox.empty")}
-              description={t("consultation.inbox.emptyHint")}
-            />
-          )}
-        </SectionCard>
-        <TransferUpdates transfers={data.transfers} />
+      <div className="@container/inbox">
+        <div className="grid items-start gap-5 @min-[74rem]/inbox:grid-cols-[minmax(0,1fr)_20rem]">
+          <SectionCard
+            size="sm"
+            icon={Inbox}
+            title={t(`consultation.inbox.filters.${filter}`)}
+          >
+            {shown.length ? (
+              <ul className="flex flex-col" data-testid="inbox-list">
+                {shown.map((item) => (
+                  <InboxRow
+                    key={item.id}
+                    item={item}
+                    patient={
+                      item.patientId
+                        ? data.patients.get(item.patientId)
+                        : undefined
+                    }
+                    tests={labs?.byId}
+                  />
+                ))}
+              </ul>
+            ) : (
+              <EmptyState
+                size="sm"
+                icon={Inbox}
+                title={t("consultation.inbox.empty")}
+                description={t("consultation.inbox.emptyHint")}
+              />
+            )}
+          </SectionCard>
+          <TransferUpdates transfers={data.transfers} />
+        </div>
       </div>
     </div>
   )
@@ -191,7 +236,9 @@ function InboxRow({
   tests?: Map<string, LabTestRow>
 }) {
   const { t, tk, locale, time } = useLocale()
-  const [open, setOpen] = React.useState(item.kind === "substitution" && item.status !== "actioned")
+  const [open, setOpen] = React.useState(
+    item.kind === "substitution" && item.status !== "actioned"
+  )
   const read = useClinicalCommand(readInboxItem)
   const ack = useClinicalCommand(acknowledgeInboxItem)
   const flash = useFlashOnChange(item.version)
@@ -204,7 +251,8 @@ function InboxRow({
   const toggle = () => {
     const next = !open
     setOpen(next)
-    if (next && item.status === "unread") void read.run({ inboxItemId: item.id }, { quiet: true })
+    if (next && item.status === "unread")
+      void read.run({ inboxItemId: item.id }, { quiet: true })
   }
   const onAck = async () => {
     const out = await ack.run({ inboxItemId: item.id })
@@ -234,7 +282,12 @@ function InboxRow({
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className={cn("text-[0.875rem]", item.status === "unread" ? "font-bold" : "font-semibold")}>
+            <span
+              className={cn(
+                "text-[0.875rem]",
+                item.status === "unread" ? "font-bold" : "font-semibold"
+              )}
+            >
               {label}
             </span>
             <StatusText tone={STATUS_TONE[item.status]} dot className="text-xs">
@@ -243,25 +296,46 @@ function InboxRow({
           </div>
           {patient ? (
             <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
-              <span className="font-medium text-foreground/85">{nameIn(patient, locale)}</span>
+              <span className="font-medium text-foreground/85">
+                {nameIn(patient, locale)}
+              </span>
               <UhidText uhid={patient.uhid} className="text-[0.6875rem]" />
             </div>
           ) : null}
           <div className="mt-0.5 text-xs text-muted-foreground">
             <DateText value={item.createdAt} variant="relative" />
-            {item.ackAt ? ` · ${t("consultation.inbox.acked", { time: time(item.ackAt) })}` : ""}
+            {item.ackAt
+              ? ` · ${t("consultation.inbox.acked", { time: time(item.ackAt) })}`
+              : ""}
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
-          {isResult && item.status !== "acknowledged" && item.status !== "actioned" ? (
-            <Button size="xs" onClick={onAck} disabled={ack.pending} data-testid="inbox-ack">
+          {isResult &&
+          item.status !== "acknowledged" &&
+          item.status !== "actioned" ? (
+            <Button
+              size="xs"
+              onClick={onAck}
+              disabled={ack.pending}
+              data-testid="inbox-ack"
+            >
               <Check />
               {t("consultation.inbox.ack")}
             </Button>
           ) : null}
-          <Button size="xs" variant="ghost" onClick={toggle} aria-expanded={open} data-testid="inbox-toggle">
-            {open ? t("consultation.inbox.close") : t("consultation.inbox.open")}
-            <ChevronDown className={cn("transition-transform", open && "rotate-180")} />
+          <Button
+            size="xs"
+            variant="ghost"
+            onClick={toggle}
+            aria-expanded={open}
+            data-testid="inbox-toggle"
+          >
+            {open
+              ? t("consultation.inbox.close")
+              : t("consultation.inbox.open")}
+            <ChevronDown
+              className={cn("transition-transform", open && "rotate-180")}
+            />
           </Button>
         </div>
       </div>
@@ -278,43 +352,81 @@ function InboxRow({
   )
 }
 
-function ResultDetails({ item, tests }: { item: InboxItemRow; tests?: Map<string, LabTestRow> }) {
+function ResultDetails({
+  item,
+  tests,
+}: {
+  item: InboxItemRow
+  tests?: Map<string, LabTestRow>
+}) {
   const { t, tk } = useLocale()
   const db = useDb()
   const data = useLiveQuery(async () => {
-    const report = item.refs.reportId ? await db.labReports.get(item.refs.reportId) : undefined
+    const report = item.refs.reportId
+      ? await db.labReports.get(item.refs.reportId)
+      : undefined
     let results: ResultRow[] = []
     if (report) {
-      results = await db.results.where("labOrderItemId").anyOf(report.itemIds).toArray()
+      results = await db.results
+        .where("labOrderItemId")
+        .anyOf(report.itemIds)
+        .toArray()
     } else if (item.refs.resultId) {
       const r = await db.results.get(item.refs.resultId)
       results = r ? [r] : []
     }
-    const imaging = item.refs.imagingOrderId ? await db.imagingOrders.get(item.refs.imagingOrderId) : undefined
-    const imagingReport = imaging?.reportId ? await db.imagingReports.get(imaging.reportId) : undefined
+    const imaging = item.refs.imagingOrderId
+      ? await db.imagingOrders.get(item.refs.imagingOrderId)
+      : undefined
+    const imagingReport = imaging?.reportId
+      ? await db.imagingReports.get(imaging.reportId)
+      : undefined
     return { report, results, imaging, imagingReport }
-  }, [db, item.id, item.refs.reportId, item.refs.resultId, item.refs.imagingOrderId])
+  }, [
+    db,
+    item.id,
+    item.refs.reportId,
+    item.refs.resultId,
+    item.refs.imagingOrderId,
+  ])
 
   if (!data) return null
   const { report, results, imaging, imagingReport } = data
   if (!report && !results.length && !imaging) {
-    return <p className="text-[0.8125rem] text-muted-foreground">{t("consultation.inbox.noReport")}</p>
+    return (
+      <p className="text-[0.8125rem] text-muted-foreground">
+        {t("consultation.inbox.noReport")}
+      </p>
+    )
   }
   return (
     <div className="flex flex-col gap-2" data-testid="inbox-result">
       {report ? (
         <div className="text-xs text-muted-foreground">
           <span className="font-mono" lang="en">
-            {t("consultation.inbox.report", { reportNo: report.reportNo, version: report.reportVersion })}
+            {t("consultation.inbox.report", {
+              reportNo: report.reportNo,
+              version: report.reportVersion,
+            })}
           </span>
           {report.supersedesId || report.reportVersion > 1 ? (
             <div className="mt-1 rounded-md bg-[color-mix(in_oklch,var(--info)_14%,transparent)] px-2.5 py-1.5 text-info">
-              {t("consultation.inbox.reportCorrected", { version: report.reportVersion })}
+              {t("consultation.inbox.reportCorrected", {
+                version: report.reportVersion,
+              })}
               {report.correctionReason ? (
-                <div>{t("consultation.inbox.correctionReason", { reason: report.correctionReason })}</div>
+                <div>
+                  {t("consultation.inbox.correctionReason", {
+                    reason: report.correctionReason,
+                  })}
+                </div>
               ) : null}
               {report.changeSummary ? (
-                <div>{t("consultation.inbox.changeSummary", { summary: report.changeSummary })}</div>
+                <div>
+                  {t("consultation.inbox.changeSummary", {
+                    summary: report.changeSummary,
+                  })}
+                </div>
               ) : null}
             </div>
           ) : null}
@@ -324,14 +436,26 @@ function ResultDetails({ item, tests }: { item: InboxItemRow; tests?: Map<string
         <table className="w-full text-[0.8125rem]">
           <thead>
             <tr className="text-left text-xs text-muted-foreground">
-              <th className="py-1 font-medium">{t("consultation.inbox.analyte")}</th>
-              <th className="py-1 font-medium">{t("consultation.inbox.value")}</th>
-              <th className="py-1 font-medium">{t("consultation.inbox.flag")}</th>
+              <th className="py-1 font-medium">
+                {t("consultation.inbox.analyte")}
+              </th>
+              <th className="py-1 font-medium">
+                {t("consultation.inbox.value")}
+              </th>
+              <th className="py-1 font-medium">
+                {t("consultation.inbox.flag")}
+              </th>
             </tr>
           </thead>
           <tbody>
             {results.map((r) => (
-              <tr key={r.id} className={cn("border-t border-hairline", r.critical && "text-destructive")}>
+              <tr
+                key={r.id}
+                className={cn(
+                  "border-t border-hairline",
+                  r.critical && "text-destructive"
+                )}
+              >
                 <td className="py-1" lang="en">
                   {analyteName(tests?.get(r.testId), r.analyteCode)}
                 </td>
@@ -340,11 +464,16 @@ function ResultDetails({ item, tests }: { item: InboxItemRow; tests?: Map<string
                 </td>
                 <td className="py-1">
                   {r.flag !== "N" ? (
-                    <StatusPill tone={FLAG_TONE[r.flag]} className="h-5 px-2 text-[0.6875rem]">
+                    <StatusPill
+                      tone={FLAG_TONE[r.flag]}
+                      className="h-5 px-2 text-[0.6875rem]"
+                    >
                       {tk(`consultation.summary.flags.${r.flag}`)}
                     </StatusPill>
                   ) : (
-                    <span className="text-xs text-muted-foreground">{tk("consultation.summary.flags.N")}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {tk("consultation.summary.flags.N")}
+                    </span>
                   )}
                 </td>
               </tr>
@@ -354,8 +483,15 @@ function ResultDetails({ item, tests }: { item: InboxItemRow; tests?: Map<string
       ) : null}
       {imaging ? (
         <p className="text-[0.8125rem]">
-          {t("consultation.inbox.imagingReport", { name: tests?.get(imaging.testId)?.name ?? imaging.orderNo })}
-          {imagingReport?.summary ? <span className="text-muted-foreground"> · {imagingReport.summary}</span> : null}
+          {t("consultation.inbox.imagingReport", {
+            name: tests?.get(imaging.testId)?.name ?? imaging.orderNo,
+          })}
+          {imagingReport?.summary ? (
+            <span className="text-muted-foreground">
+              {" "}
+              · {imagingReport.summary}
+            </span>
+          ) : null}
         </p>
       ) : null}
     </div>
@@ -394,31 +530,51 @@ function SubstitutionCard({ item }: { item: InboxItemRow }) {
       db.stockLevels.where("brandId").equals(sub.proposedBrandId).toArray(),
       db.reorderLevels.where("brandId").equals(sub.proposedBrandId).toArray(),
     ])
-    const onHand = stockByBranch(sub.proposedBrandId, levels, reorder)[sub.branchId].onHand
+    const onHand = stockByBranch(sub.proposedBrandId, levels, reorder)[
+      sub.branchId
+    ].onHand
     return {
       sub,
       line,
       from,
       to,
       rxNo: rx?.rxNo,
-      requester: staff ? (locale === "bn" ? staff.nameBn : staff.nameEn) : undefined,
+      requester: staff
+        ? locale === "bn"
+          ? staff.nameBn
+          : staff.nameEn
+        : undefined,
       onHand,
     }
   }, [db, item.refs.substitutionId, locale])
 
-  if (!data) return <p className="text-[0.8125rem] text-muted-foreground">{t("consultation.inbox.noReport")}</p>
+  if (!data)
+    return (
+      <p className="text-[0.8125rem] text-muted-foreground">
+        {t("consultation.inbox.noReport")}
+      </p>
+    )
   const { sub, line, from, to } = data
   const pending = sub.status === "pending"
 
   const run = async (decision: "approve" | "reject") => {
-    const text = note.trim() || (decision === "reject" ? t("consultation.inbox.substitution.defaultReject") : undefined)
-    const out = await decide.run({ substitutionId: sub.id, decision, note: text })
+    const text =
+      note.trim() ||
+      (decision === "reject"
+        ? t("consultation.inbox.substitution.defaultReject")
+        : undefined)
+    const out = await decide.run({
+      substitutionId: sub.id,
+      decision,
+      note: text,
+    })
     if (out.ok) {
       if (out.result.decision === "approved") {
         toast.success(
           t("consultation.inbox.substitution.approved", {
             rxNo: out.result.rxNo,
-            version: out.result.decision === "approved" ? out.result.rxVersion : 1,
+            version:
+              out.result.decision === "approved" ? out.result.rxVersion : 1,
           })
         )
       } else {
@@ -428,13 +584,22 @@ function SubstitutionCard({ item }: { item: InboxItemRow }) {
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-md border border-border/70 p-3" data-testid="substitution-card">
-      <div className="text-[0.8125rem] font-semibold">{t("consultation.inbox.substitution.title")}</div>
+    <div
+      className="flex flex-col gap-3 rounded-md border border-border/70 p-3"
+      data-testid="substitution-card"
+    >
+      <div className="text-[0.8125rem] font-semibold">
+        {t("consultation.inbox.substitution.title")}
+      </div>
       <div className="grid gap-2 @min-[34rem]/inbox:grid-cols-2">
         <div className="rounded-md bg-surface-raised px-3 py-2">
-          <div className="text-xs text-muted-foreground">{t("consultation.inbox.substitution.prescribed")}</div>
+          <div className="text-xs text-muted-foreground">
+            {t("consultation.inbox.substitution.prescribed")}
+          </div>
           <div className="text-[0.8125rem] font-semibold" lang="en">
-            {from ? `${from.name} ${from.strength}` : (line?.nonDictionaryName ?? "")}
+            {from
+              ? `${from.name} ${from.strength}`
+              : (line?.nonDictionaryName ?? "")}
           </div>
           {line ? (
             <div className="text-xs" lang="bn">
@@ -442,24 +607,33 @@ function SubstitutionCard({ item }: { item: InboxItemRow }) {
             </div>
           ) : null}
           {data.rxNo ? (
-            <div className="font-mono text-[0.6875rem] text-muted-foreground" lang="en">
+            <div
+              className="font-mono text-[0.6875rem] text-muted-foreground"
+              lang="en"
+            >
               {data.rxNo}
             </div>
           ) : null}
         </div>
         <div className="rounded-md bg-primary-soft px-3 py-2">
-          <div className="text-xs text-muted-foreground">{t("consultation.inbox.substitution.proposed")}</div>
+          <div className="text-xs text-muted-foreground">
+            {t("consultation.inbox.substitution.proposed")}
+          </div>
           <div className="text-[0.8125rem] font-semibold" lang="en">
             {to ? `${to.name} ${to.strength}` : ""}
           </div>
           <div className="text-xs text-muted-foreground">
-            {t("consultation.inbox.substitution.stock", { branch: branchName(sub.branchId, locale) })}:{" "}
-            {isEdge ? "-" : num(data.onHand)}
+            {t("consultation.inbox.substitution.stock", {
+              branch: branchName(sub.branchId, locale),
+            })}
+            : {isEdge ? "-" : num(data.onHand)}
           </div>
         </div>
       </div>
       <div className="text-[0.8125rem]">
-        <span className="text-muted-foreground">{t("consultation.inbox.substitution.reason")}: </span>
+        <span className="text-muted-foreground">
+          {t("consultation.inbox.substitution.reason")}:{" "}
+        </span>
         {sub.reason}
       </div>
       {data.requester ? (
@@ -473,7 +647,9 @@ function SubstitutionCard({ item }: { item: InboxItemRow }) {
       {pending ? (
         <>
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-semibold text-muted-foreground">{t("consultation.inbox.substitution.note")}</span>
+            <span className="text-xs font-semibold text-muted-foreground">
+              {t("consultation.inbox.substitution.note")}
+            </span>
             <Textarea
               value={note}
               className="min-h-12 text-[0.8125rem]"
@@ -482,7 +658,9 @@ function SubstitutionCard({ item }: { item: InboxItemRow }) {
               onChange={(e) => setNote(e.target.value)}
             />
           </label>
-          <p className="text-[0.6875rem] text-muted-foreground">{t("consultation.inbox.substitution.onlyDoctor")}</p>
+          <p className="text-[0.6875rem] text-muted-foreground">
+            {t("consultation.inbox.substitution.onlyDoctor")}
+          </p>
           <div className="flex flex-wrap justify-end gap-2">
             <Button
               size="sm"
@@ -493,18 +671,31 @@ function SubstitutionCard({ item }: { item: InboxItemRow }) {
             >
               {t("consultation.inbox.substitution.reject")}
             </Button>
-            <Button size="sm" onClick={() => run("approve")} disabled={decide.pending} data-testid="substitution-approve">
+            <Button
+              size="sm"
+              onClick={() => run("approve")}
+              disabled={decide.pending}
+              data-testid="substitution-approve"
+            >
               <Check />
               {t("consultation.inbox.substitution.approve")}
             </Button>
           </div>
         </>
       ) : (
-        <div className="text-[0.8125rem]" data-testid="substitution-decision" data-status={sub.status}>
+        <div
+          className="text-[0.8125rem]"
+          data-testid="substitution-decision"
+          data-status={sub.status}
+        >
           {t("consultation.inbox.substitution.decided", {
-            decision: tk(`consultation.inbox.substitution.decisions.${sub.status}`),
+            decision: tk(
+              `consultation.inbox.substitution.decisions.${sub.status}`
+            ),
           })}
-          {sub.decisionNote ? <span className="text-muted-foreground"> · {sub.decisionNote}</span> : null}
+          {sub.decisionNote ? (
+            <span className="text-muted-foreground"> · {sub.decisionNote}</span>
+          ) : null}
         </div>
       )}
     </div>
@@ -516,9 +707,13 @@ function TransferUpdates({ transfers }: { transfers: TransferRow[] }) {
   const db = useDb()
   const lines = useLiveQuery(async () => {
     const ids = transfers.map((tr) => tr.id)
-    const rows = ids.length ? await db.transferLines.where("transferId").anyOf(ids).toArray() : []
+    const rows = ids.length
+      ? await db.transferLines.where("transferId").anyOf(ids).toArray()
+      : []
     const brands = new Map(
-      (await db.brands.bulkGet([...new Set(rows.map((r) => r.brandId))])).filter(Boolean).map((b) => [b!.id, b!])
+      (await db.brands.bulkGet([...new Set(rows.map((r) => r.brandId))]))
+        .filter(Boolean)
+        .map((b) => [b!.id, b!])
     )
     return rows.map((r) => ({ ...r, brand: brands.get(r.brandId) }))
   }, [db, transfers.map((tr) => `${tr.id}:${tr.version}`).join(",")])
@@ -540,11 +735,20 @@ function TransferUpdates({ transfers }: { transfers: TransferRow[] }) {
               data-status={tr.status}
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="font-mono text-[0.8125rem] font-semibold" lang="en">
+                <span
+                  className="font-mono text-[0.8125rem] font-semibold"
+                  lang="en"
+                >
                   {tr.transferNo}
                 </span>
                 <StatusText
-                  tone={tr.status === "received" ? "success" : tr.status === "cancelled" ? "muted" : "info"}
+                  tone={
+                    tr.status === "received"
+                      ? "success"
+                      : tr.status === "cancelled"
+                        ? "muted"
+                        : "info"
+                  }
                   dot
                   className="text-xs"
                 >
@@ -563,7 +767,9 @@ function TransferUpdates({ transfers }: { transfers: TransferRow[] }) {
                   <div key={l.id} className="text-xs" lang="en">
                     {t("consultation.inbox.transfers.line", {
                       qty: num(l.qtyRequested),
-                      item: l.brand ? `${l.brand.name} ${l.brand.strength}` : l.brandId,
+                      item: l.brand
+                        ? `${l.brand.name} ${l.brand.strength}`
+                        : l.brandId,
                     })}
                   </div>
                 ))}
@@ -571,7 +777,9 @@ function TransferUpdates({ transfers }: { transfers: TransferRow[] }) {
           ))}
         </ul>
       ) : (
-        <p className="text-[0.8125rem] text-muted-foreground">{t("consultation.inbox.transfers.empty")}</p>
+        <p className="text-[0.8125rem] text-muted-foreground">
+          {t("consultation.inbox.transfers.empty")}
+        </p>
       )}
     </SectionCard>
   )

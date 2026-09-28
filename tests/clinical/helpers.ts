@@ -74,8 +74,11 @@ export async function startVisit(
   db: MedcoreDb,
   patientId: string = HERO.patient.abdulKarim
 ): Promise<{ appointmentId: string; tokenId: string; encounterId: string }> {
-  const existing = (await db.appointments.where("sessionId").equals(KAMAL_SESSION).toArray()).find(
-    (a) => a.patientId === patientId && ["booked", "checked-in"].includes(a.status)
+  const existing = (
+    await db.appointments.where("sessionId").equals(KAMAL_SESSION).toArray()
+  ).find(
+    (a) =>
+      a.patientId === patientId && ["booked", "checked-in"].includes(a.status)
   )
   let appointmentId = existing?.id
   if (!appointmentId) {
@@ -99,10 +102,16 @@ export async function startVisit(
   }
   let tokenId = (await db.appointments.get(appointmentId))!.tokenId
   if (!tokenId) {
-    tokenId = (await commit(checkIn, { appointmentId }, { db, actor: reception })).result.tokenId
+    tokenId = (
+      await commit(checkIn, { appointmentId }, { db, actor: reception })
+    ).result.tokenId
   }
   await commit(callToken, { tokenId }, { db, actor: kamal })
-  const started = await commit(startConsultation, { appointmentId }, { db, actor: kamal })
+  const started = await commit(
+    startConsultation,
+    { appointmentId },
+    { db, actor: kamal }
+  )
   return { appointmentId, tokenId, encounterId: started.result.encounterId }
 }
 
@@ -117,13 +126,27 @@ export const testDispense = defineCommand({
   async run(tx, input) {
     const line = await tx.get("rxLines", input.rxLineId)
     const brand = await tx.get("brands", line.brandId!)
-    const levels = await tx.list("stockLevels", "[branchId+brandId]", [line.branchId, brand.id])
-    const batches = await Promise.all(levels.map((l) => tx.get("batches", l.batchId)))
-    const { picks } = fefoAllocate(input.qty, line.branchId, brand.id, levels, batches, tx.today())
+    const levels = await tx.list("stockLevels", "[branchId+brandId]", [
+      line.branchId,
+      brand.id,
+    ])
+    const batches = await Promise.all(
+      levels.map((l) => tx.get("batches", l.batchId))
+    )
+    const { picks } = fefoAllocate(
+      input.qty,
+      line.branchId,
+      brand.id,
+      levels,
+      batches,
+      tx.today()
+    )
     await tx.update("rxLines", line.id, { paymentCleared: true })
     let given = 0
     for (const pick of picks) {
-      await tx.update("stockLevels", pick.level.id, { qty: pick.level.qty - pick.take })
+      await tx.update("stockLevels", pick.level.id, {
+        qty: pick.level.qty - pick.take,
+      })
       tx.insert("dispenses", {
         rxId: line.rxId,
         rxLineId: line.id,
@@ -145,7 +168,10 @@ export const testDispense = defineCommand({
     }
     await tx.update("rxLines", line.id, {
       dispensedQty: line.dispensedQty + given,
-      status: line.dispensedQty + given >= line.qtyPrescribed ? "dispensed" : "partial",
+      status:
+        line.dispensedQty + given >= line.qtyPrescribed
+          ? "dispensed"
+          : "partial",
     })
     return { given }
   },
@@ -155,7 +181,11 @@ export const testDispense = defineCommand({
 export const testRequestSubstitution = defineCommand({
   name: "test.requestSubstitution",
   roles: "any",
-  input: z.object({ rxLineId: z.string(), proposedBrandId: z.string(), reason: z.string() }),
+  input: z.object({
+    rxLineId: z.string(),
+    proposedBrandId: z.string(),
+    reason: z.string(),
+  }),
   async run(tx, input) {
     const line = await tx.get("rxLines", input.rxLineId)
     const rx = await tx.get("prescriptions", line.rxId)

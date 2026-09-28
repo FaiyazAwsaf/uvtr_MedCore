@@ -51,7 +51,10 @@ export async function activeEmployee(
   patient: PatientRow
 ): Promise<CorporateEmployeeRow | undefined> {
   if (!patient.corporateEmployeeId) return undefined
-  const employee = await tx.find("corporateEmployees", patient.corporateEmployeeId)
+  const employee = await tx.find(
+    "corporateEmployees",
+    patient.corporateEmployeeId
+  )
   return employee?.status === "active" ? employee : undefined
 }
 

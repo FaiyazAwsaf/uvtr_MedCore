@@ -1,7 +1,13 @@
 "use client"
 
 import * as React from "react"
-import { FilePenLine, FileSignature, History, LayoutTemplate, PenLine } from "lucide-react"
+import {
+  FilePenLine,
+  FileSignature,
+  History,
+  LayoutTemplate,
+  PenLine,
+} from "lucide-react"
 import { toast } from "sonner"
 
 import { SegmentedPills } from "@/components/motion/segmented"
@@ -10,7 +16,12 @@ import { StatusPill } from "@/components/shared/status"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import type { Diagnosis, EncounterRow, NoteRow, NoteSections } from "@/core/db/schema"
+import type {
+  Diagnosis,
+  EncounterRow,
+  NoteRow,
+  NoteSections,
+} from "@/core/db/schema"
 import type { QuickText } from "@/core/seed/content"
 import type { Locale } from "@/lib/i18n/config"
 import { cn } from "@/lib/utils"
@@ -78,17 +89,29 @@ export function NoteEditor({
       title={t("consultation.note.title")}
       action={
         signedLatest ? (
-          <StatusPill tone="success" dot data-testid="note-status" data-status="signed">
-            {t("consultation.note.signedV", { version: signedLatest.noteVersion })}
+          <StatusPill
+            tone="success"
+            dot
+            data-testid="note-status"
+            data-status="signed"
+          >
+            {t("consultation.note.signedV", {
+              version: signedLatest.noteVersion,
+            })}
           </StatusPill>
         ) : (
-          <StatusPill tone="warning" dot data-testid="note-status" data-status="draft">
+          <StatusPill
+            tone="warning"
+            dot
+            data-testid="note-status"
+            data-status="draft"
+          >
             {t("consultation.note.draft")}
           </StatusPill>
         )
       }
     >
-      <div id="enc-note" className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4">
         {notes === undefined ? null : signedLatest && !amending ? (
           <SignedNote
             note={signedLatest}
@@ -96,7 +119,11 @@ export function NoteEditor({
             onAmend={() => setAmending(true)}
           />
         ) : signedLatest && amending ? (
-          <AmendForm note={signedLatest} specialtyCode={specialtyCode} onDone={() => setAmending(false)} />
+          <AmendForm
+            note={signedLatest}
+            specialtyCode={specialtyCode}
+            onDone={() => setAmending(false)}
+          />
         ) : (
           <DraftForm
             encounter={encounter}
@@ -113,7 +140,10 @@ export function NoteEditor({
               <History className="size-3.5" />
               {t("consultation.note.versions")}
             </h3>
-            <ul className="flex flex-col gap-1 text-xs text-muted-foreground" data-testid="note-versions">
+            <ul
+              className="flex flex-col gap-1 text-xs text-muted-foreground"
+              data-testid="note-versions"
+            >
               {notes.map((n) => (
                 <li key={n.id}>
                   {t("consultation.note.versionLine", {
@@ -121,7 +151,9 @@ export function NoteEditor({
                     status: tk(`consultation.note.versionStatus.${n.status}`),
                     time: time(n.signedAt ?? n.updatedAt),
                   })}
-                  {n.amendReason ? ` · ${t("consultation.note.amendedBecause", { reason: n.amendReason })}` : ""}
+                  {n.amendReason
+                    ? ` · ${t("consultation.note.amendedBecause", { reason: n.amendReason })}`
+                    : ""}
                 </li>
               ))}
             </ul>
@@ -154,7 +186,10 @@ function SectionFields({
       {NOTE_SECTION_KEYS.map((key) => (
         <label
           key={key}
-          className={cn("flex min-w-0 flex-col gap-1.5", key === "chiefComplaint" && "@min-[40rem]/note:col-span-2")}
+          className={cn(
+            "flex min-w-0 flex-col gap-1.5",
+            key === "chiefComplaint" && "@min-[40rem]/note:col-span-2"
+          )}
         >
           <span className="text-xs font-semibold text-muted-foreground">
             {t(`consultation.note.sections.${key}`)}
@@ -165,7 +200,10 @@ function SectionFields({
             readOnly={readOnly}
             placeholder={scaffold[key]}
             lang={lang}
-            className={cn("text-[0.8125rem] leading-relaxed", key === "chiefComplaint" ? "min-h-12" : "min-h-24")}
+            className={cn(
+              "text-[0.8125rem] leading-relaxed",
+              key === "chiefComplaint" ? "min-h-12" : "min-h-24"
+            )}
             onChange={(e) => {
               const value = e.target.value
               onChange(key, expandQuickText(value, lang) ?? value)
@@ -196,7 +234,12 @@ function DraftForm({
   const initial = React.useCallback(
     (row: NoteRow | undefined): Draft =>
       row
-        ? { sections: row.sections, diagnoses: row.diagnoses, templateId: row.templateId, lang: row.lang }
+        ? {
+            sections: row.sections,
+            diagnoses: row.diagnoses,
+            templateId: row.templateId,
+            lang: row.lang,
+          }
         : {
             sections: emptySections(),
             diagnoses: [],
@@ -212,7 +255,9 @@ function DraftForm({
   const [saving, setSaving] = React.useState(false)
   const editSeq = React.useRef(0)
   const knownVersion = React.useRef<number | undefined>(latest?.version)
-  const syncedKey = React.useRef(latest ? `${latest.id}:${latest.version}` : "none")
+  const syncedKey = React.useRef(
+    latest ? `${latest.id}:${latest.version}` : "none"
+  )
   const timer = React.useRef<number | undefined>(undefined)
   const inflight = React.useRef<Promise<void>>(Promise.resolve())
 
@@ -282,7 +327,9 @@ function DraftForm({
     if (out.ok) {
       dirtyRef.current = false
       setDirty(false)
-      toast.success(t("consultation.note.signed", { version: out.result.noteVersion }))
+      toast.success(
+        t("consultation.note.signed", { version: out.result.noteVersion })
+      )
     }
   }
 
@@ -293,7 +340,9 @@ function DraftForm({
         <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
           <LayoutTemplate className="size-3.5" />
           {t("consultation.note.template")}:{" "}
-          <span className="font-medium text-foreground">{template.name[locale]}</span>
+          <span className="font-medium text-foreground">
+            {template.name[locale]}
+          </span>
         </span>
         <SegmentedPills
           size="sm"
@@ -313,7 +362,13 @@ function DraftForm({
               type="button"
               data-testid="note-insert-template"
               onClick={() => {
-                update({ sections: applyTemplate(draftRef.current.sections, template, draftRef.current.lang) })
+                update({
+                  sections: applyTemplate(
+                    draftRef.current.sections,
+                    template,
+                    draftRef.current.lang
+                  ),
+                })
                 toast(t("consultation.note.templateInserted"))
               }}
             >
@@ -326,7 +381,11 @@ function DraftForm({
                 update({
                   sections: {
                     ...draftRef.current.sections,
-                    [key]: appendQuickText(draftRef.current.sections[key], quick, draftRef.current.lang),
+                    [key]: appendQuickText(
+                      draftRef.current.sections[key],
+                      quick,
+                      draftRef.current.lang
+                    ),
                   },
                 })
               }}
@@ -340,11 +399,15 @@ function DraftForm({
         lang={draft.lang}
         templateId={draft.templateId}
         readOnly={readOnly}
-        onChange={(key, value) => update({ sections: { ...draftRef.current.sections, [key]: value } })}
+        onChange={(key, value) =>
+          update({ sections: { ...draftRef.current.sections, [key]: value } })
+        }
       />
 
       <div className="flex flex-col gap-2">
-        <h3 className="text-xs font-semibold text-muted-foreground">{t("consultation.icd.title")}</h3>
+        <h3 className="text-xs font-semibold text-muted-foreground">
+          {t("consultation.icd.title")}
+        </h3>
         <IcdPicker
           value={draft.diagnoses}
           specialty={specialtyCode}
@@ -355,8 +418,17 @@ function DraftForm({
 
       {!readOnly ? (
         <div className="flex flex-wrap items-center justify-end gap-3 border-t border-hairline pt-3">
-          <span className="mr-auto text-xs text-muted-foreground" data-testid="note-save-state">
-            {saving ? t("consultation.note.saving") : dirty ? t("consultation.note.unsaved") : latest ? t("consultation.note.saved") : t("consultation.note.signHint")}
+          <span
+            className="mr-auto text-xs text-muted-foreground"
+            data-testid="note-save-state"
+          >
+            {saving
+              ? t("consultation.note.saving")
+              : dirty
+                ? t("consultation.note.unsaved")
+                : latest
+                  ? t("consultation.note.saved")
+                  : t("consultation.note.signHint")}
           </span>
           <Button
             size="sm"
@@ -384,32 +456,55 @@ function SignedNote({
 }) {
   const { t, time } = useLocale()
   return (
-    <div className="@container/note flex flex-col gap-3" data-testid="note-signed">
+    <div
+      className="@container/note flex flex-col gap-3"
+      data-testid="note-signed"
+    >
       <dl className="grid gap-3 @min-[40rem]/note:grid-cols-2">
         {NOTE_SECTION_KEYS.map((key) => (
-          <div key={key} className={cn("min-w-0", key === "chiefComplaint" && "@min-[40rem]/note:col-span-2")}>
-            <dt className="text-xs font-semibold text-muted-foreground">{t(`consultation.note.sections.${key}`)}</dt>
+          <div
+            key={key}
+            className={cn(
+              "min-w-0",
+              key === "chiefComplaint" && "@min-[40rem]/note:col-span-2"
+            )}
+          >
+            <dt className="text-xs font-semibold text-muted-foreground">
+              {t(`consultation.note.sections.${key}`)}
+            </dt>
             <dd
               className="mt-1 text-[0.8125rem] leading-relaxed whitespace-pre-wrap"
               lang={note.lang}
               data-testid={`note-section-${key}`}
             >
-              {note.sections[key].trim() || <span className="text-muted-foreground">{t("consultation.note.empty")}</span>}
+              {note.sections[key].trim() || (
+                <span className="text-muted-foreground">
+                  {t("consultation.note.empty")}
+                </span>
+              )}
             </dd>
           </div>
         ))}
       </dl>
       <div>
-        <h3 className="mb-1.5 text-xs font-semibold text-muted-foreground">{t("consultation.icd.title")}</h3>
+        <h3 className="mb-1.5 text-xs font-semibold text-muted-foreground">
+          {t("consultation.icd.title")}
+        </h3>
         <IcdPicker value={note.diagnoses} onChange={() => undefined} readOnly />
       </div>
       <div className="flex flex-wrap items-center justify-end gap-3 border-t border-hairline pt-3">
         <span className="mr-auto text-xs text-muted-foreground">
-          {t("consultation.note.signed", { version: note.noteVersion })} · {note.signedAt ? time(note.signedAt) : ""}
+          {t("consultation.note.signed", { version: note.noteVersion })} ·{" "}
+          {note.signedAt ? time(note.signedAt) : ""}
           {note.scribeDraftId ? ` · ${t("consultation.note.fromScribe")}` : ""}
         </span>
         {canAmend ? (
-          <Button size="sm" variant="outline" onClick={onAmend} data-testid="note-amend">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onAmend}
+            data-testid="note-amend"
+          >
             <PenLine />
             {t("consultation.note.amend")}
           </Button>
@@ -443,23 +538,36 @@ function AmendForm({
       reason,
     })
     if (out.ok) {
-      toast.success(t("consultation.note.amended", { version: out.result.noteVersion }))
+      toast.success(
+        t("consultation.note.amended", { version: out.result.noteVersion })
+      )
       onDone()
     }
   }
 
   return (
-    <div className="@container/note flex flex-col gap-4" data-testid="note-amend-form">
-      <p className="text-[0.8125rem] font-semibold">{t("consultation.note.amendTitle")}</p>
+    <div
+      className="@container/note flex flex-col gap-4"
+      data-testid="note-amend-form"
+    >
+      <p className="text-[0.8125rem] font-semibold">
+        {t("consultation.note.amendTitle")}
+      </p>
       <SectionFields
         sections={sections}
         lang={note.lang}
         templateId={note.templateId}
         onChange={(key, value) => setSections((s) => ({ ...s, [key]: value }))}
       />
-      <IcdPicker value={diagnoses} specialty={specialtyCode} onChange={setDiagnoses} />
+      <IcdPicker
+        value={diagnoses}
+        specialty={specialtyCode}
+        onChange={setDiagnoses}
+      />
       <label className="flex flex-col gap-1.5">
-        <span className="text-xs font-semibold text-muted-foreground">{t("consultation.note.amendReason")}</span>
+        <span className="text-xs font-semibold text-muted-foreground">
+          {t("consultation.note.amendReason")}
+        </span>
         <Input
           value={reason}
           data-testid="note-amend-reason"
@@ -474,7 +582,9 @@ function AmendForm({
         <Button
           size="sm"
           onClick={submit}
-          disabled={amend.pending || reason.trim().length < 3 || isNoteEmpty(sections)}
+          disabled={
+            amend.pending || reason.trim().length < 3 || isNoteEmpty(sections)
+          }
           data-testid="note-amend-sign"
         >
           <FileSignature />

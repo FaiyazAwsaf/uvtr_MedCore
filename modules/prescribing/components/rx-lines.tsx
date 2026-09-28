@@ -11,7 +11,7 @@ import { useLocale } from "@/lib/i18n/provider"
 import type { MedicineCatalogRows } from "@/modules/consultation/components/data"
 
 import { brandLabel, FORM_PREFIX } from "./medicine-search"
-import { RxStockBadge, type StockLookup } from "./stock"
+import { RxStockBadge, unitText, type StockLookup } from "./stock"
 
 /** One prescription line as shown on the pad (a stored line or a line being revised). */
 export type LineView = {
@@ -46,8 +46,15 @@ const STATUS_TONE: Record<RxLineStatus, Tone> = {
 /** The medicine name as written: "Tab. Ace 500 mg" plus its generic. */
 export function useLineName(catalog: MedicineCatalogRows | undefined) {
   return React.useCallback(
-    (line: Pick<LineView, "brandId" | "nonDictionaryName" | "strength" | "form" | "genericId">) => {
-      const brand = line.brandId ? catalog?.brandById.get(line.brandId) : undefined
+    (
+      line: Pick<
+        LineView,
+        "brandId" | "nonDictionaryName" | "strength" | "form" | "genericId"
+      >
+    ) => {
+      const brand = line.brandId
+        ? catalog?.brandById.get(line.brandId)
+        : undefined
       if (brand) {
         return {
           prefix: FORM_PREFIX[brand.form] ?? "",
@@ -106,7 +113,9 @@ export function RxLines({
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                 <span className="text-[0.875rem] font-semibold" lang="en">
-                  <span className="mr-1 font-normal text-muted-foreground">{n.prefix}</span>
+                  <span className="mr-1 font-normal text-muted-foreground">
+                    {n.prefix}
+                  </span>
                   {n.name}
                 </span>
                 {n.generic ? (
@@ -115,17 +124,26 @@ export function RxLines({
                   </span>
                 ) : null}
                 {line.nonDictionaryName ? (
-                  <StatusPill tone="warning" className="h-5 px-2 text-[0.625rem]">
+                  <StatusPill
+                    tone="warning"
+                    className="h-5 px-2 text-[0.625rem]"
+                  >
                     {t("prescribing.lines.nonDictionary")}
                   </StatusPill>
                 ) : null}
                 {line.isAntibiotic ? (
-                  <StatusPill tone="warning" className="h-5 px-2 text-[0.625rem]">
+                  <StatusPill
+                    tone="warning"
+                    className="h-5 px-2 text-[0.625rem]"
+                  >
                     {t("prescribing.lines.antibiotic")}
                   </StatusPill>
                 ) : null}
                 {line.isControlled ? (
-                  <StatusPill tone="destructive" className="h-5 px-2 text-[0.625rem]">
+                  <StatusPill
+                    tone="destructive"
+                    className="h-5 px-2 text-[0.625rem]"
+                  >
                     {t("prescribing.lines.controlled")}
                   </StatusPill>
                 ) : null}
@@ -135,7 +153,11 @@ export function RxLines({
                   </StatusPill>
                 ) : null}
               </div>
-              <div className="mt-0.5 text-[0.8125rem]" lang="bn" data-testid="rx-line-bn">
+              <div
+                className="mt-0.5 text-[0.8125rem]"
+                lang="bn"
+                data-testid="rx-line-bn"
+              >
                 {line.instructionsBn}
               </div>
               <div className="text-xs text-muted-foreground" lang="en">
@@ -145,14 +167,31 @@ export function RxLines({
                 <span className="nums">
                   {t("prescribing.lines.qty")}:{" "}
                   {n.brand
-                    ? t("prescribing.lines.units", { count: num(line.qtyPrescribed), unit: n.brand.unitLabel[locale] })
+                    ? t("prescribing.lines.units", {
+                        count: num(line.qtyPrescribed),
+                        unit: unitText(
+                          n.brand.unitLabel,
+                          line.qtyPrescribed,
+                          locale
+                        ),
+                      })
                     : num(line.qtyPrescribed)}
                 </span>
                 {view && stock ? (
-                  <RxStockBadge brand={n.brand!} view={view} lookup={stock} compact testId="rx-line-stock" />
+                  <RxStockBadge
+                    brand={n.brand!}
+                    view={view}
+                    lookup={stock}
+                    compact
+                    testId="rx-line-stock"
+                  />
                 ) : null}
                 {showStatus && line.status ? (
-                  <StatusText tone={STATUS_TONE[line.status]} dot className="text-xs">
+                  <StatusText
+                    tone={STATUS_TONE[line.status]}
+                    dot
+                    className="text-xs"
+                  >
                     {tk(`prescribing.lines.lineStatus.${line.status}`)}
                     {line.dispensedQty ? ` · ${num(line.dispensedQty)}` : ""}
                   </StatusText>

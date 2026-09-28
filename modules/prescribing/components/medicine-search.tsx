@@ -11,7 +11,8 @@ import { cn } from "@/lib/utils"
 import { useLocale } from "@/lib/i18n/provider"
 import type { MedicineCatalogRows } from "@/modules/consultation/components/data"
 
-export type MedicinePick = { kind: "brand"; brandId: string } | { kind: "free"; name: string }
+export type MedicinePick =
+  { kind: "brand"; brandId: string } | { kind: "free"; name: string }
 
 /** Short printed form prefix, e.g. "Tab." (medicine names stay English, plan §3.11). */
 export const FORM_PREFIX: Record<string, string> = {
@@ -57,8 +58,13 @@ export function MedicineSearch({
     () =>
       query.trim().length < 2
         ? []
-        : rankMedicines(query, catalog, { kinds: ["brand"], limit: 10 }).flatMap((hit) => {
-            const brand = hit.brandId ? catalog.brandById.get(hit.brandId) : undefined
+        : rankMedicines(query, catalog, {
+            kinds: ["brand"],
+            limit: 10,
+          }).flatMap((hit) => {
+            const brand = hit.brandId
+              ? catalog.brandById.get(hit.brandId)
+              : undefined
             return brand ? [{ hit, brand }] : []
           }),
     [query, catalog]
@@ -67,7 +73,8 @@ export function MedicineSearch({
   const options = hits.length + (free.length >= 2 ? 1 : 0)
 
   const choose = (index: number) => {
-    if (index < hits.length) onPick({ kind: "brand", brandId: hits[index].brand.id })
+    if (index < hits.length)
+      onPick({ kind: "brand", brandId: hits[index].brand.id })
     else if (free.length >= 2) onPick({ kind: "free", name: free })
     setQuery("")
     setActive(0)
@@ -118,7 +125,9 @@ export function MedicineSearch({
           className="absolute inset-x-0 top-full z-40 mt-1 max-h-80 overflow-y-auto rounded-md border border-border/60 bg-popover p-1 shadow-xl"
         >
           {hits.length === 0 ? (
-            <li className="px-2.5 py-2 text-[0.8125rem] text-muted-foreground">{t("prescribing.search.noMatch")}</li>
+            <li className="px-2.5 py-2 text-[0.8125rem] text-muted-foreground">
+              {t("prescribing.search.noMatch")}
+            </li>
           ) : null}
           {hits.map(({ hit, brand }, i) => (
             <li
@@ -140,10 +149,14 @@ export function MedicineSearch({
               <Pill className="size-4 shrink-0 text-muted-foreground" />
               <div className="min-w-0 flex-1" lang="en">
                 <div className="truncate text-[0.8125rem] font-semibold">
-                  <span className="mr-1 font-normal text-muted-foreground">{FORM_PREFIX[brand.form] ?? ""}</span>
+                  <span className="mr-1 font-normal text-muted-foreground">
+                    {FORM_PREFIX[brand.form] ?? ""}
+                  </span>
                   {hit.label}
                 </div>
-                <div className="truncate text-xs text-muted-foreground">{hit.detail}</div>
+                <div className="truncate text-xs text-muted-foreground">
+                  {hit.detail}
+                </div>
               </div>
               {brand.isAntibiotic ? (
                 <StatusPill tone="warning" className="h-5 px-2 text-[0.625rem]">
@@ -151,7 +164,13 @@ export function MedicineSearch({
                 </StatusPill>
               ) : null}
               <StatusPill
-                tone={brand.category === "controlled" ? "destructive" : brand.category === "otc" ? "muted" : "info"}
+                tone={
+                  brand.category === "controlled"
+                    ? "destructive"
+                    : brand.category === "otc"
+                      ? "muted"
+                      : "info"
+                }
                 className="h-5 px-2 text-[0.625rem]"
               >
                 {t(`prescribing.search.category.${brand.category}`)}
@@ -175,7 +194,9 @@ export function MedicineSearch({
             <PencilLine className="size-4 shrink-0" />
             {t("prescribing.search.free", { name: free })}
           </li>
-          <li className="px-2.5 pt-1 pb-0.5 text-[0.6875rem] text-muted-foreground">{t("prescribing.search.hint")}</li>
+          <li className="px-2.5 pt-1 pb-0.5 text-[0.6875rem] text-muted-foreground">
+            {t("prescribing.search.hint")}
+          </li>
         </ul>
       ) : null}
     </div>

@@ -4,7 +4,11 @@ import * as React from "react"
 import { useLiveQuery } from "dexie-react-hooks"
 
 import { StatusPill, type Tone } from "@/components/shared/status"
-import { branches, type BranchCode } from "@/config/brand.config"
+import {
+  branches,
+  type Bilingual,
+  type BranchCode,
+} from "@/config/brand.config"
 import { useDbInfo } from "@/core/db/DbProvider"
 import type { BrandRow, ReorderLevelRow, StockLevelRow } from "@/core/db/schema"
 import {
@@ -44,7 +48,8 @@ export function useStock(brandIds: string[]): StockLookup | undefined {
   const key = [...new Set(brandIds)].sort().join(",")
   const rows = useLiveQuery(async () => {
     const ids = key ? key.split(",") : []
-    if (!ids.length) return { levels: [] as StockLevelRow[], reorder: [] as ReorderLevelRow[] }
+    if (!ids.length)
+      return { levels: [] as StockLevelRow[], reorder: [] as ReorderLevelRow[] }
     const [levels, reorder] = await Promise.all([
       db.stockLevels.where("brandId").anyOf(ids).toArray(),
       db.reorderLevels.where("brandId").anyOf(ids).toArray(),
@@ -62,7 +67,12 @@ export function useStock(brandIds: string[]): StockLookup | undefined {
       const here = byBranch[branch]
       const view: StockView = {
         status: s.status,
-        local: here.onHand > here.reorderLevel ? "in-stock" : here.onHand > 0 ? "low" : "out",
+        local:
+          here.onHand > here.reorderLevel
+            ? "in-stock"
+            : here.onHand > 0
+              ? "low"
+              : "out",
         onHand: s.onHand,
         byBranch,
         otherBranches: s.otherBranches,
@@ -79,6 +89,15 @@ const LOCAL_TONE: Record<StockView["local"], Tone> = {
   "in-stock": "success",
   low: "warning",
   out: "destructive",
+}
+
+/** "560 capsules": the brand's unit, plural in English (Bangla has no plural form). */
+export function unitText(
+  label: Bilingual,
+  count: number,
+  locale: "en" | "bn"
+): string {
+  return locale === "en" && count !== 1 ? `${label.en}s` : label[locale]
 }
 
 export function branchName(code: BranchCode, locale: "en" | "bn"): string {
@@ -111,35 +130,58 @@ export function RxStockBadge({
         : t("prescribing.stock.outHere", { branch: lookup.branch })
   return (
     <span
-      className={cn("inline-flex flex-wrap items-center gap-1.5", compact && "gap-1")}
+      className={cn(
+        "inline-flex flex-wrap items-center gap-1.5",
+        compact && "gap-1"
+      )}
       data-testid={testId}
       data-status={view.status}
       data-local={view.local}
       data-on-hand={view.onHand}
     >
-      <StatusPill tone={LOCAL_TONE[view.local]} dot className={compact ? "h-5 px-2 text-[0.6875rem]" : undefined}>
+      <StatusPill
+        tone={LOCAL_TONE[view.local]}
+        dot
+        className={compact ? "h-5 px-2 text-[0.6875rem]" : undefined}
+      >
         {label}
         {view.local !== "out" ? (
           <span className="nums opacity-80">
-            · {t("prescribing.stock.units", { count: num(view.onHand), unit: brand.unitLabel[locale] })}
+            ·{" "}
+            {t("prescribing.stock.units", {
+              count: num(view.onHand),
+              unit: unitText(brand.unitLabel, view.onHand, locale),
+            })}
           </span>
         ) : null}
         {lookup.asAt !== undefined ? (
-          <span className="font-normal opacity-75">{t("prescribing.stock.asAt", { time: time(lookup.asAt) })}</span>
+          <span className="font-normal opacity-75">
+            {t("prescribing.stock.asAt", { time: time(lookup.asAt) })}
+          </span>
         ) : null}
       </StatusPill>
-      {!compact && view.local !== "in-stock"
-        ? lookup.offline
-          ? (
-              <StatusPill tone="muted">{t("prescribing.stock.offline")}</StatusPill>
-            )
-          : view.otherBranches.map((code) => (
-              <StatusPill key={code} tone="info" dot data-testid="rx-stock-other" data-branch={code}>
-                {t("common.stock.atBranch", { branch: `${branchName(code, locale)} (${code})` })}
-                <span className="nums opacity-80">· {num(view.byBranch[code].onHand)}</span>
-              </StatusPill>
-            ))
-        : null}
+      {!compact && view.local !== "in-stock" ? (
+        lookup.offline ? (
+          <StatusPill tone="muted">{t("prescribing.stock.offline")}</StatusPill>
+        ) : (
+          view.otherBranches.map((code) => (
+            <StatusPill
+              key={code}
+              tone="info"
+              dot
+              data-testid="rx-stock-other"
+              data-branch={code}
+            >
+              {t("common.stock.atBranch", {
+                branch: `${branchName(code, locale)} (${code})`,
+              })}
+              <span className="nums opacity-80">
+                · {num(view.byBranch[code].onHand)}
+              </span>
+            </StatusPill>
+          ))
+        )
+      ) : null}
     </span>
   )
 }

@@ -7,7 +7,12 @@
  */
 
 import { branches, type BranchCode } from "@/config/brand.config"
-import type { BatchRow, BrandRow, ISODate, StockLevelRow } from "@/core/db/schema"
+import type {
+  BatchRow,
+  BrandRow,
+  ISODate,
+  StockLevelRow,
+} from "@/core/db/schema"
 import { brandsOfGeneric } from "@/core/search/medicines"
 import type { BranchStock } from "@/core/stock/availability"
 
@@ -31,7 +36,9 @@ export function alternativesFor(
   branch: BranchCode,
   { offline = false }: { offline?: boolean } = {}
 ): Alternatives {
-  const siblings = brandsOfGeneric(brand.genericId, catalog).filter((b) => b.id !== brand.id)
+  const siblings = brandsOfGeneric(brand.genericId, catalog).filter(
+    (b) => b.id !== brand.id
+  )
   const same = strengthKey(brand.strength)
   return {
     sameStrength: siblings.filter((b) => strengthKey(b.strength) === same),
@@ -40,7 +47,9 @@ export function alternativesFor(
       ? []
       : branches
           .map((b) => b.code)
-          .filter((code) => code !== branch && (byBranch[code]?.onHand ?? 0) > 0)
+          .filter(
+            (code) => code !== branch && (byBranch[code]?.onHand ?? 0) > 0
+          )
           .sort()
           .map((code) => ({ branch: code, onHand: byBranch[code].onHand })),
   }
@@ -57,10 +66,16 @@ export function dispensableOnHand(
   brandId: string,
   today: ISODate
 ): number {
-  const lookup = typeof batches === "function" ? batches : (id: string) => batches.get(id)
+  const lookup =
+    typeof batches === "function" ? batches : (id: string) => batches.get(id)
   let total = 0
   for (const level of levels) {
-    if (level.branchId !== branch || level.brandId !== brandId || level.qty <= 0) continue
+    if (
+      level.branchId !== branch ||
+      level.brandId !== brandId ||
+      level.qty <= 0
+    )
+      continue
     const batch = lookup(level.batchId)
     if (!batch || batch.status !== "ok" || batch.expiry < today) continue
     total += level.qty

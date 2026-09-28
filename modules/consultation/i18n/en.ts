@@ -13,7 +13,8 @@ export const consultationEn = {
       noSessionHint: "Your sessions appear here on the days you consult.",
       noDoctor: "This persona is not a consulting doctor.",
       empty: "No one has checked in yet",
-      emptyHint: "Patients appear here as soon as the front desk checks them in.",
+      emptyHint:
+        "Patients appear here as soon as the front desk checks them in.",
       notArrived: "{count} booked, not arrived yet",
       columns: {
         token: "Token",
@@ -40,8 +41,7 @@ export const consultationEn = {
         waiting: "Waiting",
         waitingCaption: "in the queue now",
         avgWait: "Average wait",
-        avgWaitCaption: "check-in to call",
-        avgWaitValue: "{count} min",
+        avgWaitCaption: "minutes, check-in to call",
         inbox: "Results inbox",
         inboxCaption: "unread items",
       },
@@ -68,7 +68,8 @@ export const consultationEn = {
     encounter: {
       loading: "Opening the consultation…",
       notFound: "This consultation does not exist",
-      notFoundHint: "It may belong to another branch's data while it is offline.",
+      notFoundHint:
+        "It may belong to another branch's data while it is offline.",
       backToWorklist: "Back to worklist",
       tokenLine: "Token {token}",
       startedAt: "Started {time}",
@@ -77,13 +78,15 @@ export const consultationEn = {
         signed: "Note signed",
         closed: "Finished",
       },
-      closedBanner: "This consultation finished at {time}. The note can still be amended and the prescription revised.",
+      closedBanner:
+        "This consultation finished at {time}. The note can still be amended and the prescription revised.",
       reopen: "Reopen consultation",
       reopened: "Consultation reopened",
       finish: "Finish consultation",
       finished: "Consultation finished: {name}",
       finishTitle: "Before you finish",
-      finishBody: "The consultation closes and the patient leaves the queue. These must be done first:",
+      finishBody:
+        "The consultation closes and the patient leaves the queue. These must be done first:",
       checks: {
         noteSigned: "Clinical note signed",
         rxSigned: "Prescription signed (or none written)",
@@ -137,7 +140,8 @@ export const consultationEn = {
         report: "Lab report {reportNo} released",
         imaging: "Imaging report released",
       },
-      criticalOnFile: "Critical result on file: {test} {value} ({flag}), {date}",
+      criticalOnFile:
+        "Critical result on file: {test} {value} ({flag}), {date}",
     },
     vitals: {
       title: "Vitals",
@@ -177,8 +181,10 @@ export const consultationEn = {
       concept: "Concept",
       aiDraft: "AI draft: not saved until signed",
       ambient: "Ambient notes: Later (roadmap)",
-      guardrail: "The scribe never writes medicines or diagnoses. Those stay with you on the Rx pad and the diagnosis picker.",
-      scripted: "Scripted playback: no audio is recorded and nothing leaves this device.",
+      guardrail:
+        "The scribe never writes medicines or diagnoses. Those stay with you on the Rx pad and the diagnosis picker.",
+      scripted:
+        "Scripted playback: no audio is recorded and nothing leaves this device.",
       record: "Record consultation",
       recordAgain: "Record again",
       recording: "Listening…",
@@ -208,8 +214,10 @@ export const consultationEn = {
       nothingNew: "Every draft line is already in the note",
       discard: "Discard draft",
       discarded: "Scribe draft discarded",
-      noteSignedHint: "The note is signed, so draft lines can only go in through an amendment.",
-      idleHint: "Records the conversation, then drafts the subjective, objective and plan sections for you to review.",
+      noteSignedHint:
+        "The note is signed, so draft lines can only go in through an amendment.",
+      idleHint:
+        "Records the conversation, then drafts the subjective, objective and plan sections for you to review.",
     },
     note: {
       title: "Clinical note",
@@ -225,7 +233,8 @@ export const consultationEn = {
         plan: "Plan",
       },
       quickTexts: "Quick texts",
-      quickTextsHint: "Type a shortcut such as .fluids followed by a space, or pick one here.",
+      quickTextsHint:
+        "Type a shortcut such as .fluids followed by a space, or pick one here.",
       saving: "Saving…",
       saved: "Draft saved",
       unsaved: "Unsaved changes",
@@ -233,7 +242,8 @@ export const consultationEn = {
       signedV: "Signed v{version}",
       sign: "Sign note",
       signed: "Note signed (v{version})",
-      signHint: "Signing makes the note permanent. Later changes become amendments.",
+      signHint:
+        "Signing makes the note permanent. Later changes become amendments.",
       amend: "Amend",
       amendTitle: "Amend the signed note",
       amendReason: "Reason for the amendment",
@@ -260,11 +270,13 @@ export const consultationEn = {
       primary: "Primary",
       makePrimary: "Make primary",
       remove: "Remove",
-      doctorOnly: "Chosen by the doctor. The scribe never suggests a diagnosis.",
+      doctorOnly:
+        "Chosen by the doctor. The scribe never suggests a diagnosis.",
     },
     inbox: {
       title: "Results inbox",
-      subtitle: "Results, corrections, substitution requests and transfer updates",
+      subtitle:
+        "Results, corrections, substitution requests and transfer updates",
       kind: {
         result: "New result",
         abnormal: "Abnormal result",
@@ -298,7 +310,8 @@ export const consultationEn = {
       open: "Details",
       close: "Hide",
       report: "Report {reportNo} · v{version}",
-      reportCorrected: "Corrected report: v{version} replaces the earlier version",
+      reportCorrected:
+        "Corrected report: v{version} replaces the earlier version",
       correctionReason: "Reason: {reason}",
       changeSummary: "What changed: {summary}",
       noReport: "Report details are not available yet.",
@@ -327,7 +340,8 @@ export const consultationEn = {
           approved: "Approved",
           rejected: "Rejected",
         },
-        onlyDoctor: "Only you change the prescription. Nothing is swapped automatically.",
+        onlyDoctor:
+          "Only you change the prescription. Nothing is swapped automatically.",
       },
       transfers: {
         title: "Transfer updates",
@@ -348,11 +362,13 @@ export const consultationEn = {
       encounterStarted: "Consultation started (token {token})",
       encounterReopened: "Consultation reopened (token {token})",
       vitalsRecorded: "Vitals recorded (BP {bp})",
-      scribeDraftReady: "AI scribe draft ready for review ({lines} lines, concept)",
+      scribeDraftReady:
+        "AI scribe draft ready for review ({lines} lines, concept)",
       scribeDraftAccepted: "Doctor added {lines} scribe lines to the note",
       noteSigned: "Clinical note v{version} signed",
       noteAmended: "Clinical note amended to v{version}",
-      consultationFinished: "Consultation finished (token {token}, {minutes} min)",
+      consultationFinished:
+        "Consultation finished (token {token}, {minutes} min)",
       inboxAcknowledged: "Result acknowledged by the doctor",
     },
     consumers: {
@@ -364,19 +380,24 @@ export const consultationEn = {
       doctorInbox: "Doctor inbox",
     },
     rules: {
-      NOT_CHECKED_IN: "This patient has not checked in yet, so the consultation can't start.",
+      NOT_CHECKED_IN:
+        "This patient has not checked in yet, so the consultation can't start.",
       NOT_YOUR_PATIENT: "This patient is under another doctor.",
       TOKEN_SKIPPED: "Token {token} was skipped. Recall it first.",
       TOKEN_STATE: "Token {token} has already moved on in the queue.",
-      ENCOUNTER_CLOSED: "This consultation is finished. Reopen it to make changes.",
+      ENCOUNTER_CLOSED:
+        "This consultation is finished. Reopen it to make changes.",
       NOTE_SIGNED: "The note is already signed. Amend it to make a change.",
-      NOTE_EMPTY: "The note is empty. Write at least one section before signing.",
+      NOTE_EMPTY:
+        "The note is empty. Write at least one section before signing.",
       NOTE_NOT_SIGNED: "Sign the clinical note first.",
       NOTE_SUPERSEDED: "A newer version of this note exists (v{version}).",
       SCRIBE_STATE: "This scribe draft can't be used any more. Record again.",
-      RX_DRAFT_OPEN: "Prescription {rxNo} is still a draft. Sign it or remove its medicines first.",
+      RX_DRAFT_OPEN:
+        "Prescription {rxNo} is still a draft. Sign it or remove its medicines first.",
       NOT_YOUR_ITEM: "This item belongs to another doctor's inbox.",
-      INBOX_NEEDS_DECISION: "Approve or reject the substitution request instead.",
+      INBOX_NEEDS_DECISION:
+        "Approve or reject the substitution request instead.",
       VITALS_EMPTY: "Enter at least one vital sign.",
       VITALS_BP: "The diastolic pressure must be lower than the systolic.",
     },

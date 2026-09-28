@@ -31,7 +31,10 @@ export const consultationEvents: EventCatalog = {
   ScribeDraftReady: {
     module: "consultation",
     labelKey: "consultation.events.scribeDraftReady",
-    consumers: ["consultation.consumers.doctorReview", "consultation.consumers.audit"],
+    consumers: [
+      "consultation.consumers.doctorReview",
+      "consultation.consumers.audit",
+    ],
     severity: "info",
   },
   ScribeDraftAccepted: {
@@ -66,7 +69,10 @@ export const consultationEvents: EventCatalog = {
   InboxAcknowledged: {
     module: "consultation",
     labelKey: "consultation.events.inboxAcknowledged",
-    consumers: ["consultation.consumers.doctorInbox", "consultation.consumers.audit"],
+    consumers: [
+      "consultation.consumers.doctorInbox",
+      "consultation.consumers.audit",
+    ],
     severity: "info",
   },
 }

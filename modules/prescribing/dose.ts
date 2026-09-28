@@ -122,6 +122,10 @@ export function parseDoseShortcut(text: string): ParsedDose {
 }
 
 /** The EN and BN instruction lines for a dose (the BN line is what the printed Rx shows). */
-export function instructionsFor(code: string, meal: MealTiming, durationDays: number) {
+export function instructionsFor(
+  code: string,
+  meal: MealTiming,
+  durationDays: number
+) {
   return doseInstruction(code, meal, durationDays)
 }

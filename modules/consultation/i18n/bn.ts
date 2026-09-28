@@ -42,8 +42,7 @@ export const consultationBn: typeof consultationEn = {
         waiting: "অপেক্ষায়",
         waitingCaption: "এখন সারিতে",
         avgWait: "গড় অপেক্ষা",
-        avgWaitCaption: "চেক-ইন থেকে ডাক পর্যন্ত",
-        avgWaitValue: "{count} মিনিট",
+        avgWaitCaption: "মিনিট, চেক-ইন থেকে ডাক",
         inbox: "ফলাফল ইনবক্স",
         inboxCaption: "না-পড়া আইটেম",
       },
@@ -79,13 +78,15 @@ export const consultationBn: typeof consultationEn = {
         signed: "নোট স্বাক্ষরিত",
         closed: "সম্পন্ন",
       },
-      closedBanner: "এই পরামর্শ {time}-এ শেষ হয়েছে। নোট সংশোধন ও প্রেসক্রিপশন পরিবর্তন এখনো করা যাবে।",
+      closedBanner:
+        "এই পরামর্শ {time}-এ শেষ হয়েছে। নোট সংশোধন ও প্রেসক্রিপশন পরিবর্তন এখনো করা যাবে।",
       reopen: "পরামর্শ আবার খুলুন",
       reopened: "পরামর্শ আবার খোলা হয়েছে",
       finish: "পরামর্শ শেষ করুন",
       finished: "পরামর্শ শেষ: {name}",
       finishTitle: "শেষ করার আগে",
-      finishBody: "পরামর্শ বন্ধ হবে এবং রোগী সারি থেকে বেরিয়ে যাবেন। আগে এগুলো সম্পন্ন করতে হবে:",
+      finishBody:
+        "পরামর্শ বন্ধ হবে এবং রোগী সারি থেকে বেরিয়ে যাবেন। আগে এগুলো সম্পন্ন করতে হবে:",
       checks: {
         noteSigned: "ক্লিনিক্যাল নোট স্বাক্ষরিত",
         rxSigned: "প্রেসক্রিপশন স্বাক্ষরিত (অথবা লেখা হয়নি)",
@@ -179,8 +180,10 @@ export const consultationBn: typeof consultationEn = {
       concept: "ধারণা",
       aiDraft: "এআই খসড়া: স্বাক্ষর না হওয়া পর্যন্ত সংরক্ষিত নয়",
       ambient: "অ্যাম্বিয়েন্ট নোট: পরে (রোডম্যাপ)",
-      guardrail: "স্ক্রাইব কখনো ওষুধ বা রোগনির্ণয় লেখে না। সেগুলো আপনার হাতে, আরএক্স প্যাড ও রোগনির্ণয় তালিকায়।",
-      scripted: "স্ক্রিপ্টেড প্লেব্যাক: কোনো অডিও রেকর্ড হয় না, কিছুই এই ডিভাইসের বাইরে যায় না।",
+      guardrail:
+        "স্ক্রাইব কখনো ওষুধ বা রোগনির্ণয় লেখে না। সেগুলো আপনার হাতে, আরএক্স প্যাড ও রোগনির্ণয় তালিকায়।",
+      scripted:
+        "স্ক্রিপ্টেড প্লেব্যাক: কোনো অডিও রেকর্ড হয় না, কিছুই এই ডিভাইসের বাইরে যায় না।",
       record: "পরামর্শ রেকর্ড করুন",
       recordAgain: "আবার রেকর্ড করুন",
       recording: "শুনছে…",
@@ -210,8 +213,10 @@ export const consultationBn: typeof consultationEn = {
       nothingNew: "খসড়ার সব লাইন আগেই নোটে আছে",
       discard: "খসড়া বাতিল",
       discarded: "স্ক্রাইব খসড়া বাতিল করা হয়েছে",
-      noteSignedHint: "নোট স্বাক্ষরিত, তাই খসড়ার লাইন কেবল সংশোধনের মাধ্যমে যোগ করা যাবে।",
-      idleHint: "কথোপকথন রেকর্ড করে, তারপর সাবজেক্টিভ, অবজেক্টিভ ও পরিকল্পনা অংশের খসড়া দেয়, আপনি যাচাই করবেন।",
+      noteSignedHint:
+        "নোট স্বাক্ষরিত, তাই খসড়ার লাইন কেবল সংশোধনের মাধ্যমে যোগ করা যাবে।",
+      idleHint:
+        "কথোপকথন রেকর্ড করে, তারপর সাবজেক্টিভ, অবজেক্টিভ ও পরিকল্পনা অংশের খসড়া দেয়, আপনি যাচাই করবেন।",
     },
     note: {
       title: "ক্লিনিক্যাল নোট",
@@ -227,7 +232,8 @@ export const consultationBn: typeof consultationEn = {
         plan: "পরিকল্পনা",
       },
       quickTexts: "কুইক টেক্সট",
-      quickTextsHint: ".fluids এর মতো শর্টকাট লিখে স্পেস দিন, অথবা এখান থেকে বেছে নিন।",
+      quickTextsHint:
+        ".fluids এর মতো শর্টকাট লিখে স্পেস দিন, অথবা এখান থেকে বেছে নিন।",
       saving: "সংরক্ষণ হচ্ছে…",
       saved: "খসড়া সংরক্ষিত",
       unsaved: "অসংরক্ষিত পরিবর্তন",
@@ -235,7 +241,8 @@ export const consultationBn: typeof consultationEn = {
       signedV: "স্বাক্ষরিত v{version}",
       sign: "নোট স্বাক্ষর",
       signed: "নোট স্বাক্ষরিত (v{version})",
-      signHint: "স্বাক্ষরের পর নোট স্থায়ী হয়। পরের পরিবর্তন হবে সংশোধন হিসেবে।",
+      signHint:
+        "স্বাক্ষরের পর নোট স্থায়ী হয়। পরের পরিবর্তন হবে সংশোধন হিসেবে।",
       amend: "সংশোধন",
       amendTitle: "স্বাক্ষরিত নোট সংশোধন",
       amendReason: "সংশোধনের কারণ",
@@ -262,7 +269,8 @@ export const consultationBn: typeof consultationEn = {
       primary: "প্রধান",
       makePrimary: "প্রধান করুন",
       remove: "সরান",
-      doctorOnly: "ডাক্তারের নির্বাচন। স্ক্রাইব কখনো রোগনির্ণয় প্রস্তাব করে না।",
+      doctorOnly:
+        "ডাক্তারের নির্বাচন। স্ক্রাইব কখনো রোগনির্ণয় প্রস্তাব করে না।",
     },
     inbox: {
       title: "ফলাফল ইনবক্স",
@@ -329,7 +337,8 @@ export const consultationBn: typeof consultationEn = {
           approved: "অনুমোদিত",
           rejected: "প্রত্যাখ্যাত",
         },
-        onlyDoctor: "প্রেসক্রিপশন কেবল আপনিই বদলান। স্বয়ংক্রিয়ভাবে কিছুই বদলায় না।",
+        onlyDoctor:
+          "প্রেসক্রিপশন কেবল আপনিই বদলান। স্বয়ংক্রিয়ভাবে কিছুই বদলায় না।",
       },
       transfers: {
         title: "স্থানান্তরের খবর",
@@ -350,7 +359,8 @@ export const consultationBn: typeof consultationEn = {
       encounterStarted: "পরামর্শ শুরু (টোকেন {token})",
       encounterReopened: "পরামর্শ আবার খোলা (টোকেন {token})",
       vitalsRecorded: "ভাইটালস রেকর্ড (রক্তচাপ {bp})",
-      scribeDraftReady: "এআই স্ক্রাইব খসড়া যাচাইয়ের জন্য প্রস্তুত ({lines} লাইন, ধারণা)",
+      scribeDraftReady:
+        "এআই স্ক্রাইব খসড়া যাচাইয়ের জন্য প্রস্তুত ({lines} লাইন, ধারণা)",
       scribeDraftAccepted: "ডাক্তার নোটে {lines}টি স্ক্রাইব লাইন যোগ করেছেন",
       noteSigned: "ক্লিনিক্যাল নোট v{version} স্বাক্ষরিত",
       noteAmended: "ক্লিনিক্যাল নোট সংশোধিত, এখন v{version}",
@@ -375,10 +385,13 @@ export const consultationBn: typeof consultationEn = {
       NOTE_EMPTY: "নোট খালি। স্বাক্ষরের আগে অন্তত একটি অংশ লিখুন।",
       NOTE_NOT_SIGNED: "আগে ক্লিনিক্যাল নোট স্বাক্ষর করুন।",
       NOTE_SUPERSEDED: "এই নোটের নতুন সংস্করণ আছে (v{version})।",
-      SCRIBE_STATE: "এই স্ক্রাইব খসড়া আর ব্যবহার করা যাবে না। আবার রেকর্ড করুন।",
-      RX_DRAFT_OPEN: "প্রেসক্রিপশন {rxNo} এখনো খসড়া। আগে স্বাক্ষর করুন বা এর ওষুধগুলো সরান।",
+      SCRIBE_STATE:
+        "এই স্ক্রাইব খসড়া আর ব্যবহার করা যাবে না। আবার রেকর্ড করুন।",
+      RX_DRAFT_OPEN:
+        "প্রেসক্রিপশন {rxNo} এখনো খসড়া। আগে স্বাক্ষর করুন বা এর ওষুধগুলো সরান।",
       NOT_YOUR_ITEM: "এই আইটেমটি অন্য ডাক্তারের ইনবক্সের।",
-      INBOX_NEEDS_DECISION: "এর বদলে ওষুধ বদলের অনুরোধ অনুমোদন বা প্রত্যাখ্যান করুন।",
+      INBOX_NEEDS_DECISION:
+        "এর বদলে ওষুধ বদলের অনুরোধ অনুমোদন বা প্রত্যাখ্যান করুন।",
       VITALS_EMPTY: "অন্তত একটি ভাইটাল সাইন লিখুন।",
       VITALS_BP: "ডায়াস্টোলিক চাপ সিস্টোলিকের চেয়ে কম হতে হবে।",
     },

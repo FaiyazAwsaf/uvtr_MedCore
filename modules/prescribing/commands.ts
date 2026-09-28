@@ -1,7 +1,11 @@
 import { z } from "zod"
 
 import { defineCommand } from "@/core/engine/defineCommand"
-import { activeEmployee, actorDoctor, writableEncounter } from "@/modules/consultation/server"
+import {
+  activeEmployee,
+  actorDoctor,
+  writableEncounter,
+} from "@/modules/consultation/server"
 
 import {
   basketLineFor,
@@ -52,7 +56,10 @@ const overridesInput = z
 
 export type RxLineInput = z.input<typeof lineInput>
 
-async function patientOf(tx: Parameters<typeof buildLine>[0], patientId: string) {
+async function patientOf(
+  tx: Parameters<typeof buildLine>[0],
+  patientId: string
+) {
   const patient = await tx.get("patients", patientId)
   return { patient, employee: await activeEmployee(tx, patient) }
 }
@@ -114,7 +121,9 @@ export const updateRxLine = defineCommand({
     qtyPrescribed: z.number().int().min(0).max(10_000).optional(),
   }),
   async run(tx, input) {
-    const line = await tx.get("rxLines", input.lineId, { expectedVersion: input.expectedVersion })
+    const line = await tx.get("rxLines", input.lineId, {
+      expectedVersion: input.expectedVersion,
+    })
     const rx = await tx.get("prescriptions", line.rxId)
     if (rx.status !== "draft") tx.reject("RX_NOT_DRAFT", { rxNo: rx.rxNo })
     if (rx.encounterId) await writableEncounter(tx, rx.encounterId)
@@ -150,7 +159,8 @@ export const removeRxLine = defineCommand({
     const rx = await tx.get("prescriptions", line.rxId)
     if (rx.status !== "draft") tx.reject("RX_NOT_DRAFT", { rxNo: rx.rxNo })
     if (rx.encounterId) await writableEncounter(tx, rx.encounterId)
-    if (line.status !== "cancelled") await tx.update("rxLines", line.id, { status: "cancelled" })
+    if (line.status !== "cancelled")
+      await tx.update("rxLines", line.id, { status: "cancelled" })
     return { lineId: line.id }
   },
 })
@@ -204,7 +214,9 @@ export const signRx = defineCommand({
       expectedVersion: input.expectedVersion,
     })
     if (rx.status !== "draft") tx.reject("RX_NOT_DRAFT", { rxNo: rx.rxNo })
-    const encounter = rx.encounterId ? await writableEncounter(tx, rx.encounterId) : undefined
+    const encounter = rx.encounterId
+      ? await writableEncounter(tx, rx.encounterId)
+      : undefined
     if (!encounter) {
       const doctor = await actorDoctor(tx)
       if (doctor?.id !== rx.doctorId) tx.reject("NOT_YOUR_PATIENT", {})
@@ -212,7 +224,9 @@ export const signRx = defineCommand({
     const lines = await liveLinesOf(tx, rx.id)
     if (!lines.length) tx.reject("RX_EMPTY", {})
     const followUpDate =
-      input.followUpDate === undefined ? rx.followUpDate : (input.followUpDate ?? undefined)
+      input.followUpDate === undefined
+        ? rx.followUpDate
+        : (input.followUpDate ?? undefined)
     if (followUpDate && followUpDate <= tx.today()) {
       tx.reject("FOLLOW_UP_PAST", { date: followUpDate })
     }
@@ -244,8 +258,16 @@ export const signRx = defineCommand({
       : false
     tx.emit("PrescriptionSigned", {
       branchId: signed.branchId,
-      refs: { patientId: signed.patientId, rxId: signed.id, encounterId: signed.encounterId },
-      params: { rxNo: signed.rxNo, version: signed.rxVersion, lines: lines.length },
+      refs: {
+        patientId: signed.patientId,
+        rxId: signed.id,
+        encounterId: signed.encounterId,
+      },
+      params: {
+        rxNo: signed.rxNo,
+        version: signed.rxVersion,
+        lines: lines.length,
+      },
     })
     return {
       rxId: signed.id,
@@ -302,7 +324,11 @@ export const reviseRxCommand = defineCommand({
     // Alerts for every line that is new or changed (kept lines were checked when first written).
     for (const [index, line] of input.lines.entries()) {
       const prev = line.keepLineId ? oldById.get(line.keepLineId) : undefined
-      if (prev && prev.brandId === line.brandId && prev.nonDictionaryName === line.nonDictionaryName) {
+      if (
+        prev &&
+        prev.brandId === line.brandId &&
+        prev.nonDictionaryName === line.nonDictionaryName
+      ) {
         continue
       }
       const others = input.lines
@@ -316,7 +342,8 @@ export const reviseRxCommand = defineCommand({
           strength: l.strength ?? "",
         }))
       for (const other of others) {
-        if (other.brandId) other.genericId = (await tx.get("brands", other.brandId)).genericId
+        if (other.brandId)
+          other.genericId = (await tx.get("brands", other.brandId)).genericId
       }
       await checkAlerts(
         tx,
@@ -328,8 +355,14 @@ export const reviseRxCommand = defineCommand({
     }
 
     const followUpDate =
-      input.followUpDate === undefined ? old.followUpDate : (input.followUpDate ?? undefined)
-    if (followUpDate && followUpDate !== old.followUpDate && followUpDate <= tx.today()) {
+      input.followUpDate === undefined
+        ? old.followUpDate
+        : (input.followUpDate ?? undefined)
+    if (
+      followUpDate &&
+      followUpDate !== old.followUpDate &&
+      followUpDate <= tx.today()
+    ) {
       tx.reject("FOLLOW_UP_PAST", { date: followUpDate })
     }
     const result = await reviseRx(tx, old, input.lines, {
@@ -389,7 +422,8 @@ export const decideSubstitution = defineCommand({
   }),
   async run(tx, input) {
     const sub = await tx.get("substitutionRequests", input.substitutionId)
-    if (sub.status !== "pending") tx.reject("SUBSTITUTION_DECIDED", { status: sub.status })
+    if (sub.status !== "pending")
+      tx.reject("SUBSTITUTION_DECIDED", { status: sub.status })
     const doctor = await actorDoctor(tx)
     if (!doctor || doctor.id !== sub.doctorId) tx.reject("NOT_YOUR_ITEM", {})
     const rx = await tx.get("prescriptions", sub.rxId)
@@ -397,10 +431,17 @@ export const decideSubstitution = defineCommand({
     const proposed = await tx.get("brands", sub.proposedBrandId)
     const from = await lineName(tx, line)
     const to = `${proposed.name} ${proposed.strength}`
-    const inboxItems = (await tx.list("inboxItems", "doctorId", doctor!.id)).filter(
-      (item) => item.refs.substitutionId === sub.id && item.status !== "actioned"
+    const inboxItems = (
+      await tx.list("inboxItems", "doctorId", doctor!.id)
+    ).filter(
+      (item) =>
+        item.refs.substitutionId === sub.id && item.status !== "actioned"
     )
-    const decided = { decidedBy: tx.actor.staffId, decidedAt: tx.now(), decisionNote: input.note }
+    const decided = {
+      decidedBy: tx.actor.staffId,
+      decidedAt: tx.now(),
+      decisionNote: input.note,
+    }
     const refs = {
       patientId: sub.patientId,
       rxId: rx.id,
@@ -409,12 +450,18 @@ export const decideSubstitution = defineCommand({
     }
 
     if (input.decision === "reject") {
-      await tx.update("substitutionRequests", sub.id, { status: "rejected", ...decided })
+      await tx.update("substitutionRequests", sub.id, {
+        status: "rejected",
+        ...decided,
+      })
       if (line.status === "awaiting-prescriber") {
         await tx.update("rxLines", line.id, { status: "open" })
       }
       for (const item of inboxItems) {
-        await tx.update("inboxItems", item.id, { status: "actioned", ackAt: tx.now() })
+        await tx.update("inboxItems", item.id, {
+          status: "actioned",
+          ackAt: tx.now(),
+        })
       }
       if (input.note) tx.auditContext({ reason: input.note })
       tx.emit("SubstitutionRejected", {
@@ -431,14 +478,21 @@ export const decideSubstitution = defineCommand({
     await checkAlerts(
       tx,
       patient,
-      { brandId: proposed.id, dosePattern: line.dosePattern, mealTiming: line.mealTiming, durationDays: line.durationDays },
+      {
+        brandId: proposed.id,
+        dosePattern: line.dosePattern,
+        mealTiming: line.mealTiming,
+        durationDays: line.durationDays,
+      },
       { thisRx: [], ignoreRxIds: [rx.id], kinds: ["allergy"] },
       undefined
     )
     const oldLines = await liveLinesOf(tx, rx.id)
     const dispensed = oldLines.some((l) => l.dispensedQty > 0)
     const keep = (l: (typeof oldLines)[number]) =>
-      l.id === line.id || !dispensed || (l.dispensedQty === 0 && l.status !== "bought-elsewhere")
+      l.id === line.id ||
+      !dispensed ||
+      (l.dispensedQty === 0 && l.status !== "bought-elsewhere")
     const lines: RevisedLine[] = oldLines.filter(keep).map((l) =>
       l.id === line.id
         ? {
@@ -463,40 +517,54 @@ export const decideSubstitution = defineCommand({
             keepLineId: l.id,
           }
     )
-    const encounter = rx.encounterId ? await tx.find("encounters", rx.encounterId) : undefined
+    const encounter = rx.encounterId
+      ? await tx.find("encounters", rx.encounterId)
+      : undefined
     const result = await reviseRx(tx, rx, lines, {
       advice: rx.advice,
       followUpDate: rx.followUpDate,
       employee,
       encounter,
     })
-    const newLine = result.lines.find((l) => l.substitutedFromLineId === line.id)
+    const newLine = result.lines.find(
+      (l) => l.substitutedFromLineId === line.id
+    )
     await tx.update("substitutionRequests", sub.id, {
       status: "approved",
       ...decided,
       resultRxId: result.rx.id,
     })
     for (const item of inboxItems) {
-      await tx.update("inboxItems", item.id, { status: "actioned", ackAt: tx.now() })
+      await tx.update("inboxItems", item.id, {
+        status: "actioned",
+        ackAt: tx.now(),
+      })
     }
-    tx.auditContext({ reason: input.note || `Substitution approved: ${from} to ${to}` })
+    tx.auditContext({
+      reason: input.note || `Substitution approved: ${from} to ${to}`,
+    })
     tx.emit("SubstitutionApproved", {
       branchId: sub.branchId,
       refs: { ...refs, rxId: result.rx.id, rxLineId: newLine?.id },
       params: { rxNo: result.rx.rxNo, from, to },
     })
-    tx.emit(result.mode === "revised" ? "PrescriptionRevised" : "PrescriptionReplaced", {
-      branchId: result.rx.branchId,
-      refs: {
-        patientId: result.rx.patientId,
-        rxId: result.rx.id,
-        encounterId: result.rx.encounterId,
-      },
-      params:
-        result.mode === "revised"
-          ? { rxNo: result.rx.rxNo, version: result.rx.rxVersion }
-          : { rxNo: result.rx.rxNo, oldRxNo: rx.rxNo },
-    })
+    tx.emit(
+      result.mode === "revised"
+        ? "PrescriptionRevised"
+        : "PrescriptionReplaced",
+      {
+        branchId: result.rx.branchId,
+        refs: {
+          patientId: result.rx.patientId,
+          rxId: result.rx.id,
+          encounterId: result.rx.encounterId,
+        },
+        params:
+          result.mode === "revised"
+            ? { rxNo: result.rx.rxNo, version: result.rx.rxVersion }
+            : { rxNo: result.rx.rxNo, oldRxNo: rx.rxNo },
+      }
+    )
     return {
       decision: "approved" as const,
       rxId: result.rx.id,

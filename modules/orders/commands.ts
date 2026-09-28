@@ -24,10 +24,17 @@ import { bodyPartOf } from "./catalog"
  * corporate employee, whose company is billed (the payment-gate bypass).
  */
 
-async function orderContext(tx: Tx, patientId: string, encounterId: string | undefined) {
+async function orderContext(
+  tx: Tx,
+  patientId: string,
+  encounterId: string | undefined
+) {
   const patient = await tx.get("patients", patientId)
-  const encounter = encounterId ? await writableEncounter(tx, encounterId) : undefined
-  if (encounter && encounter.patientId !== patient.id) tx.reject("WRONG_PATIENT", {})
+  const encounter = encounterId
+    ? await writableEncounter(tx, encounterId)
+    : undefined
+  if (encounter && encounter.patientId !== patient.id)
+    tx.reject("WRONG_PATIENT", {})
   const doctor = await actorDoctor(tx)
   const branch = (encounter?.branchId ?? tx.actor.branchId) as BranchCode | null
   if (!branch) tx.reject("BRANCH_REQUIRED", {})
@@ -41,7 +48,11 @@ async function orderContext(tx: Tx, patientId: string, encounterId: string | und
   }
 }
 
-async function testsOf(tx: Tx, ids: string[], kind: LabTestRow["kind"]): Promise<LabTestRow[]> {
+async function testsOf(
+  tx: Tx,
+  ids: string[],
+  kind: LabTestRow["kind"]
+): Promise<LabTestRow[]> {
   const tests: LabTestRow[] = []
   for (const id of [...new Set(ids)]) {
     const test = await tx.get("labTests", id)
@@ -52,7 +63,10 @@ async function testsOf(tx: Tx, ids: string[], kind: LabTestRow["kind"]): Promise
 }
 
 /** Tests already ordered (and not cancelled) in this encounter. */
-async function orderedInEncounter(tx: Tx, encounterId: string | undefined): Promise<Set<string>> {
+async function orderedInEncounter(
+  tx: Tx,
+  encounterId: string | undefined
+): Promise<Set<string>> {
   const ids = new Set<string>()
   if (!encounterId) return ids
   for (const order of await tx.list("labOrders", "encounterId", encounterId)) {
@@ -61,7 +75,11 @@ async function orderedInEncounter(tx: Tx, encounterId: string | undefined): Prom
       if (item.status !== "cancelled") ids.add(item.testId)
     }
   }
-  for (const order of await tx.list("imagingOrders", "encounterId", encounterId)) {
+  for (const order of await tx.list(
+    "imagingOrders",
+    "encounterId",
+    encounterId
+  )) {
     if (order.status !== "cancelled") ids.add(order.testId)
   }
   return ids
@@ -171,7 +189,11 @@ export const placeImaging = defineCommand({
     const repeat = tests.find((t) => already.has(t.id))
     if (repeat) tx.reject("DUPLICATE_TEST", { test: repeat.name })
 
-    const orders: { imagingOrderId: string; orderNo: string; basketLineId: string }[] = []
+    const orders: {
+      imagingOrderId: string
+      orderNo: string
+      basketLineId: string
+    }[] = []
     for (const test of tests) {
       const orderId = newId("img")
       const basketLineId = newId("bsk")

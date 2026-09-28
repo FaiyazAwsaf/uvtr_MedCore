@@ -10,12 +10,23 @@ import { SectionCard } from "@/components/shared/section-card"
 import { SimulatedBadge } from "@/components/shared/simulated-badge"
 import { StatusPill } from "@/components/shared/status"
 import { Button } from "@/components/ui/button"
-import type { EncounterRow, NoteRow, NoteSections, ScribeDraftRow, TranscriptLine } from "@/core/db/schema"
+import type {
+  EncounterRow,
+  NoteRow,
+  NoteSections,
+  ScribeDraftRow,
+  TranscriptLine,
+} from "@/core/db/schema"
 import { SCRIBE_SCRIPTS } from "@/core/seed/content"
 import { cn } from "@/lib/utils"
 import { useLocale } from "@/lib/i18n/provider"
 
-import { acceptScribe, completeScribe, discardScribe, startScribe } from "../../commands"
+import {
+  acceptScribe,
+  completeScribe,
+  discardScribe,
+  startScribe,
+} from "../../commands"
 import { hasLine } from "../../note"
 import { SCRIBE_LINE_MS, SCRIBE_RECORDING_MS } from "../../scribe"
 import { useClinicalCommand } from "../use-clinical-command"
@@ -30,7 +41,8 @@ type Playback = {
 const SPEAKER_TONE: Record<TranscriptLine["speaker"], string> = {
   doctor: "text-link",
   patient: "text-info",
-  attendant: "text-[color-mix(in_oklch,var(--chart-2),var(--foreground)_20%)] dark:text-chart-2",
+  attendant:
+    "text-[color-mix(in_oklch,var(--chart-2),var(--foreground)_20%)] dark:text-chart-2",
 }
 
 /**
@@ -62,7 +74,9 @@ export function ScribePanel({
   const [hover, setHover] = React.useState<Set<string> | null>(null)
   const completing = React.useRef(false)
 
-  const script = SCRIBE_SCRIPTS.find((s) => s.id === (play?.scriptId ?? draft?.scriptId))
+  const script = SCRIBE_SCRIPTS.find(
+    (s) => s.id === (play?.scriptId ?? draft?.scriptId)
+  )
   const total = script?.transcript.length ?? 0
   const completeRun = complete.run
   const completeRef = React.useRef(completeRun)
@@ -116,17 +130,28 @@ export function ScribePanel({
     const out = await start.run({ encounterId: encounter.id })
     if (out.ok) {
       setElapsed(0)
-      setPlay({ draftId: out.result.draftId, scriptId: out.result.scriptId, phase: "recording", shown: 0 })
+      setPlay({
+        draftId: out.result.draftId,
+        scriptId: out.result.scriptId,
+        phase: "recording",
+        shown: 0,
+      })
     }
   }
   const skip = () => {
     if (!play || !script) return
     setPlay({ ...play, phase: "streaming", shown: script.transcript.length })
   }
-  const acceptLines = async (lines?: { section: keyof NoteSections; index: number }[]) => {
+  const acceptLines = async (
+    lines?: { section: keyof NoteSections; index: number }[]
+  ) => {
     if (!draft) return
     await flushNote()
-    const out = await accept.run({ draftId: draft.id, lines, lang: note?.lang ?? locale })
+    const out = await accept.run({
+      draftId: draft.id,
+      lines,
+      lang: note?.lang ?? locale,
+    })
     if (out.ok) {
       toast.success(
         out.result.added
@@ -142,7 +167,10 @@ export function ScribePanel({
   }
 
   const noteSigned = !!note && note.status !== "draft"
-  const reviewing = !play && draft && (draft.status === "drafted" || draft.status === "accepted")
+  const reviewing =
+    !play &&
+    draft &&
+    (draft.status === "drafted" || draft.status === "accepted")
   const interrupted = !play && draft?.status === "recording"
   const transcript = reviewing ? draft!.transcript : (script?.transcript ?? [])
   const lineNumber = new Map(transcript.map((l, i) => [l.id, i + 1]))
@@ -164,12 +192,18 @@ export function ScribePanel({
         </div>
       }
     >
-      <div className="@container/scribe flex flex-col gap-3" data-testid="scribe-panel" data-state={play?.phase ?? draft?.status ?? "idle"}>
+      <div
+        className="@container/scribe flex flex-col gap-3"
+        data-testid="scribe-panel"
+        data-state={play?.phase ?? draft?.status ?? "idle"}
+      >
         <div className="flex flex-wrap gap-1.5">
           <StatusPill tone="warning" dot>
             {t("consultation.scribe.aiDraft")}
           </StatusPill>
-          <StatusPill tone="muted">{t("consultation.scribe.ambient")}</StatusPill>
+          <StatusPill tone="muted">
+            {t("consultation.scribe.ambient")}
+          </StatusPill>
         </div>
 
         {play ? (
@@ -181,19 +215,37 @@ export function ScribePanel({
               </span>
               <div className="min-w-0 flex-1">
                 <div className="text-[0.8125rem] font-semibold">
-                  {play.phase === "recording" ? t("consultation.scribe.recording") : t("consultation.scribe.transcribing")}
+                  {play.phase === "recording"
+                    ? t("consultation.scribe.recording")
+                    : t("consultation.scribe.transcribing")}
                 </div>
-                <Waveform active bars={40} height={28} className="mt-1 justify-start" />
+                <Waveform
+                  active
+                  bars={40}
+                  height={28}
+                  className="mt-1 justify-start"
+                />
               </div>
-              <span className="nums font-mono text-xs text-muted-foreground" lang="en">
+              <span
+                className="nums font-mono text-xs text-muted-foreground"
+                lang="en"
+              >
                 {`00:${String(Math.min(59, elapsed)).padStart(2, "0")}`}
               </span>
-              <Button size="xs" variant="ghost" onClick={skip} data-testid="scribe-skip">
+              <Button
+                size="xs"
+                variant="ghost"
+                onClick={skip}
+                data-testid="scribe-skip"
+              >
                 {t("consultation.scribe.skip")}
               </Button>
             </div>
             {play.phase === "streaming" && script ? (
-              <ol className="flex max-h-72 flex-col gap-1.5 overflow-y-auto pr-1" data-testid="scribe-transcript">
+              <ol
+                className="flex max-h-72 flex-col gap-1.5 overflow-y-auto pr-1"
+                data-testid="scribe-transcript"
+              >
                 {script.transcript.slice(0, play.shown).map((line, i) => (
                   <TranscriptItem
                     key={line.id}
@@ -208,8 +260,13 @@ export function ScribePanel({
         ) : reviewing ? (
           <div className="grid gap-3 @min-[38rem]/scribe:grid-cols-2">
             <div className="min-w-0">
-              <h3 className="micro mb-2">{t("consultation.scribe.transcript")}</h3>
-              <ol className="flex max-h-96 flex-col gap-1 overflow-y-auto pr-1" data-testid="scribe-transcript">
+              <h3 className="micro mb-2">
+                {t("consultation.scribe.transcript")}
+              </h3>
+              <ol
+                className="flex max-h-96 flex-col gap-1 overflow-y-auto pr-1"
+                data-testid="scribe-transcript"
+              >
                 {draft!.transcript.map((line, i) => (
                   <TranscriptItem
                     key={line.id}
@@ -230,16 +287,24 @@ export function ScribePanel({
                     </div>
                     <ul className="flex flex-col gap-1">
                       {section.lines.map((line, index) => {
-                        const inNote = !!note && hasLine(note.sections[section.section], line.text)
+                        const inNote =
+                          !!note &&
+                          hasLine(note.sections[section.section], line.text)
                         return (
                           <li
                             key={index}
                             data-testid="scribe-draft-line"
                             data-section={section.section}
-                            data-transcript-ids={line.transcriptLineIds.join(",")}
-                            onMouseEnter={() => setHover(new Set(line.transcriptLineIds))}
+                            data-transcript-ids={line.transcriptLineIds.join(
+                              ","
+                            )}
+                            onMouseEnter={() =>
+                              setHover(new Set(line.transcriptLineIds))
+                            }
                             onMouseLeave={() => setHover(null)}
-                            onFocus={() => setHover(new Set(line.transcriptLineIds))}
+                            onFocus={() =>
+                              setHover(new Set(line.transcriptLineIds))
+                            }
                             onBlur={() => setHover(null)}
                             tabIndex={0}
                             className="group/line flex items-start gap-2 rounded-md px-2 py-1.5 text-[0.8125rem] outline-none hover:bg-primary-soft focus-visible:bg-primary-soft"
@@ -267,7 +332,11 @@ export function ScribePanel({
                                 aria-label={t("consultation.scribe.acceptLine")}
                                 data-testid="scribe-accept-line"
                                 disabled={accept.pending}
-                                onClick={() => acceptLines([{ section: section.section, index }])}
+                                onClick={() =>
+                                  acceptLines([
+                                    { section: section.section, index },
+                                  ])
+                                }
                               >
                                 <Plus />
                               </Button>
@@ -284,26 +353,42 @@ export function ScribePanel({
         ) : interrupted ? (
           <div className="flex flex-wrap items-center gap-2 rounded-md bg-surface-raised px-3 py-2.5 text-[0.8125rem]">
             <TriangleAlert className="size-4 text-warning" />
-            <span className="flex-1">{t("consultation.scribe.interrupted")}</span>
-            <Button size="xs" variant="outline" onClick={() => complete.run({ draftId: draft!.id })}>
+            <span className="flex-1">
+              {t("consultation.scribe.interrupted")}
+            </span>
+            <Button
+              size="xs"
+              variant="outline"
+              onClick={() => complete.run({ draftId: draft!.id })}
+            >
               {t("consultation.scribe.showDraft")}
             </Button>
           </div>
         ) : (
-          <p className="text-[0.8125rem] text-muted-foreground">{t("consultation.scribe.idleHint")}</p>
+          <p className="text-[0.8125rem] text-muted-foreground">
+            {t("consultation.scribe.idleHint")}
+          </p>
         )}
 
         <p className="rounded-md border border-dashed border-border px-3 py-2 text-xs leading-relaxed text-muted-foreground">
-          {t("consultation.scribe.guardrail")} {t("consultation.scribe.scripted")}
+          {t("consultation.scribe.guardrail")}{" "}
+          {t("consultation.scribe.scripted")}
         </p>
         {reviewing && noteSigned ? (
-          <p className="text-xs text-muted-foreground">{t("consultation.scribe.noteSignedHint")}</p>
+          <p className="text-xs text-muted-foreground">
+            {t("consultation.scribe.noteSignedHint")}
+          </p>
         ) : null}
 
         {!readOnly ? (
           <div className="flex flex-wrap items-center justify-end gap-2">
             {reviewing && draft?.status !== "discarded" ? (
-              <Button size="sm" variant="ghost" onClick={onDiscard} disabled={discard.pending}>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onDiscard}
+                disabled={discard.pending}
+              >
                 <Trash2 />
                 {t("consultation.scribe.discard")}
               </Button>
@@ -317,7 +402,9 @@ export function ScribePanel({
                 data-testid="scribe-record"
               >
                 <Mic />
-                {reviewing || interrupted ? t("consultation.scribe.recordAgain") : t("consultation.scribe.record")}
+                {reviewing || interrupted
+                  ? t("consultation.scribe.recordAgain")
+                  : t("consultation.scribe.record")}
               </Button>
             ) : null}
             {reviewing && !noteSigned ? (
@@ -359,13 +446,24 @@ function TranscriptItem({
         highlighted && "bg-primary-soft ring-1 ring-primary/40"
       )}
     >
-      <span className="nums w-5 shrink-0 text-right text-[0.6875rem] text-muted-foreground">{num(number)}</span>
+      <span className="nums w-5 shrink-0 text-right text-[0.6875rem] text-muted-foreground">
+        {num(number)}
+      </span>
       <div className="min-w-0 flex-1">
-        <span className={cn("mr-1.5 text-xs font-semibold", SPEAKER_TONE[line.speaker])}>
+        <span
+          className={cn(
+            "mr-1.5 text-xs font-semibold",
+            SPEAKER_TONE[line.speaker]
+          )}
+        >
           {t(`consultation.scribe.speakers.${line.speaker}`)}
         </span>
         <span lang={line.lang}>
-          {streaming ? <StreamingText text={line.text} charsPerTick={4} maxDelay={24} /> : line.text}
+          {streaming ? (
+            <StreamingText text={line.text} charsPerTick={4} maxDelay={24} />
+          ) : (
+            line.text
+          )}
         </span>
       </div>
     </li>

@@ -6,7 +6,11 @@
 
 import type { Locale } from "@/lib/i18n/config"
 import type { NoteSections } from "@/core/db/schema"
-import { NOTE_TEMPLATES, templateForSpecialty, type NoteTemplate } from "@/core/seed/content"
+import {
+  NOTE_TEMPLATES,
+  templateForSpecialty,
+  type NoteTemplate,
+} from "@/core/seed/content"
 
 export const NOTE_SECTION_KEYS = [
   "chiefComplaint",
@@ -19,7 +23,13 @@ export const NOTE_SECTION_KEYS = [
 export type NoteSectionKey = (typeof NOTE_SECTION_KEYS)[number]
 
 export function emptySections(): NoteSections {
-  return { chiefComplaint: "", history: "", examination: "", assessment: "", plan: "" }
+  return {
+    chiefComplaint: "",
+    history: "",
+    examination: "",
+    assessment: "",
+    plan: "",
+  }
 }
 
 export function isNoteEmpty(sections: NoteSections): boolean {
@@ -49,7 +59,10 @@ export function templateById(id: string | undefined): NoteTemplate {
 export { templateForSpecialty }
 
 /** The scaffold text of a template in one language. */
-export function templateSections(template: NoteTemplate, lang: Locale): NoteSections {
+export function templateSections(
+  template: NoteTemplate,
+  lang: Locale
+): NoteSections {
   return {
     chiefComplaint: template.sections.chiefComplaint[lang],
     history: template.sections.history[lang],
@@ -79,7 +92,8 @@ export function applyTemplate(
 /** Trims every section (what gets saved and signed). */
 export function cleanSections(sections: NoteSections): NoteSections {
   const out = emptySections()
-  for (const key of NOTE_SECTION_KEYS) out[key] = sections[key].replace(/\s+$/, "")
+  for (const key of NOTE_SECTION_KEYS)
+    out[key] = sections[key].replace(/\s+$/, "")
   return out
 }
 

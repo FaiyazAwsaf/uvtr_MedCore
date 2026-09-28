@@ -4,7 +4,14 @@ import * as React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useLiveQuery } from "dexie-react-hooks"
-import { ArrowLeft, CheckCircle2, Circle, DoorOpen, LogOut, RotateCcw } from "lucide-react"
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Circle,
+  DoorOpen,
+  LogOut,
+  RotateCcw,
+} from "lucide-react"
 import { toast } from "sonner"
 
 import { IdentityBanner } from "@/components/shared/identity-banner"
@@ -30,7 +37,9 @@ import type { EncounterCore } from "../data"
 import { useClinicalCommand } from "../use-clinical-command"
 
 export function scrollToSection(id: string) {
-  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" })
+  document
+    .getElementById(id)
+    ?.scrollIntoView({ behavior: "smooth", block: "start" })
 }
 
 /**
@@ -38,7 +47,13 @@ export function scrollToSection(id: string) {
  * concern button and "Finish consultation". Finishing needs a signed note
  * and no prescription left as a draft; otherwise a checklist explains why.
  */
-export function EncounterHeader({ core, latestNote }: { core: EncounterCore; latestNote: NoteRow | undefined }) {
+export function EncounterHeader({
+  core,
+  latestNote,
+}: {
+  core: EncounterCore
+  latestNote: NoteRow | undefined
+}) {
   const { t, tk, time, locale } = useLocale()
   const router = useRouter()
   const db = useDb()
@@ -49,17 +64,29 @@ export function EncounterHeader({ core, latestNote }: { core: EncounterCore; lat
   const closed = encounter.status === "closed"
 
   const state = useLiveQuery(async () => {
-    const rxs = await db.prescriptions.where("encounterId").equals(encounter.id).toArray()
+    const rxs = await db.prescriptions
+      .where("encounterId")
+      .equals(encounter.id)
+      .toArray()
     let draftOpen = false
     for (const rx of rxs.filter((r) => r.status === "draft")) {
       const lines = await db.rxLines.where("rxId").equals(rx.id).toArray()
       if (lines.some((l) => l.status !== "cancelled")) draftOpen = true
     }
-    const labOrders = await db.labOrders.where("encounterId").equals(encounter.id).toArray()
+    const labOrders = await db.labOrders
+      .where("encounterId")
+      .equals(encounter.id)
+      .toArray()
     const items = labOrders.length
-      ? await db.labOrderItems.where("labOrderId").anyOf(labOrders.map((o) => o.id)).count()
+      ? await db.labOrderItems
+          .where("labOrderId")
+          .anyOf(labOrders.map((o) => o.id))
+          .count()
       : 0
-    const imaging = await db.imagingOrders.where("encounterId").equals(encounter.id).count()
+    const imaging = await db.imagingOrders
+      .where("encounterId")
+      .equals(encounter.id)
+      .count()
     return { draftOpen, orders: items + imaging }
   }, [db, encounter.id])
 
@@ -69,7 +96,9 @@ export function EncounterHeader({ core, latestNote }: { core: EncounterCore; lat
   const doFinish = async () => {
     const out = await finish.run({ encounterId: encounter.id })
     if (out.ok) {
-      toast.success(t("consultation.encounter.finished", { name: nameIn(patient, locale) }))
+      toast.success(
+        t("consultation.encounter.finished", { name: nameIn(patient, locale) })
+      )
       setCheckOpen(false)
       router.push("/doctor")
     }
@@ -81,7 +110,12 @@ export function EncounterHeader({ core, latestNote }: { core: EncounterCore; lat
     if (out.ok) toast.success(t("consultation.encounter.reopened"))
   }
 
-  const statusTone = encounter.status === "closed" ? "success" : encounter.status === "signed" ? "info" : "warning"
+  const statusTone =
+    encounter.status === "closed"
+      ? "success"
+      : encounter.status === "signed"
+        ? "info"
+        : "warning"
 
   return (
     <div className="flex flex-col gap-2">
@@ -102,9 +136,20 @@ export function EncounterHeader({ core, latestNote }: { core: EncounterCore; lat
             {t("consultation.encounter.tokenLine", { token: token.label })}
           </span>
         ) : null}
-        {appointment ? <span>{tk(`consultation.visitType.${appointment.visitType}`)}</span> : null}
-        <span>{t("consultation.encounter.startedAt", { time: time(encounter.startedAt) })}</span>
-        <StatusPill tone={statusTone} dot data-testid="encounter-status" data-status={encounter.status}>
+        {appointment ? (
+          <span>{tk(`consultation.visitType.${appointment.visitType}`)}</span>
+        ) : null}
+        <span>
+          {t("consultation.encounter.startedAt", {
+            time: time(encounter.startedAt),
+          })}
+        </span>
+        <StatusPill
+          tone={statusTone}
+          dot
+          data-testid="encounter-status"
+          data-status={encounter.status}
+        >
           {tk(`consultation.encounter.status.${encounter.status}`)}
         </StatusPill>
       </div>
@@ -114,17 +159,30 @@ export function EncounterHeader({ core, latestNote }: { core: EncounterCore; lat
           <>
             <ReportSafetyConcernButton
               iconOnly
-              context={t("consultation.encounter.safetyContext", { token: token?.label ?? "" })}
+              context={t("consultation.encounter.safetyContext", {
+                token: token?.label ?? "",
+              })}
             />
             {closed ? (
               appointment ? (
-                <Button size="sm" variant="outline" onClick={onReopen} disabled={reopen.pending} data-testid="consult-reopen">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={onReopen}
+                  disabled={reopen.pending}
+                  data-testid="consult-reopen"
+                >
                   <RotateCcw />
                   {t("consultation.encounter.reopen")}
                 </Button>
               ) : null
             ) : (
-              <Button size="sm" onClick={onFinish} disabled={finish.pending} data-testid="consult-finish">
+              <Button
+                size="sm"
+                onClick={onFinish}
+                disabled={finish.pending}
+                data-testid="consult-finish"
+              >
                 <LogOut />
                 {t("consultation.encounter.finish")}
               </Button>
@@ -135,7 +193,9 @@ export function EncounterHeader({ core, latestNote }: { core: EncounterCore; lat
       {closed && encounter.endedAt ? (
         <div className="flex items-center gap-2 rounded-md bg-surface-raised px-3 py-2 text-[0.8125rem] text-muted-foreground">
           <DoorOpen className="size-4" />
-          {t("consultation.encounter.closedBanner", { time: time(encounter.endedAt) })}
+          {t("consultation.encounter.closedBanner", {
+            time: time(encounter.endedAt),
+          })}
         </div>
       ) : null}
 
@@ -143,12 +203,26 @@ export function EncounterHeader({ core, latestNote }: { core: EncounterCore; lat
         <DialogContent className="sm:max-w-md" data-testid="finish-dialog">
           <DialogHeader>
             <DialogTitle>{t("consultation.encounter.finishTitle")}</DialogTitle>
-            <DialogDescription>{t("consultation.encounter.finishBody")}</DialogDescription>
+            <DialogDescription>
+              {t("consultation.encounter.finishBody")}
+            </DialogDescription>
           </DialogHeader>
           <ul className="flex flex-col gap-2 text-[0.8125rem]">
-            <Check ok={noteSigned} label={t("consultation.encounter.checks.noteSigned")} />
-            <Check ok={!state?.draftOpen} label={t("consultation.encounter.checks.rxSigned")} />
-            <Check ok neutral label={t("consultation.encounter.checks.ordersPlaced", { count: state?.orders ?? 0 })} />
+            <Check
+              ok={noteSigned}
+              label={t("consultation.encounter.checks.noteSigned")}
+            />
+            <Check
+              ok={!state?.draftOpen}
+              label={t("consultation.encounter.checks.rxSigned")}
+            />
+            <Check
+              ok
+              neutral
+              label={t("consultation.encounter.checks.ordersPlaced", {
+                count: state?.orders ?? 0,
+              })}
+            />
           </ul>
           <DialogFooter>
             {!noteSigned ? (
@@ -173,7 +247,11 @@ export function EncounterHeader({ core, latestNote }: { core: EncounterCore; lat
                 {t("consultation.encounter.goToRx")}
               </Button>
             ) : null}
-            <Button onClick={doFinish} disabled={!ready || finish.pending} data-testid="consult-finish-confirm">
+            <Button
+              onClick={doFinish}
+              disabled={!ready || finish.pending}
+              data-testid="consult-finish-confirm"
+            >
               {t("consultation.encounter.finishAnyway")}
             </Button>
           </DialogFooter>
@@ -183,11 +261,28 @@ export function EncounterHeader({ core, latestNote }: { core: EncounterCore; lat
   )
 }
 
-function Check({ ok, label, neutral = false }: { ok: boolean; label: string; neutral?: boolean }) {
+function Check({
+  ok,
+  label,
+  neutral = false,
+}: {
+  ok: boolean
+  label: string
+  neutral?: boolean
+}) {
   const Icon = ok ? CheckCircle2 : Circle
   return (
     <li className="flex items-center gap-2">
-      <Icon className={cn("size-4", neutral ? "text-muted-foreground" : ok ? "text-success" : "text-warning")} />
+      <Icon
+        className={cn(
+          "size-4",
+          neutral
+            ? "text-muted-foreground"
+            : ok
+              ? "text-success"
+              : "text-warning"
+        )}
+      />
       <span className={cn(!ok && "font-medium")}>{label}</span>
     </li>
   )

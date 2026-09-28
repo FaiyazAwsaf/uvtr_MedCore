@@ -2,7 +2,15 @@
 
 import * as React from "react"
 import { useLiveQuery } from "dexie-react-hooks"
-import { FileSignature, History, Pill, Printer, RefreshCcw, Send, X } from "lucide-react"
+import {
+  FileSignature,
+  History,
+  Pill,
+  Printer,
+  RefreshCcw,
+  Send,
+  X,
+} from "lucide-react"
 import { toast } from "sonner"
 
 import { SectionCard } from "@/components/shared/section-card"
@@ -26,7 +34,11 @@ import type {
 } from "@/core/db/schema"
 import { useLocale } from "@/lib/i18n/provider"
 import type { MedicineCatalogRows } from "@/modules/consultation/components/data"
-import { appendQuickText, expandQuickText, QuickTextMenu } from "@/modules/consultation/components/quick-text"
+import {
+  appendQuickText,
+  expandQuickText,
+  QuickTextMenu,
+} from "@/modules/consultation/components/quick-text"
 import { useClinicalCommand } from "@/modules/consultation/components/use-clinical-command"
 
 import type { AlertOverride, DuplicateContext } from "../alerts"
@@ -41,7 +53,11 @@ import {
 } from "../commands"
 import { instructionsFor, normaliseDoseCode, quantityFor } from "../dose"
 import { FollowUpBooking } from "./follow-up-booking"
-import { brandLabel, MedicineSearch, type MedicinePick } from "./medicine-search"
+import {
+  brandLabel,
+  MedicineSearch,
+  type MedicinePick,
+} from "./medicine-search"
 import { PickPanel, type AlertContext, type PickInitial } from "./pick-panel"
 import { RxLines, type LineView } from "./rx-lines"
 import { RxPrintDialog, type RxPrintData } from "./rx-print"
@@ -78,7 +94,10 @@ function viewOfRow(line: RxLineRow): LineView {
   }
 }
 
-function viewOfLocal(line: LocalLine, catalog: MedicineCatalogRows | undefined): LineView {
+function viewOfLocal(
+  line: LocalLine,
+  catalog: MedicineCatalogRows | undefined
+): LineView {
   const c = line.content
   const brand = c.brandId ? catalog?.brandById.get(c.brandId) : undefined
   const generic = brand ? catalog?.genericById.get(brand.genericId) : undefined
@@ -143,18 +162,19 @@ export function RxPad({
   const today = dhakaDate(nowMs)
 
   const data = useLiveQuery(async () => {
-    const rxs = (await db.prescriptions.where("encounterId").equals(encounter.id).toArray()).sort(
-      (a, b) => b.createdAt - a.createdAt
-    )
+    const rxs = (
+      await db.prescriptions.where("encounterId").equals(encounter.id).toArray()
+    ).sort((a, b) => b.createdAt - a.createdAt)
     const ids = rxs.map((r) => r.id)
-    const [lines, queue, patientLines, results, labOrders, imaging] = await Promise.all([
-      ids.length ? db.rxLines.where("rxId").anyOf(ids).toArray() : [],
-      ids.length ? db.pharmacyQueue.where("rxId").anyOf(ids).toArray() : [],
-      db.rxLines.where("patientId").equals(patient.id).toArray(),
-      db.results.where("patientId").equals(patient.id).toArray(),
-      db.labOrders.where("encounterId").equals(encounter.id).toArray(),
-      db.imagingOrders.where("encounterId").equals(encounter.id).toArray(),
-    ])
+    const [lines, queue, patientLines, results, labOrders, imaging] =
+      await Promise.all([
+        ids.length ? db.rxLines.where("rxId").anyOf(ids).toArray() : [],
+        ids.length ? db.pharmacyQueue.where("rxId").anyOf(ids).toArray() : [],
+        db.rxLines.where("patientId").equals(patient.id).toArray(),
+        db.results.where("patientId").equals(patient.id).toArray(),
+        db.labOrders.where("encounterId").equals(encounter.id).toArray(),
+        db.imagingOrders.where("encounterId").equals(encounter.id).toArray(),
+      ])
     const own = new Set(ids)
     const others = patientLines.filter((l) => !own.has(l.rxId))
     const otherRx = new Map(
@@ -163,7 +183,10 @@ export function RxPad({
         .map((r) => [r!.id, r!])
     )
     const items = labOrders.length
-      ? await db.labOrderItems.where("labOrderId").anyOf(labOrders.map((o) => o.id)).toArray()
+      ? await db.labOrderItems
+          .where("labOrderId")
+          .anyOf(labOrders.map((o) => o.id))
+          .toArray()
       : []
     const testIds = [
       ...items.filter((i) => i.status !== "cancelled").map((i) => i.testId),
@@ -175,7 +198,9 @@ export function RxPad({
   const rxs = data?.rxs ?? []
   const signed = rxs.find((r) => r.status === "signed")
   const draft = signed ? undefined : rxs.find((r) => r.status === "draft")
-  const history = rxs.filter((r) => r.status === "superseded" || r.status === "replaced")
+  const history = rxs.filter(
+    (r) => r.status === "superseded" || r.status === "replaced"
+  )
   const linesOf = React.useCallback(
     (rx: PrescriptionRow | undefined) =>
       rx
@@ -223,7 +248,11 @@ export function RxPad({
   const persist = React.useCallback(
     async (nextAdvice: string, nextFollowUp: string) => {
       const out = await saveRun(
-        { encounterId: encounter.id, advice: nextAdvice, followUpDate: nextFollowUp || null },
+        {
+          encounterId: encounter.id,
+          advice: nextAdvice,
+          followUpDate: nextFollowUp || null,
+        },
         { quiet: true }
       )
       if (out.ok) dirty.current = false
@@ -236,18 +265,25 @@ export function RxPad({
     if (revising) return
     dirty.current = true
     window.clearTimeout(timer.current)
-    timer.current = window.setTimeout(() => void persist(nextAdvice, nextFollowUp), AUTOSAVE_MS)
+    timer.current = window.setTimeout(
+      () => void persist(nextAdvice, nextFollowUp),
+      AUTOSAVE_MS
+    )
   }
 
   /* ---------------- lines on the pad ---------------- */
-  const views: LineView[] = revising ? local.map((l) => viewOfLocal(l, catalog)) : (signed ? signedLines : draftLines).map(viewOfRow)
+  const views: LineView[] = revising
+    ? local.map((l) => viewOfLocal(l, catalog))
+    : (signed ? signedLines : draftLines).map(viewOfRow)
   const stock = useStock(views.flatMap((v) => (v.brandId ? [v.brandId] : [])))
 
   const thisRx: DuplicateContext["thisRx"] = revising
     ? local.map((l) => ({
         id: l.key,
         brandId: l.content.brandId,
-        genericId: l.content.brandId ? catalog?.brandById.get(l.content.brandId)?.genericId : undefined,
+        genericId: l.content.brandId
+          ? catalog?.brandById.get(l.content.brandId)?.genericId
+          : undefined,
         nonDictionaryName: l.content.nonDictionaryName,
         status: "open" as const,
         strength: l.content.strength ?? "",
@@ -265,8 +301,16 @@ export function RxPad({
     otherLines: (data?.others ?? []).flatMap((line) => {
       const rx = data?.otherRx.get(line.rxId)
       if (!rx) return []
-      const brand = line.brandId ? catalog?.brandById.get(line.brandId) : undefined
-      return [{ line, rx, name: brand ? brandLabel(brand) : (line.nonDictionaryName ?? "") }]
+      const brand = line.brandId
+        ? catalog?.brandById.get(line.brandId)
+        : undefined
+      return [
+        {
+          line,
+          rx,
+          name: brand ? brandLabel(brand) : (line.nonDictionaryName ?? ""),
+        },
+      ]
     }),
     results: data?.results ?? [],
     now: nowMs,
@@ -288,12 +332,26 @@ export function RxPad({
     setEditKey(null)
   }
 
-  const onSubmit = async (line: RxLineInput, overrides: AlertOverride[]): Promise<boolean> => {
+  const onSubmit = async (
+    line: RxLineInput,
+    overrides: AlertOverride[]
+  ): Promise<boolean> => {
     if (revising) {
       setLocal((current) =>
         editKey
-          ? current.map((l) => (l.key === editKey ? { ...l, content: { ...l.content, ...line } } : l))
-          : [...current, { key: `new-${current.length}-${line.brandId ?? line.nonDictionaryName}`, content: line, overrides }]
+          ? current.map((l) =>
+              l.key === editKey
+                ? { ...l, content: { ...l.content, ...line } }
+                : l
+            )
+          : [
+              ...current,
+              {
+                key: `new-${current.length}-${line.brandId ?? line.nonDictionaryName}`,
+                content: line,
+                overrides,
+              },
+            ]
       )
       closePick()
       return true
@@ -318,7 +376,11 @@ export function RxPad({
     const v = views.find((x) => x.key === key)
     if (!v) return
     setEditKey(key)
-    setPick(v.brandId ? { kind: "brand", brandId: v.brandId } : { kind: "free", name: v.nonDictionaryName ?? "" })
+    setPick(
+      v.brandId
+        ? { kind: "brand", brandId: v.brandId }
+        : { kind: "free", name: v.nonDictionaryName ?? "" }
+    )
   }
   const onRemove = async (key: string) => {
     if (revising) {
@@ -334,10 +396,17 @@ export function RxPad({
     if (!draft) return
     window.clearTimeout(timer.current)
     dirty.current = false
-    const out = await sign.run({ rxId: draft.id, advice, followUpDate: followUp || null, smsLang: "bn" })
+    const out = await sign.run({
+      rxId: draft.id,
+      advice,
+      followUpDate: followUp || null,
+      smsLang: "bn",
+    })
     if (out.ok) {
       toast.success(t("prescribing.pad.signed", { rxNo: out.result.rxNo }), {
-        description: out.result.smsQueued ? t("prescribing.followUp.smsQueued") : undefined,
+        description: out.result.smsQueued
+          ? t("prescribing.followUp.smsQueued")
+          : undefined,
       })
       closePick()
     }
@@ -345,7 +414,13 @@ export function RxPad({
 
   const startRevision = () => {
     if (!signed) return
-    setLocal(signedLines.map((l) => ({ key: l.id, keepLineId: l.id, content: contentOfRow(l) })))
+    setLocal(
+      signedLines.map((l) => ({
+        key: l.id,
+        keepLineId: l.id,
+        content: contentOfRow(l),
+      }))
+    )
     setReason("")
     syncedFrom.current = ""
     setRevising(true)
@@ -361,7 +436,11 @@ export function RxPad({
     const out = await revise.run({
       rxId: signed.id,
       expectedVersion: signed.version,
-      lines: local.map((l) => ({ ...l.content, keepLineId: l.keepLineId, overrides: l.overrides })),
+      lines: local.map((l) => ({
+        ...l.content,
+        keepLineId: l.keepLineId,
+        overrides: l.overrides,
+      })),
       advice,
       followUpDate: followUp || null,
       reason,
@@ -370,7 +449,10 @@ export function RxPad({
     if (out.ok) {
       toast.success(
         out.result.mode === "revised"
-          ? t("prescribing.pad.revised", { rxNo: out.result.rxNo, version: out.result.rxVersion })
+          ? t("prescribing.pad.revised", {
+              rxNo: out.result.rxNo,
+              version: out.result.rxVersion,
+            })
           : t("prescribing.pad.replacedToast", { rxNo: out.result.rxNo })
       )
       setRevising(false)
@@ -379,12 +461,16 @@ export function RxPad({
   }
 
   const current = revising ? signed : (signed ?? draft)
-  const queueEntry = signed ? data?.queue.find((q) => q.rxId === signed.id) : undefined
+  const queueEntry = signed
+    ? data?.queue.find((q) => q.rxId === signed.id)
+    : undefined
   const canWrite = revising || (!signed && !readOnly)
 
   const printData: RxPrintData | undefined = current
     ? {
-        rx: signed ? current : { ...current, advice, followUpDate: followUp || undefined },
+        rx: signed
+          ? current
+          : { ...current, advice, followUpDate: followUp || undefined },
         lines: views,
         patient,
         doctor,
@@ -409,24 +495,41 @@ export function RxPad({
       }
       action={
         signed && !revising ? (
-          <StatusPill tone="success" dot data-testid="rx-status" data-status="signed">
+          <StatusPill
+            tone="success"
+            dot
+            data-testid="rx-status"
+            data-status="signed"
+          >
             {t("prescribing.pad.signedV", { version: signed.rxVersion })}
           </StatusPill>
         ) : revising && signed ? (
-          <StatusPill tone="warning" dot data-testid="rx-status" data-status="revising">
+          <StatusPill
+            tone="warning"
+            dot
+            data-testid="rx-status"
+            data-status="revising"
+          >
             {t("prescribing.pad.revising", { rxNo: signed.rxNo })}
           </StatusPill>
         ) : (
-          <StatusPill tone="warning" dot data-testid="rx-status" data-status="draft">
+          <StatusPill
+            tone="warning"
+            dot
+            data-testid="rx-status"
+            data-status="draft"
+          >
             {t("prescribing.pad.draft")}
           </StatusPill>
         )
       }
     >
-      <div id="enc-rx" className="@container/rx flex flex-col gap-4" data-testid="rx-pad">
+      <div className="@container/rx flex flex-col gap-4" data-testid="rx-pad">
         {canWrite && catalog ? (
           <div className="flex flex-col gap-3">
-            {!pick ? <MedicineSearch catalog={catalog} onPick={(p) => setPick(p)} /> : null}
+            {!pick ? (
+              <MedicineSearch catalog={catalog} onPick={(p) => setPick(p)} />
+            ) : null}
             {pick ? (
               <PickPanel
                 key={`${pick.kind}:${pick.kind === "brand" ? pick.brandId : pick.name}:${editKey ?? ""}`}
@@ -456,7 +559,12 @@ export function RxPad({
             onRemove={canWrite ? onRemove : undefined}
           />
         ) : (
-          <EmptyState size="sm" icon={Pill} title={t("prescribing.pad.noLines")} description={t("prescribing.pad.noLinesHint")} />
+          <EmptyState
+            size="sm"
+            icon={Pill}
+            title={t("prescribing.pad.noLines")}
+            description={t("prescribing.pad.noLinesHint")}
+          />
         )}
 
         {/* Advice, follow-up and tests */}
@@ -468,24 +576,42 @@ export function RxPad({
                 <QuickTextMenu
                   sections={["advice", "plan"]}
                   lang={locale}
-                  onPick={(quick) => changeDraftMeta(appendQuickText(advice, quick, locale), followUp)}
+                  onPick={(quick) =>
+                    changeDraftMeta(
+                      appendQuickText(advice, quick, locale),
+                      followUp
+                    )
+                  }
                 />
               ) : null}
             </span>
-            <Textarea
-              value={canWrite ? advice : (signed?.advice ?? "")}
-              readOnly={!canWrite}
-              data-testid="rx-advice"
-              placeholder={t("prescribing.pad.advicePlaceholder")}
-              className="min-h-16 text-[0.8125rem]"
-              onChange={(e) => {
-                const value = e.target.value
-                changeDraftMeta(expandQuickText(value, locale) ?? value, followUp)
-              }}
-            />
+            {canWrite ? (
+              <Textarea
+                value={advice}
+                data-testid="rx-advice"
+                placeholder={t("prescribing.pad.advicePlaceholder")}
+                className="min-h-16 text-[0.8125rem]"
+                onChange={(e) => {
+                  const value = e.target.value
+                  changeDraftMeta(
+                    expandQuickText(value, locale) ?? value,
+                    followUp
+                  )
+                }}
+              />
+            ) : (
+              <p
+                className="text-[0.8125rem] whitespace-pre-wrap"
+                data-testid="rx-advice-value"
+              >
+                {signed?.advice.trim() || "-"}
+              </p>
+            )}
           </label>
           <div className="flex min-w-0 flex-col gap-1.5">
-            <span className="text-xs font-semibold text-muted-foreground">{t("prescribing.pad.followUp")}</span>
+            <span className="text-xs font-semibold text-muted-foreground">
+              {t("prescribing.pad.followUp")}
+            </span>
             {canWrite ? (
               <>
                 <Input
@@ -505,16 +631,30 @@ export function RxPad({
                       type="button"
                       data-testid="rx-follow-up-chip"
                       data-days={d}
-                      onClick={() => changeDraftMeta(advice, addDaysISO(today, d))}
+                      onClick={() =>
+                        changeDraftMeta(advice, addDaysISO(today, d))
+                      }
                     >
                       {t("prescribing.pad.followUpIn", { count: num(d) })}
                     </Button>
                   ))}
-                  <Button size="xs" variant="secondary" type="button" onClick={() => changeDraftMeta(advice, addDaysISO(today, 30))}>
+                  <Button
+                    size="xs"
+                    variant="secondary"
+                    type="button"
+                    onClick={() =>
+                      changeDraftMeta(advice, addDaysISO(today, 30))
+                    }
+                  >
                     {t("prescribing.pad.followUpMonth")}
                   </Button>
                   {followUp ? (
-                    <Button size="xs" variant="ghost" type="button" onClick={() => changeDraftMeta(advice, "")}>
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      type="button"
+                      onClick={() => changeDraftMeta(advice, "")}
+                    >
                       <X />
                       {t("prescribing.pad.clear")}
                     </Button>
@@ -523,26 +663,40 @@ export function RxPad({
               </>
             ) : (
               <p className="text-[0.8125rem]" data-testid="rx-follow-up-value">
-                {signed?.followUpDate ? <FollowUpDate iso={signed.followUpDate} /> : t("prescribing.pad.followUpNone")}
+                {signed?.followUpDate ? (
+                  <FollowUpDate iso={signed.followUpDate} />
+                ) : (
+                  t("prescribing.pad.followUpNone")
+                )}
               </p>
             )}
           </div>
         </div>
         <div className="flex flex-col gap-1">
-          <span className="text-xs font-semibold text-muted-foreground">{t("prescribing.pad.tests")}</span>
+          <span className="text-xs font-semibold text-muted-foreground">
+            {t("prescribing.pad.tests")}
+          </span>
           {tests.length || signed?.tests.length ? (
             <p className="text-[0.8125rem]" lang="en" data-testid="rx-tests">
               {[...new Set([...(signed?.tests ?? []), ...tests])].join(", ")}
             </p>
           ) : (
-            <p className="text-[0.8125rem] text-muted-foreground">{t("prescribing.pad.testsNone")}</p>
+            <p className="text-[0.8125rem] text-muted-foreground">
+              {t("prescribing.pad.testsNone")}
+            </p>
           )}
-          {canWrite ? <p className="text-[0.6875rem] text-muted-foreground">{t("prescribing.pad.testsHint")}</p> : null}
+          {canWrite ? (
+            <p className="text-[0.6875rem] text-muted-foreground">
+              {t("prescribing.pad.testsHint")}
+            </p>
+          ) : null}
         </div>
 
         {revising ? (
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-semibold text-muted-foreground">{t("prescribing.pad.reviseReason")}</span>
+            <span className="text-xs font-semibold text-muted-foreground">
+              {t("prescribing.pad.reviseReason")}
+            </span>
             <Input
               value={reason}
               data-testid="rx-revise-reason"
@@ -550,7 +704,10 @@ export function RxPad({
               onChange={(e) => setReason(e.target.value)}
             />
             <span className="text-[0.6875rem] text-muted-foreground">
-              {t("prescribing.pad.reviseHint", { next: (signed?.rxVersion ?? 1) + 1, rxNo: signed?.rxNo ?? "" })}
+              {t("prescribing.pad.reviseHint", {
+                next: (signed?.rxVersion ?? 1) + 1,
+                rxNo: signed?.rxNo ?? "",
+              })}
             </span>
           </label>
         ) : null}
@@ -562,19 +719,32 @@ export function RxPad({
               <Send className="size-3.5 text-success" />
               {t("prescribing.pad.sentTo")}
               {queueEntry ? (
-                <StatusPill tone="info" className="h-5 px-2 text-[0.6875rem]" data-testid="rx-queue-status" data-status={queueEntry.status}>
-                  {t("prescribing.pad.queue.label")}: {tk(`prescribing.pad.queue.${queueEntry.status}`)}
+                <StatusPill
+                  tone="info"
+                  className="h-5 px-2 text-[0.6875rem]"
+                  data-testid="rx-queue-status"
+                  data-status={queueEntry.status}
+                >
+                  {t("prescribing.pad.queue.label")}:{" "}
+                  {tk(`prescribing.pad.queue.${queueEntry.status}`)}
                 </StatusPill>
               ) : null}
             </span>
           ) : !signed ? (
-            <span className="mr-auto text-xs text-muted-foreground">{t("prescribing.pad.signHint")}</span>
+            <span className="mr-auto text-xs text-muted-foreground">
+              {t("prescribing.pad.signHint")}
+            </span>
           ) : (
             <span className="mr-auto" />
           )}
 
           {current ? (
-            <Button size="sm" variant="neutral" onClick={() => setPrintOpen(true)} data-testid="rx-print">
+            <Button
+              size="sm"
+              variant="neutral"
+              onClick={() => setPrintOpen(true)}
+              data-testid="rx-print"
+            >
               <Printer />
               {t("prescribing.pad.print")}
             </Button>
@@ -584,14 +754,25 @@ export function RxPad({
             <FollowUpBooking
               patientId={patient.id}
               doctorId={doctor.id}
-              doctorName={doctorStaff ? (locale === "bn" ? doctorStaff.nameBn : doctorStaff.nameEn) : ""}
+              doctorName={
+                doctorStaff
+                  ? locale === "bn"
+                    ? doctorStaff.nameBn
+                    : doctorStaff.nameEn
+                  : ""
+              }
               fromDate={signed.followUpDate}
               today={today}
             />
           ) : null}
 
           {signed && !revising ? (
-            <Button size="sm" variant="outline" onClick={startRevision} data-testid="rx-revise">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={startRevision}
+              data-testid="rx-revise"
+            >
               <RefreshCcw />
               {t("prescribing.pad.revise")}
             </Button>
@@ -605,7 +786,12 @@ export function RxPad({
               <Button
                 size="sm"
                 onClick={submitRevision}
-                disabled={revise.pending || !local.length || reason.trim().length < 3 || !!pick}
+                disabled={
+                  revise.pending ||
+                  !local.length ||
+                  reason.trim().length < 3 ||
+                  !!pick
+                }
                 data-testid="rx-revise-sign"
               >
                 <FileSignature />
@@ -622,7 +808,9 @@ export function RxPad({
               data-testid="rx-sign"
             >
               <FileSignature />
-              {sign.pending ? t("prescribing.pad.signing") : t("prescribing.pad.sign")}
+              {sign.pending
+                ? t("prescribing.pad.signing")
+                : t("prescribing.pad.sign")}
             </Button>
           ) : null}
         </div>
@@ -633,7 +821,10 @@ export function RxPad({
               <History className="size-3.5" />
               {t("prescribing.pad.history")}
             </h3>
-            <ul className="flex flex-col gap-0.5 text-xs text-muted-foreground" data-testid="rx-history">
+            <ul
+              className="flex flex-col gap-0.5 text-xs text-muted-foreground"
+              data-testid="rx-history"
+            >
               {history.map((rx) => (
                 <li key={rx.id}>
                   {t("prescribing.pad.historyLine", {
@@ -649,7 +840,12 @@ export function RxPad({
         ) : null}
       </div>
 
-      <RxPrintDialog open={printOpen} onOpenChange={setPrintOpen} data={printData} catalog={catalog} />
+      <RxPrintDialog
+        open={printOpen}
+        onOpenChange={setPrintOpen}
+        data={printData}
+        catalog={catalog}
+      />
     </SectionCard>
   )
 }

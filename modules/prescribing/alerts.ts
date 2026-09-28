@@ -53,7 +53,11 @@ export type RxAlertKind = RxAlert["kind"]
 /** An acknowledgement the doctor gave for an alert (a reason is required for allergy). */
 export type AlertOverride = { kind: RxAlertKind; reason?: string }
 
-const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
+const norm = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
 
 /**
  * Allergy alert: the patient's allergy class matches the generic's class
@@ -115,7 +119,10 @@ export function isLineActive(
 
 export type DuplicateContext = {
   /** Lines already on the prescription being written (cancelled ones are ignored) */
-  thisRx: Pick<RxLineRow, "id" | "genericId" | "brandId" | "nonDictionaryName" | "status">[]
+  thisRx: Pick<
+    RxLineRow,
+    "id" | "genericId" | "brandId" | "nonDictionaryName" | "status"
+  >[]
   /** Lines of the patient's other signed prescriptions, with their prescription */
   otherLines: {
     line: Pick<RxLineRow, "genericId" | "status" | "durationDays" | "strength">
@@ -139,7 +146,12 @@ export function duplicateAlertsFor(
   for (const line of ctx.thisRx) {
     if (line.id === ctx.exceptLineId || line.status === "cancelled") continue
     if (line.genericId === genericId) {
-      out.push({ kind: "duplicate", source: "this-rx", genericId, name: names.thisRx(line.id) })
+      out.push({
+        kind: "duplicate",
+        source: "this-rx",
+        genericId,
+        name: names.thisRx(line.id),
+      })
     }
   }
   const seenRx = new Set<Id>()
@@ -159,7 +171,12 @@ export function duplicateAlertsFor(
   if (!out.length) {
     for (const med of ctx.currentMeds) {
       if (med.genericId === genericId) {
-        out.push({ kind: "duplicate", source: "current-meds", genericId, name: med.name })
+        out.push({
+          kind: "duplicate",
+          source: "current-meds",
+          genericId,
+          name: med.name,
+        })
       }
     }
   }
@@ -170,7 +187,10 @@ export function duplicateAlertsFor(
 export const CRITICAL_WINDOW_DAYS = 30
 
 /** Critical value: a validated critical result on file in the last 30 days, newest first. */
-export function criticalAlertsFor(results: ResultRow[], now: Ms): CriticalAlert[] {
+export function criticalAlertsFor(
+  results: ResultRow[],
+  now: Ms
+): CriticalAlert[] {
   return results
     .filter(
       (r) =>
@@ -178,7 +198,9 @@ export function criticalAlertsFor(results: ResultRow[], now: Ms): CriticalAlert[
         r.status === "validated" &&
         (r.validatedAt ?? r.updatedAt) >= now - CRITICAL_WINDOW_DAYS * DAY
     )
-    .sort((a, b) => (b.validatedAt ?? b.updatedAt) - (a.validatedAt ?? a.updatedAt))
+    .sort(
+      (a, b) => (b.validatedAt ?? b.updatedAt) - (a.validatedAt ?? a.updatedAt)
+    )
     .map((r) => ({
       kind: "critical" as const,
       resultId: r.id,

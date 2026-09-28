@@ -27,7 +27,10 @@ export function useDoctor() {
   const db = useDb()
   const staffId = persona?.staff?.id
   const doctor = useLiveQuery(
-    async () => (staffId ? ((await db.doctors.where("staffId").equals(staffId).first()) ?? null) : null),
+    async () =>
+      staffId
+        ? ((await db.doctors.where("staffId").equals(staffId).first()) ?? null)
+        : null,
     [db, staffId]
   )
   return { persona, staffId, doctor, branch: persona?.branchId ?? null }
@@ -66,7 +69,8 @@ export function useMedicineCatalog(): MedicineCatalogRows | undefined {
 }
 
 /** The lab and imaging catalogue. */
-export function useLabCatalog(): { tests: LabTestRow[]; byId: Map<string, LabTestRow> } | undefined {
+export function useLabCatalog():
+  { tests: LabTestRow[]; byId: Map<string, LabTestRow> } | undefined {
   const db = useDb()
   return useLiveQuery(async () => {
     const tests = await db.labTests.toArray()
@@ -85,23 +89,37 @@ export type EncounterCore = {
 }
 
 /** The encounter with its patient, appointment, token and doctor (null when missing). */
-export function useEncounterCore(encounterId: string): EncounterCore | null | undefined {
+export function useEncounterCore(
+  encounterId: string
+): EncounterCore | null | undefined {
   const db = useDb()
   return useLiveQuery(async () => {
     const encounter = await db.encounters.get(encounterId)
     if (!encounter) return null
     const [patient, appointment, doctor] = await Promise.all([
       db.patients.get(encounter.patientId),
-      encounter.appointmentId ? db.appointments.get(encounter.appointmentId) : undefined,
+      encounter.appointmentId
+        ? db.appointments.get(encounter.appointmentId)
+        : undefined,
       db.doctors.get(encounter.doctorId),
     ])
     if (!patient) return null
     const [token, doctorStaff, specialty] = await Promise.all([
-      appointment?.tokenId ? db.queueTokens.get(appointment.tokenId) : undefined,
+      appointment?.tokenId
+        ? db.queueTokens.get(appointment.tokenId)
+        : undefined,
       doctor ? db.staff.get(doctor.staffId) : undefined,
       doctor ? db.specialties.get(doctor.specialtyId) : undefined,
     ])
-    return { encounter, patient, appointment, token, doctor, doctorStaff, specialty }
+    return {
+      encounter,
+      patient,
+      appointment,
+      token,
+      doctor,
+      doctorStaff,
+      specialty,
+    }
   }, [db, encounterId])
 }
 
@@ -118,10 +136,15 @@ export function useNotes(encounterId: string): NoteRow[] | undefined {
 }
 
 /** The encounter's latest scribe draft (any status). */
-export function useScribeDraft(encounterId: string): ScribeDraftRow | null | undefined {
+export function useScribeDraft(
+  encounterId: string
+): ScribeDraftRow | null | undefined {
   const db = useDb()
   return useLiveQuery(async () => {
-    const drafts = await db.scribeDrafts.where("encounterId").equals(encounterId).toArray()
+    const drafts = await db.scribeDrafts
+      .where("encounterId")
+      .equals(encounterId)
+      .toArray()
     return drafts.sort((a, b) => b.createdAt - a.createdAt)[0] ?? null
   }, [db, encounterId])
 }
