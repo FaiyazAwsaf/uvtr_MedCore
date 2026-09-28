@@ -209,7 +209,7 @@ function TabBar() {
             data-testid={`app-tab-${tab.href.split("/")[2] ?? "home"}`}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "flex min-h-14 flex-col items-center justify-center gap-1 rounded-2xl text-[0.6875rem] leading-none font-medium transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40",
+              "flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-2xl text-[0.6875rem] leading-[1.4] font-medium transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40",
               active
                 ? "text-link"
                 : "text-muted-foreground hover:text-foreground"
@@ -223,7 +223,9 @@ function TabBar() {
             >
               <Icon className="size-5" />
             </span>
-            <span className="max-w-full truncate px-0.5">{tab.label}</span>
+            <span className="max-w-full truncate px-0.5 py-px">
+              {tab.label}
+            </span>
           </Link>
         )
       })}

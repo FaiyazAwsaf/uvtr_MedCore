@@ -21,6 +21,7 @@ import { useLocale } from "@/lib/i18n/provider"
 
 import { isBdMobile, samePhone } from "../lib/phone"
 import { updateAppState } from "../state/app-state"
+import { AppLoading } from "./bits"
 import { PhoneBanner } from "./phone"
 
 const OTP = rules.simulated.otp
@@ -72,6 +73,9 @@ export function OtpLogin({ accountId }: { accountId: Id }) {
   }
 
   const closeSms = React.useCallback(() => setSmsOpen(false), [])
+
+  // Wait for the account record so the phone field is never briefly empty.
+  if (account === undefined) return <AppLoading />
 
   return (
     <div className="flex flex-1 flex-col px-6 pt-6 pb-8">
