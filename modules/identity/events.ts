@@ -14,4 +14,31 @@ export const identityEvents: EventCatalog = {
     consumers: ["identity.consumers.dataSteward", "identity.consumers.audit"],
     severity: "warning",
   },
+  PatientsMerged: {
+    module: "identity",
+    labelKey: "identity.events.patientsMerged",
+    consumers: [
+      "identity.consumers.registry",
+      "identity.consumers.dataSteward",
+      "identity.consumers.reception",
+      "identity.consumers.audit",
+    ],
+    severity: "warning",
+  },
+  IdentityReviewResolved: {
+    module: "identity",
+    labelKey: "identity.events.identityReviewResolved",
+    consumers: ["identity.consumers.dataSteward", "identity.consumers.audit"],
+    severity: "info",
+  },
+  PatientContactUpdated: {
+    module: "identity",
+    labelKey: "identity.events.patientContactUpdated",
+    consumers: [
+      "identity.consumers.registry",
+      "identity.consumers.patientApp",
+      "identity.consumers.audit",
+    ],
+    severity: "info",
+  },
 }

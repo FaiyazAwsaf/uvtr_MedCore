@@ -1,5 +1,6 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { ReviewQueue } from "@/modules/identity/components/review-queue"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.reception" phase={3} />
+/** "/reception/review": the data steward's review queue (sync duplicates, identity conflicts). */
+export default function ReviewPage() {
+  return <ReviewQueue />
 }

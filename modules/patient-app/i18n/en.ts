@@ -173,6 +173,18 @@ export const patientAppEn = {
       delayed: "Running {minutes} min late",
       blocked: "The doctor is not available for this session",
     },
+    delay: {
+      title: "{doctor} is running about {minutes} minutes late",
+      ask: "Your turn is now expected around {time}. What would you like to do?",
+      waiting: "You chose to wait. Your turn is expected around {time}.",
+      choice: {
+        wait: "Wait",
+        rebook: "Rebook",
+        refund: "Refund",
+      },
+      hint: "Rebook moves you to the doctor's next session. A refund cancels the visit; a paid fee is refunded at the counter.",
+      inboxDetail: "Open the appointment to wait, rebook or get a refund.",
+    },
     queue: {
       nowServing: "Now serving",
       lastCalled: "Last called",
