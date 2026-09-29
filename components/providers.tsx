@@ -4,6 +4,7 @@ import * as React from "react"
 import { Toaster } from "sonner"
 
 import { ThemeProvider } from "@/components/theme-provider"
+import { ScenarioUrlLauncher } from "@/components/shell/demo/use-scenario-launcher"
 import { EngineFeedbackHost } from "@/components/shell/engine-feedback"
 import { UiScaleProvider } from "@/components/shell/ui-scale"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -27,6 +28,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
             {/* Once per window: conflict, rule, denial and persona dialogs
                 for every page (launcher, Demo Wall and demo panel included). */}
             <EngineFeedbackHost />
+            <ScenarioUrlLauncher />
             <Toaster
               position="bottom-right"
               gap={8}
@@ -42,7 +44,8 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
                   info: "[&_[data-icon]]:!text-info",
                   actionButton:
                     "!rounded-sm !bg-primary !font-semibold !text-primary-foreground",
-                  cancelButton: "!rounded-sm !bg-surface-raised !text-foreground",
+                  cancelButton:
+                    "!rounded-sm !bg-surface-raised !text-foreground",
                 },
               }}
             />

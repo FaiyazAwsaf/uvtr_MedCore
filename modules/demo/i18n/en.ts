@@ -14,6 +14,7 @@ export const demoEn = {
       edgeEventsReplayed: "{count} offline events replayed from {branch}",
       identityConflictQueued: "Possible duplicate sent for review",
       patientContactUpdated: "Contact details updated",
+      scenarioLaunched: "Scenario {scenario} set up",
     },
     consumers: {
       audit: "Audit",
@@ -24,6 +25,7 @@ export const demoEn = {
       central: "Central",
       dataSteward: "Data steward",
       registry: "Patient registry",
+      presenter: "Presenter",
     },
     common: {
       system: "System",
@@ -171,9 +173,15 @@ export const demoEn = {
       failed: "The network change failed",
     },
     scenarios: {
-      title: "Scenario launchers",
-      empty: "Scenario launchers arrive in Phase 3",
+      title: "Exception scenarios",
+      empty: "No scenario launchers are registered",
       launch: "Launch",
+      running: "Setting up…",
+      lastRun: "Last run {time}",
+      failed: "Setup failed. The reason is shown in the dialog.",
+      jumpTitle: "Jump into the main journey",
+      jumpHint:
+        "Skip ahead if a step goes wrong: the story is set up to that point.",
     },
     engine: {
       title: "Engine check",
@@ -264,6 +272,31 @@ export const demoEn = {
         command: "Command",
         code: "Rule",
         approver: "Approver",
+      },
+    },
+    launchers: {
+      S14: {
+        title: "Branch offline",
+        summary:
+          "Dhanmondi loses its internet and keeps working on its own store.",
+        cue: {
+          1: "Dhanmondi (B1) is now offline: every B1 window shows the offline banner.",
+          2: "Register a walk-in here: the UHID is provisional until the branch reconnects.",
+          3: "In a B1 cashier window, take cash for the visit: the invoice gets an offline number.",
+          4: "Open the demo panel: the queued counter for B1 rises with each action.",
+          5: "In the CEO window, B1 shows as offline and its new work is not visible yet. S15 reconnects it.",
+        },
+      },
+      S15: {
+        title: "Reconnect and resync with a duplicate",
+        summary:
+          "Queued work replays in order; a possible duplicate goes to review, never merged automatically.",
+        cue: {
+          1: "{name} was registered at Dhanmondi while offline (UHID {offlineUhid}, queued) and at Mirpur online as {variant}.",
+          2: "Open the demo panel and reconnect B1: the queued work replays in order with a progress bar.",
+          3: "The two records land here in the review queue: nothing is merged automatically.",
+          4: "Compare them and resolve: the same person (merged, the old UHID kept as an alias) or different people.",
+        },
       },
     },
     cue: {

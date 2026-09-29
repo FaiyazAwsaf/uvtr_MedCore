@@ -50,6 +50,12 @@ export const demoEvents: EventCatalog = {
     consumers: ["demo.consumers.dataSteward"],
     severity: "warning",
   },
+  ScenarioLaunched: {
+    module: "demo",
+    labelKey: "demo.events.scenarioLaunched",
+    consumers: ["demo.consumers.presenter", "demo.consumers.audit"],
+    severity: "info",
+  },
   PatientContactUpdated: {
     module: "demo",
     labelKey: "demo.events.patientContactUpdated",

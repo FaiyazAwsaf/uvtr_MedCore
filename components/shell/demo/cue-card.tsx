@@ -33,8 +33,9 @@ export function CueCard() {
   const total = scenario.cueKeys.length
   const step = Math.min(Math.max(cue.step, 0), Math.max(total - 1, 0))
   const title = tk(scenario.titleKey)
+  const params = cue.params ?? {}
   const go = (next: number) =>
-    updateSession({ cue: { scenarioId: scenario.id, step: next } })
+    updateSession({ cue: { scenarioId: scenario.id, step: next, params } })
   const close = () => updateSession({ cue: null })
   const progress = t("demo.cue.step", { n: num(step + 1), total: num(total) })
 
@@ -59,6 +60,8 @@ export function CueCard() {
       aria-label={t("demo.cue.label")}
       className="fixed bottom-4 left-4 z-40 flex max-h-[min(24rem,calc(100svh-6rem))] w-[20rem] max-w-[calc(100vw-2rem)] flex-col rounded-lg bg-popover text-popover-foreground shadow-lg ring-1 ring-foreground/10"
       data-testid="cue-card"
+      data-scenario-id={scenario.id}
+      data-step={step}
     >
       <header className="flex items-start gap-2 border-b border-hairline px-3 py-2.5">
         <div className="min-w-0 flex-1">
@@ -116,7 +119,9 @@ export function CueCard() {
               >
                 {i < step ? <Check className="size-2.5" /> : num(i + 1)}
               </span>
-              <span className={cn(i === step && "font-medium")}>{tk(key)}</span>
+              <span className={cn(i === step && "font-medium")}>
+                {tk(key, params)}
+              </span>
             </button>
           </li>
         ))}
