@@ -108,7 +108,11 @@ describe("live exceptions", () => {
     expect(criticals.count).toBe(1)
     expect(criticals.oldest!.id).toBe(call.callId)
 
-    await commit(acknowledgeCritical, { callId: call.callId }, { db, actor: pathologist })
+    await commit(
+      acknowledgeCritical,
+      { callId: call.callId },
+      { db, actor: pathologist }
+    )
     expect((await tile("criticals")).count).toBe(0)
   })
 

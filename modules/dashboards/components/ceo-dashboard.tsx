@@ -95,14 +95,18 @@ export function CeoDashboard() {
   const { rows, asAt: baselineAt } = data
   const view = React.useMemo(
     () =>
-      rows ? buildView({ rows, asAt: baselineAt, period, today, branch }) : undefined,
+      rows
+        ? buildView({ rows, asAt: baselineAt, period, today, branch })
+        : undefined,
     [rows, baselineAt, period, today, branch]
   )
 
   const range =
     period === "today"
       ? `${f.t("dashboards.range.today", { date: f.day(today) })}${
-          data.rows && data.asAt === undefined ? ` · ${f.t("dashboards.range.liveOnly")}` : ""
+          data.rows && data.asAt === undefined
+            ? ` · ${f.t("dashboards.range.liveOnly")}`
+            : ""
         }`
       : view
         ? f.t("dashboards.range.days", {
@@ -140,12 +144,20 @@ export function CeoDashboard() {
         prev={view?.prev}
         comparison={view?.comparison ?? { kind: "no-earlier" }}
         stock={data.stock ? pickBranches(data.stock, branch) : undefined}
-        receivables={data.balances ? pickBranches(data.balances.receivables, branch) : undefined}
-        payables={data.balances ? pickBranches(data.balances.payables, branch) : undefined}
+        receivables={
+          data.balances
+            ? pickBranches(data.balances.receivables, branch)
+            : undefined
+        }
+        payables={
+          data.balances
+            ? pickBranches(data.balances.payables, branch)
+            : undefined
+        }
         f={f}
       />
 
-      <div className="grid gap-4 @min-[80rem]/ceo:grid-cols-[minmax(0,1fr)_21rem]">
+      <div className="grid gap-4 @min-[80rem]/ceo:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="flex min-w-0 flex-col gap-4 @min-[80rem]/ceo:col-start-2 @min-[80rem]/ceo:row-span-2 @min-[80rem]/ceo:row-start-1">
           <ExceptionRail
             items={data.exceptions}
@@ -164,31 +176,57 @@ export function CeoDashboard() {
         </div>
 
         <div className="grid min-w-0 gap-4 @min-[62rem]/ceo:grid-cols-2 @min-[80rem]/ceo:col-start-1 @min-[80rem]/ceo:row-start-1">
-          <div data-testid="trend-chart" data-points={view?.trend.length ?? 0} className="@container/chart min-w-0">
+          <div
+            data-testid="trend-chart"
+            data-points={view?.trend.length ?? 0}
+            className="@container/chart min-w-0"
+          >
             <SectionCard
               title={f.t("dashboards.trend.title")}
               subtitle={
-                period === "today"
-                  ? f.t("dashboards.trend.todaySubtitle")
-                  : f.t("dashboards.trend.subtitle", { range })
+                view?.chartCut !== undefined
+                  ? f.t("dashboards.trend.cutSubtitle", {
+                      time: f.time(view.chartCut),
+                    })
+                  : period === "today"
+                    ? f.t("dashboards.trend.todaySubtitle")
+                    : f.t("dashboards.trend.subtitle", { range })
               }
               className="h-full"
             >
               {view ? (
-                <TrendChart points={view.trend} highlight={highlight} f={f} />
+                <TrendChart
+                  points={view.trend}
+                  highlight={highlight}
+                  cut={
+                    view.chartCut === undefined
+                      ? undefined
+                      : f.time(view.chartCut)
+                  }
+                  f={f}
+                />
               ) : (
                 <Skeleton className="h-48 w-full" />
               )}
             </SectionCard>
           </div>
-          <div data-testid="tat-chart" data-points={view?.tat.length ?? 0} className="@container/chart min-w-0">
+          <div
+            data-testid="tat-chart"
+            data-points={view?.tat.length ?? 0}
+            className="@container/chart min-w-0"
+          >
             <SectionCard
               title={f.t("dashboards.tat.title")}
               subtitle={f.t("dashboards.tat.subtitle")}
               className="h-full"
             >
               {view ? (
-                <TatChart points={view.tat} branch={branch} highlight={highlight} f={f} />
+                <TatChart
+                  points={view.tat}
+                  branch={branch}
+                  highlight={highlight}
+                  f={f}
+                />
               ) : (
                 <Skeleton className="h-48 w-full" />
               )}
@@ -248,34 +286,45 @@ function DrillCard({
   const net = branch ? branchNet(branch) : undefined
 
   return (
-    <SectionCard title={title} subtitle={subtitle} bodyClassName="flex flex-col gap-3">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <Crumb
-            level="network"
-            label={f.t("dashboards.drill.network")}
-            current={!branch}
-            onClick={() => onDrill(null)}
-          />
-          {branch ? (
-            <>
-              <BreadcrumbSeparator />
-              <Crumb
-                level="branch"
-                label={f.branchLabel(branch)}
-                current={!dept}
-                onClick={() => onDrill(branch)}
-              />
-            </>
-          ) : null}
-          {branch && dept ? (
-            <>
-              <BreadcrumbSeparator />
-              <Crumb level="dept" label={f.deptLabel(dept)} current onClick={() => undefined} />
-            </>
-          ) : null}
-        </BreadcrumbList>
-      </Breadcrumb>
+    <SectionCard
+      title={title}
+      subtitle={subtitle}
+      bodyClassName="flex flex-col gap-3"
+    >
+      {branch ? (
+        <Breadcrumb>
+          <BreadcrumbList>
+            <Crumb
+              level="network"
+              label={f.t("dashboards.drill.network")}
+              current={!branch}
+              onClick={() => onDrill(null)}
+            />
+            {branch ? (
+              <>
+                <BreadcrumbSeparator />
+                <Crumb
+                  level="branch"
+                  label={f.branchLabel(branch)}
+                  current={!dept}
+                  onClick={() => onDrill(branch)}
+                />
+              </>
+            ) : null}
+            {branch && dept ? (
+              <>
+                <BreadcrumbSeparator />
+                <Crumb
+                  level="dept"
+                  label={f.deptLabel(dept)}
+                  current
+                  onClick={() => undefined}
+                />
+              </>
+            ) : null}
+          </BreadcrumbList>
+        </Breadcrumb>
+      ) : null}
 
       {net && net.status !== "online" ? (
         <p
@@ -340,7 +389,11 @@ function Crumb({
   return (
     <BreadcrumbItem>
       {current ? (
-        <BreadcrumbPage data-testid="drill-crumb" data-level={level} data-current="true">
+        <BreadcrumbPage
+          data-testid="drill-crumb"
+          data-level={level}
+          data-current="true"
+        >
           {label}
         </BreadcrumbPage>
       ) : (
@@ -371,10 +424,20 @@ function BalancesCard({
   f: DashFormat
   className?: string
 }) {
-  const receivables = data.balances ? pickBranches(data.balances.receivables, branch) : undefined
-  const payables = data.balances ? pickBranches(data.balances.payables, branch) : undefined
+  const receivables = data.balances
+    ? pickBranches(data.balances.receivables, branch)
+    : undefined
+  const payables = data.balances
+    ? pickBranches(data.balances.payables, branch)
+    : undefined
   const stock = data.stock ? pickBranches(data.stock, branch) : undefined
-  const rows: { key: string; label: string; value: string; note?: string; tone?: "warning" }[] = [
+  const rows: {
+    key: string
+    label: string
+    value: string
+    note?: string
+    tone?: "warning"
+  }[] = [
     {
       key: "corporate",
       label: f.t("dashboards.balances.corporate"),
@@ -391,7 +454,9 @@ function BalancesCard({
       value: payables ? f.moneyFull(payables.dueP) : "-",
       note:
         payables && payables.overdue > 0
-          ? f.t("dashboards.balances.overdue", { count: f.num(payables.overdue) })
+          ? f.t("dashboards.balances.overdue", {
+              count: f.num(payables.overdue),
+            })
           : undefined,
       tone: "warning",
     },
@@ -399,7 +464,9 @@ function BalancesCard({
       key: "stock",
       label: f.t("dashboards.balances.stock"),
       value: stock ? f.moneyFull(stock.valueP) : "-",
-      note: stock ? f.t("dashboards.kpi.lowStock", { count: f.num(stock.lowCount) }) : undefined,
+      note: stock
+        ? f.t("dashboards.kpi.lowStock", { count: f.num(stock.lowCount) })
+        : undefined,
       tone: stock && stock.lowCount > 0 ? "warning" : undefined,
     },
   ]

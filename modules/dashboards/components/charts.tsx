@@ -51,7 +51,13 @@ function Bubble({
   rows,
 }: {
   title: string
-  rows: { key: string; color: string; label: string; value: string; strong?: boolean }[]
+  rows: {
+    key: string
+    color: string
+    label: string
+    value: string
+    strong?: boolean
+  }[]
 }) {
   return (
     <div className="min-w-[10rem] rounded-md bg-tooltip px-3 py-2 text-xs text-white shadow-lg">
@@ -60,10 +66,15 @@ function Bubble({
         {rows.map((r) => (
           <li key={r.key} className="flex items-center justify-between gap-4">
             <span className="flex items-center gap-1.5 text-white/85">
-              <span className="size-2 rounded-full" style={{ background: r.color }} />
+              <span
+                className="size-2 rounded-full"
+                style={{ background: r.color }}
+              />
               {r.label}
             </span>
-            <span className={cn("nums tabular-nums", r.strong && "font-semibold")}>
+            <span
+              className={cn("nums tabular-nums", r.strong && "font-semibold")}
+            >
               {r.value}
             </span>
           </li>
@@ -84,7 +95,10 @@ export function ChartLegend({
       {items.map((item) => (
         <li
           key={item.key}
-          className={cn("flex items-center gap-1.5", item.muted && "opacity-45")}
+          className={cn(
+            "flex items-center gap-1.5",
+            item.muted && "opacity-45"
+          )}
         >
           <span
             aria-hidden
@@ -107,21 +121,54 @@ type TooltipProps = {
  * Billed and collected per day
  * ------------------------------------------------------------------ */
 
-type TrendDatum = { date: ISODate; label: string; billed: number; collected: number }
+type TrendDatum = {
+  date: ISODate
+  label: string
+  billed: number
+  collected: number
+}
+
+/** A label that ends at its anchor, so it never runs off the right edge. */
+function EndLabel({
+  text,
+  viewBox,
+}: {
+  text: string
+  viewBox?: { x?: number; y?: number; width?: number }
+}) {
+  const x = (viewBox?.x ?? 0) + (viewBox?.width ?? 0) / 2 - 8
+  const y = (viewBox?.y ?? 0) - 6
+  return (
+    <text
+      x={x}
+      y={y}
+      textAnchor="end"
+      fill="var(--foreground)"
+      fontSize={11}
+      fontWeight={600}
+    >
+      {text}
+    </text>
+  )
+}
 
 /**
  * Billed versus collected per day: a smooth turquoise line with a gradient
  * fill for billing, a lavender line for collections, and the partial day
- * (today so far) marked when the view includes it.
+ * (today so far) marked when the view includes it. With `cut`, every earlier
+ * day is shown up to that time of day, like for like with today.
  */
 export function TrendChart({
   points,
   highlight,
+  cut,
   f,
 }: {
   points: TrendPoint[]
   /** A day to mark (today, still in progress) */
   highlight?: ISODate
+  /** "11:30 am": earlier days are cut to this time of day */
+  cut?: string
   f: DashFormat
 }) {
   const gradientId = React.useId().replace(/:/g, "")
@@ -142,17 +189,36 @@ export function TrendChart({
     <div className="flex flex-col gap-3">
       <ChartLegend
         items={[
-          { key: "billed", color: "var(--chart-1)", label: f.t("dashboards.trend.billed") },
-          { key: "collected", color: "var(--chart-2)", label: f.t("dashboards.trend.collected") },
+          {
+            key: "billed",
+            color: "var(--chart-1)",
+            label: f.t("dashboards.trend.billed"),
+          },
+          {
+            key: "collected",
+            color: "var(--chart-2)",
+            label: f.t("dashboards.trend.collected"),
+          },
         ]}
       />
-      <div className="h-48 @min-[36rem]/chart:h-60">
+      <div className="h-48 @min-[36rem]/chart:h-52">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 18, right: 12, bottom: 0, left: 0 }}>
+          <AreaChart
+            data={data}
+            margin={{ top: 22, right: 12, bottom: 0, left: 0 }}
+          >
             <defs>
               <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.34} />
-                <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0} />
+                <stop
+                  offset="0%"
+                  stopColor="var(--chart-1)"
+                  stopOpacity={0.34}
+                />
+                <stop
+                  offset="100%"
+                  stopColor="var(--chart-1)"
+                  stopOpacity={0}
+                />
               </linearGradient>
             </defs>
             <CartesianGrid vertical={false} stroke="var(--hairline)" />
@@ -172,16 +238,23 @@ export function TrendChart({
               tickFormatter={compact}
             />
             <Tooltip
-              cursor={{ stroke: "var(--muted-foreground)", strokeDasharray: "3 3" }}
+              cursor={{
+                stroke: "var(--muted-foreground)",
+                strokeDasharray: "3 3",
+              }}
               content={(props: TooltipProps) => {
-                const d = props.active ? (props.payload?.[0]?.payload as TrendDatum | undefined) : undefined
+                const d = props.active
+                  ? (props.payload?.[0]?.payload as TrendDatum | undefined)
+                  : undefined
                 if (!d) return null
                 return (
                   <Bubble
                     title={
                       d.date === highlight
                         ? `${f.day(d.date)} · ${f.t("dashboards.trend.today")}`
-                        : f.day(d.date)
+                        : cut
+                          ? `${f.day(d.date)} · ${f.t("dashboards.trend.upTo", { time: cut })}`
+                          : f.day(d.date)
                     }
                     rows={[
                       {
@@ -208,7 +281,12 @@ export function TrendChart({
               stroke="var(--chart-1)"
               strokeWidth={2.5}
               fill={`url(#${gradientId})`}
-              activeDot={{ r: 5, stroke: "var(--card)", strokeWidth: 2, fill: "var(--chart-1)" }}
+              activeDot={{
+                r: 5,
+                stroke: "var(--card)",
+                strokeWidth: 2,
+                fill: "var(--chart-1)",
+              }}
               dot={false}
               animationDuration={450}
             />
@@ -218,7 +296,12 @@ export function TrendChart({
               stroke="var(--chart-2)"
               strokeWidth={2}
               fill="transparent"
-              activeDot={{ r: 4, stroke: "var(--card)", strokeWidth: 2, fill: "var(--chart-2)" }}
+              activeDot={{
+                r: 4,
+                stroke: "var(--card)",
+                strokeWidth: 2,
+                fill: "var(--chart-2)",
+              }}
               dot={false}
               animationDuration={450}
             />
@@ -238,14 +321,14 @@ export function TrendChart({
                 fill="var(--primary)"
                 stroke="var(--card)"
                 strokeWidth={2}
-                label={{
-                  value: f.t("dashboards.trend.today"),
-                  position: "top",
-                  offset: 10,
-                  fill: "var(--foreground)",
-                  fontSize: 11,
-                  fontWeight: 600,
-                }}
+                label={(props: {
+                  viewBox?: { x?: number; y?: number; width?: number }
+                }) => (
+                  <EndLabel
+                    text={f.t("dashboards.trend.today")}
+                    viewBox={props.viewBox}
+                  />
+                )}
               />
             ) : null}
           </AreaChart>
@@ -294,9 +377,12 @@ export function TatChart({
           muted: !!branch && branch !== code,
         }))}
       />
-      <div className="h-48 @min-[36rem]/chart:h-60">
+      <div className="h-48 @min-[36rem]/chart:h-52">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 18, right: 16, bottom: 0, left: 0 }}>
+          <LineChart
+            data={data}
+            margin={{ top: 26, right: 16, bottom: 0, left: 0 }}
+          >
             <CartesianGrid vertical={false} stroke="var(--hairline)" />
             <XAxis
               dataKey="label"
@@ -314,10 +400,14 @@ export function TatChart({
               tickFormatter={(v: number) => f.num(v)}
             />
             <Tooltip
-              cursor={{ stroke: "var(--muted-foreground)", strokeDasharray: "3 3" }}
+              cursor={{
+                stroke: "var(--muted-foreground)",
+                strokeDasharray: "3 3",
+              }}
               content={(props: TooltipProps) => {
                 const d = props.active
-                  ? (props.payload?.[0]?.payload as (TatPoint & { label: string }) | undefined)
+                  ? (props.payload?.[0]?.payload as
+                      (TatPoint & { label: string }) | undefined)
                   : undefined
                 if (!d) return null
                 return (
@@ -352,7 +442,12 @@ export function TatChart({
                 strokeWidth={branch === code ? 2.75 : 2}
                 strokeOpacity={branch && branch !== code ? 0.28 : 1}
                 dot={false}
-                activeDot={{ r: 4, stroke: "var(--card)", strokeWidth: 2, fill: BRANCH_COLOR[code] }}
+                activeDot={{
+                  r: 4,
+                  stroke: "var(--card)",
+                  strokeWidth: 2,
+                  fill: BRANCH_COLOR[code],
+                }}
                 connectNulls
                 animationDuration={450}
               />
@@ -379,7 +474,12 @@ export function TatChart({
         </ResponsiveContainer>
       </div>
       {peak ? (
-        <p data-testid="tat-peak" data-branch={peak.branch} data-date={peak.date} className="text-xs text-muted-foreground">
+        <p
+          data-testid="tat-peak"
+          data-branch={peak.branch}
+          data-date={peak.date}
+          className="text-xs text-muted-foreground"
+        >
           {f.t("dashboards.tat.peak", {
             branch: f.branchLabel(peak.branch),
             date: f.day(peak.date),

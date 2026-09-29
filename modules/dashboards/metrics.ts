@@ -24,18 +24,14 @@
  * - Collection rate: collected / billed.
  * - Visits: per department. OPD: patients checked in. Lab, imaging and
  *   pharmacy: items billed (tests, scans, medicine lines, OTC items).
- *   Inpatient: admissions (the history rows carry the bed census).
+ *   Inpatient: bed-days (a day's bed census; today adds new admissions).
  * - Average OPD wait: minutes from token issue to call, weighted by the
  *   number of waits behind each average (the history rows: their visits).
  * - Lab TAT: minutes from specimen collection to report release (first
  *   release only, corrections excluded), weighted by tests.
  */
 
-import {
-  branches,
-  getBranch,
-  type BranchCode,
-} from "@/config/brand.config"
+import { branches, getBranch, type BranchCode } from "@/config/brand.config"
 import { addDaysISO, HOUR, MINUTE, startOfDhakaDay } from "@/core/clock/dates"
 import type {
   AdmissionRow,
@@ -485,9 +481,17 @@ export function liveFacts(input: LiveInput, lookups: Lookups): LiveFacts {
   }
 
   /* Collected: money received today, spread over the invoice's lines by value */
-  const spread = (invoice: InvoiceRow, lines: InvoiceLineRow[], amountP: number) => {
+  const spread = (
+    invoice: InvoiceRow,
+    lines: InvoiceLineRow[],
+    amountP: number
+  ) => {
     if (!lines.length) {
-      push(invoice.branchId, { dept: "opd", service: OTHER }, { collectedP: amountP })
+      push(
+        invoice.branchId,
+        { dept: "opd", service: OTHER },
+        { collectedP: amountP }
+      )
       return
     }
     const parts = allocate(
@@ -495,11 +499,15 @@ export function liveFacts(input: LiveInput, lookups: Lookups): LiveFacts {
       lines.map((l) => l.netP)
     )
     lines.forEach((line, i) => {
-      if (parts[i]) push(invoice.branchId, serviceOfLine(line, lookups), { collectedP: parts[i] })
+      if (parts[i])
+        push(invoice.branchId, serviceOfLine(line, lookups), {
+          collectedP: parts[i],
+        })
     })
   }
   for (const payment of input.payments) {
-    if (payment.status !== "confirmed" && payment.status !== "refunded") continue
+    if (payment.status !== "confirmed" && payment.status !== "refunded")
+      continue
     if (!CASH_TENDERS.has(payment.tender)) continue
     if (!inWindow(payment.confirmedAt, start, end)) continue
     const invoice = invoiceById.get(payment.invoiceId)
@@ -515,7 +523,11 @@ export function liveFacts(input: LiveInput, lookups: Lookups): LiveFacts {
     const credited = refund.invoiceLineIds
       .map((id) => lineById.get(id))
       .filter((l): l is InvoiceLineRow => !!l)
-    spread(invoice, credited.length ? credited : linesOf.get(invoice.id) ?? [], -refund.amountP)
+    spread(
+      invoice,
+      credited.length ? credited : (linesOf.get(invoice.id) ?? []),
+      -refund.amountP
+    )
   }
 
   /* OTC counter sales: billed and paid in cash at once, no invoice */
@@ -527,30 +539,42 @@ export function liveFacts(input: LiveInput, lookups: Lookups): LiveFacts {
     const key = `${d.branchId}|${d.at}|${d.brandId}`
     const visits = otcItems.has(key) ? 0 : 1
     otcItems.add(key)
-    push(d.branchId, { dept: "pharmacy", service: "otc" }, {
-      billedP: valueP,
-      collectedP: valueP,
-      visits,
-    })
+    push(
+      d.branchId,
+      { dept: "pharmacy", service: "otc" },
+      {
+        billedP: valueP,
+        collectedP: valueP,
+        visits,
+      }
+    )
   }
 
   /* OPD visits: patients checked in today, by the doctor's specialty */
   for (const a of input.appointments) {
     if (!inWindow(a.checkedInAt, start, end)) continue
     if (a.status === "cancelled" || a.status === "rebooked") continue
-    push(a.branchId, {
-      dept: "opd",
-      service: lookups.specialtyOfDoctor.get(a.doctorId) ?? OTHER,
-    }, { visits: 1 })
+    push(
+      a.branchId,
+      {
+        dept: "opd",
+        service: lookups.specialtyOfDoctor.get(a.doctorId) ?? OTHER,
+      },
+      { visits: 1 }
+    )
   }
 
   /* Inpatient: admissions today, by ward kind */
   for (const adm of input.admissions) {
     if (!inWindow(adm.admittedAt, start, end)) continue
-    push(adm.branchId, {
-      dept: "inpatient",
-      service: wardKindOf(adm.bedId, lookups) ?? "general",
-    }, { visits: 1 })
+    push(
+      adm.branchId,
+      {
+        dept: "inpatient",
+        service: wardKindOf(adm.bedId, lookups) ?? "general",
+      },
+      { visits: 1 }
+    )
   }
 
   /* Waits: tokens called today */
@@ -581,7 +605,8 @@ export function tatSamples(
       const collectedAt = item?.specimenId
         ? specimens.get(item.specimenId)?.collectedAt
         : undefined
-      if (collectedAt === undefined || collectedAt > report.releasedAt!) continue
+      if (collectedAt === undefined || collectedAt > report.releasedAt!)
+        continue
       out.push({
         branch: report.branchId,
         minutes: (report.releasedAt! - collectedAt) / MINUTE,
@@ -616,7 +641,8 @@ export function todayRows(
     }
     return row
   }
-  for (const code of BRANCH_CODES) for (const dept of deptsOf(code)) rowFor(code, dept)
+  for (const code of BRANCH_CODES)
+    for (const dept of deptsOf(code)) rowFor(code, dept)
   for (const b of baseline) {
     if (b.date !== date) continue
     const base = dayRowOf(b)
@@ -745,7 +771,10 @@ export type RowFilter = {
   dept?: Dept | null
 }
 
-export function filterRows(rows: readonly DayRow[], filter: RowFilter): DayRow[] {
+export function filterRows(
+  rows: readonly DayRow[],
+  filter: RowFilter
+): DayRow[] {
   const dates = filter.dates
     ? filter.dates instanceof Set
       ? filter.dates
@@ -834,7 +863,12 @@ export function branchParts(rows: readonly DayRow[]): Part[] {
   return withShares(
     BRANCH_CODES.map((code) => {
       const f = sumRows(rows.filter((r) => r.branch === code))
-      return { key: code, visits: f.visits, billedP: f.billedP, collectedP: f.collectedP }
+      return {
+        key: code,
+        visits: f.visits,
+        billedP: f.billedP,
+        collectedP: f.collectedP,
+      }
     })
   )
 }
@@ -848,7 +882,12 @@ export function deptParts(rows: readonly DayRow[], branch: BranchCode): Part[] {
   return withShares(
     depts.map((dept) => {
       const f = sumRows(mine.filter((r) => r.dept === dept))
-      return { key: dept, visits: f.visits, billedP: f.billedP, collectedP: f.collectedP }
+      return {
+        key: dept,
+        visits: f.visits,
+        billedP: f.billedP,
+        collectedP: f.collectedP,
+      }
     })
   )
 }
@@ -863,7 +902,12 @@ export function serviceParts(
   for (const r of rows) {
     if (r.branch !== branch || r.dept !== dept) continue
     for (const [key, s] of Object.entries(r.services)) {
-      const into = byKey.get(key) ?? { key, visits: 0, billedP: 0, collectedP: 0 }
+      const into = byKey.get(key) ?? {
+        key,
+        visits: 0,
+        billedP: 0,
+        collectedP: 0,
+      }
       into.visits += s.visits
       into.billedP += s.billedP
       byKey.set(key, into)
@@ -915,7 +959,9 @@ export function billedSeries(
   return dates.map((d) => byDate.get(d)!)
 }
 
-export type TatPoint = { date: ISODate } & Partial<Record<BranchCode, number | null>>
+export type TatPoint = { date: ISODate } & Partial<
+  Record<BranchCode, number | null>
+>
 
 /** Lab TAT per branch per day (null where a branch has no lab data that day). */
 export function tatByBranch(
@@ -927,7 +973,9 @@ export function tatByBranch(
     for (const code of BRANCH_CODES) {
       if (!deptsOf(code).includes("lab")) continue
       const f = sumRows(
-        rows.filter((r) => r.date === date && r.branch === code && r.dept === "lab")
+        rows.filter(
+          (r) => r.date === date && r.branch === code && r.dept === "lab"
+        )
       )
       point[code] = f.tatMin === null ? null : Math.round(f.tatMin)
     }
@@ -1093,11 +1141,7 @@ export function pickBranches<T extends Record<string, number>>(
  * ================================================================== */
 
 export type ExceptionKind =
-  | "criticals"
-  | "held"
-  | "awaiting"
-  | "mismatch"
-  | "deposit"
+  "criticals" | "held" | "awaiting" | "mismatch" | "deposit"
 
 export const EXCEPTION_KINDS: readonly ExceptionKind[] = [
   "criticals",
@@ -1243,7 +1287,10 @@ export function summarise(
 export type BranchNet = { status: NetworkRow["status"]; since?: Ms }
 
 /** A branch's network state; a branch not listed is online. */
-export function netOf(network: readonly NetworkRow[], branch: BranchCode): BranchNet {
+export function netOf(
+  network: readonly NetworkRow[],
+  branch: BranchCode
+): BranchNet {
   const row = network.find((n) => n.branchId === branch)
   if (!row || row.status === "online") return { status: "online" }
   return { status: row.status, since: row.since }

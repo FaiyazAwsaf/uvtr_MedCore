@@ -50,7 +50,9 @@ export function NetStatus({ net, f }: { net: BranchNet; f: DashFormat }) {
     )
   return (
     <StatusText tone="warning" dot>
-      {f.t("dashboards.table.offline", { time: net.since ? f.time(net.since) : "-" })}
+      {f.t("dashboards.table.offline", {
+        time: net.since ? f.time(net.since) : "-",
+      })}
     </StatusText>
   )
 }
@@ -89,19 +91,31 @@ export function BranchTable({
   const total = sumRows(rows)
   return (
     <div className="@container/drill">
-      <Table>
+      <Table density="compact">
         <TableHeader>
           <TableRow>
             <TableHead>{f.t("dashboards.table.branch")}</TableHead>
-            <TableHead className="text-right">{f.t("dashboards.table.billed")}</TableHead>
-            <TableHead className="text-right">{f.t("dashboards.table.collected")}</TableHead>
+            <TableHead className="text-right">
+              {f.t("dashboards.table.billed")}
+            </TableHead>
+            <TableHead className="text-right">
+              {f.t("dashboards.table.collected")}
+            </TableHead>
             <TableHead className={cn("text-right", HIDE_OUTSTANDING)}>
               {f.t("dashboards.table.outstanding")}
             </TableHead>
-            <TableHead className="text-right">{f.t("dashboards.table.visits")}</TableHead>
-            <TableHead className={cn("text-right", HIDE_WAIT)}>{f.t("dashboards.table.wait")}</TableHead>
-            <TableHead className="text-right">{f.t("dashboards.table.tat")}</TableHead>
-            <TableHead className={cn("text-right", HIDE_STOCK)}>{f.t("dashboards.table.stock")}</TableHead>
+            <TableHead className="text-right">
+              {f.t("dashboards.table.visits")}
+            </TableHead>
+            <TableHead className={cn("text-right", HIDE_WAIT)}>
+              {f.t("dashboards.table.wait")}
+            </TableHead>
+            <TableHead className="text-right">
+              {f.t("dashboards.table.tat")}
+            </TableHead>
+            <TableHead className={cn("text-right", HIDE_STOCK)}>
+              {f.t("dashboards.table.stock")}
+            </TableHead>
             <TableHead>{f.t("dashboards.table.status")}</TableHead>
           </TableRow>
         </TableHeader>
@@ -122,19 +136,29 @@ export function BranchTable({
         <TableFooter>
           <TableRow className="hover:bg-transparent">
             <TableCell>{f.t("dashboards.table.total")}</TableCell>
-            <TableCell className={NUM} data-testid="branch-total" data-value={total.billedP}>
+            <TableCell
+              className={NUM}
+              data-testid="branch-total"
+              data-value={total.billedP}
+            >
               {f.moneyFull(total.billedP)}
             </TableCell>
-            <TableCell className={NUM}>{f.moneyFull(total.collectedP)}</TableCell>
+            <TableCell className={NUM}>
+              {f.moneyFull(total.collectedP)}
+            </TableCell>
             <TableCell className={cn(NUM, HIDE_OUTSTANDING)}>
               {f.moneyFull(total.outstandingP)}
             </TableCell>
             <TableCell className={NUM}>{f.num(total.opdVisits)}</TableCell>
-            <TableCell className={cn(NUM, HIDE_WAIT)}>{f.minutes(total.waitMin)}</TableCell>
+            <TableCell className={cn(NUM, HIDE_WAIT)}>
+              {f.minutes(total.waitMin)}
+            </TableCell>
             <TableCell className={NUM}>{f.minutes(total.tatMin)}</TableCell>
             <TableCell className={cn(NUM, HIDE_STOCK)}>
               {stock
-                ? f.moneyCompact(BRANCH_CODES.reduce((s, c) => s + stock[c].valueP, 0))
+                ? f.moneyCompact(
+                    BRANCH_CODES.reduce((s, c) => s + stock[c].valueP, 0)
+                  )
                 : "-"}
             </TableCell>
             <TableCell />
@@ -191,15 +215,23 @@ function BranchRow({
         >
           {offline ? <WifiOff className="size-3.5 text-warning" /> : null}
           <span className="truncate">{f.branchName(code)}</span>
-          <span className="font-mono text-[0.6875rem] text-muted-foreground">{code}</span>
+          <span className="font-mono text-[0.6875rem] text-muted-foreground">
+            {code}
+          </span>
         </button>
       </TableCell>
-      <TableCell className={cn(NUM, muted)}>{f.moneyFull(fig.billedP)}</TableCell>
-      <TableCell className={cn(NUM, muted)}>{f.moneyFull(fig.collectedP)}</TableCell>
+      <TableCell className={cn(NUM, muted)}>
+        {f.moneyFull(fig.billedP)}
+      </TableCell>
+      <TableCell className={cn(NUM, muted)}>
+        {f.moneyFull(fig.collectedP)}
+      </TableCell>
       <TableCell className={cn(NUM, HIDE_OUTSTANDING, muted)}>
         {f.moneyFull(fig.outstandingP)}
       </TableCell>
-      <TableCell className={cn(NUM, muted)}>{hasOpd ? f.num(fig.opdVisits) : "-"}</TableCell>
+      <TableCell className={cn(NUM, muted)}>
+        {hasOpd ? f.num(fig.opdVisits) : "-"}
+      </TableCell>
       <TableCell className={cn(NUM, HIDE_WAIT, muted)}>
         {hasOpd ? f.minutes(fig.waitMin) : "-"}
       </TableCell>
@@ -259,14 +291,22 @@ export function DeptTable({
   const total = sumRows(rows.filter((r) => r.branch === branch))
   return (
     <div className="@container/drill">
-      <Table>
+      <Table density="compact">
         <TableHeader>
           <TableRow>
             <TableHead>{f.t("dashboards.drill.dept")}</TableHead>
-            <TableHead className="text-right">{f.t("dashboards.drill.billed")}</TableHead>
-            <TableHead className="text-right">{f.t("dashboards.drill.visits")}</TableHead>
-            <TableHead className="text-right">{f.t("dashboards.drill.shareBranch")}</TableHead>
-            <TableHead className={cn("text-right", HIDE_TREND)}>{f.t("dashboards.drill.trend")}</TableHead>
+            <TableHead className="text-right">
+              {f.t("dashboards.drill.billed")}
+            </TableHead>
+            <TableHead className="text-right">
+              {f.t("dashboards.drill.visits")}
+            </TableHead>
+            <TableHead className="text-right">
+              {f.t("dashboards.drill.shareBranch")}
+            </TableHead>
+            <TableHead className={cn("text-right", HIDE_TREND)}>
+              {f.t("dashboards.drill.trend")}
+            </TableHead>
             <TableHead className="w-8" />
           </TableRow>
         </TableHeader>
@@ -289,13 +329,23 @@ export function DeptTable({
         <TableFooter>
           <TableRow className="hover:bg-transparent">
             <TableCell>{f.t("dashboards.drill.total")}</TableCell>
-            <TableCell className={NUM} data-testid="drill-total" data-value={total.billedP}>
+            <TableCell
+              className={NUM}
+              data-testid="drill-total"
+              data-value={total.billedP}
+            >
               {f.moneyFull(total.billedP)}
             </TableCell>
-            <TableCell className={NUM} data-testid="drill-total-visits" data-value={total.visits}>
+            <TableCell
+              className={NUM}
+              data-testid="drill-total-visits"
+              data-value={total.visits}
+            >
               {f.num(total.visits)}
             </TableCell>
-            <TableCell className={NUM}>{f.pct(total.billedP > 0 ? 100 : 0, 1)}</TableCell>
+            <TableCell className={NUM}>
+              {f.pct(total.billedP > 0 ? 100 : 0, 1)}
+            </TableCell>
             <TableCell className={HIDE_TREND} />
             <TableCell />
           </TableRow>
@@ -324,17 +374,27 @@ export function ServiceTable({
   f: DashFormat
 }) {
   const parts = serviceParts(rows, branch, dept)
-  const total = sumRows(rows.filter((r) => r.branch === branch && r.dept === dept))
+  const total = sumRows(
+    rows.filter((r) => r.branch === branch && r.dept === dept)
+  )
   return (
     <div className="@container/drill">
-      <Table>
+      <Table density="compact">
         <TableHeader>
           <TableRow>
             <TableHead>{f.t("dashboards.drill.service")}</TableHead>
-            <TableHead className="text-right">{f.t("dashboards.drill.billed")}</TableHead>
-            <TableHead className="text-right">{f.t("dashboards.drill.visits")}</TableHead>
-            <TableHead className="text-right">{f.t("dashboards.drill.shareDept")}</TableHead>
-            <TableHead className={cn("text-right", HIDE_TREND)}>{f.t("dashboards.drill.trend")}</TableHead>
+            <TableHead className="text-right">
+              {f.t("dashboards.drill.billed")}
+            </TableHead>
+            <TableHead className="text-right">
+              {f.t("dashboards.drill.visits")}
+            </TableHead>
+            <TableHead className="text-right">
+              {f.t("dashboards.drill.shareDept")}
+            </TableHead>
+            <TableHead className={cn("text-right", HIDE_TREND)}>
+              {f.t("dashboards.drill.trend")}
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -353,7 +413,10 @@ export function ServiceTable({
             ))
           ) : (
             <TableRow className="hover:bg-transparent">
-              <TableCell colSpan={5} className="text-center text-muted-foreground">
+              <TableCell
+                colSpan={5}
+                className="text-center text-muted-foreground"
+              >
                 {f.t("dashboards.drill.empty")}
               </TableCell>
             </TableRow>
@@ -362,13 +425,23 @@ export function ServiceTable({
         <TableFooter>
           <TableRow className="hover:bg-transparent">
             <TableCell>{f.t("dashboards.drill.total")}</TableCell>
-            <TableCell className={NUM} data-testid="drill-total" data-value={total.billedP}>
+            <TableCell
+              className={NUM}
+              data-testid="drill-total"
+              data-value={total.billedP}
+            >
               {f.moneyFull(total.billedP)}
             </TableCell>
-            <TableCell className={NUM} data-testid="drill-total-visits" data-value={total.visits}>
+            <TableCell
+              className={NUM}
+              data-testid="drill-total-visits"
+              data-value={total.visits}
+            >
               {f.num(total.visits)}
             </TableCell>
-            <TableCell className={NUM}>{f.pct(total.billedP > 0 ? 100 : 0, 1)}</TableCell>
+            <TableCell className={NUM}>
+              {f.pct(total.billedP > 0 ? 100 : 0, 1)}
+            </TableCell>
             <TableCell className={HIDE_TREND} />
           </TableRow>
         </TableFooter>

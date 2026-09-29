@@ -48,7 +48,10 @@ afterAll(async () => {
   await db.delete()
 })
 
-async function rowsNow(): Promise<{ rows: DayRow[]; asAt: number | undefined }> {
+async function rowsNow(): Promise<{
+  rows: DayRow[]
+  asAt: number | undefined
+}> {
   const stats = await loadDailyStats(db, today)
   const live = await loadLiveFacts(db, today)
   const history = stats.filter((s) => s.date !== today).map(dayRowOf)
@@ -61,7 +64,9 @@ async function rowsNow(): Promise<{ rows: DayRow[]; asAt: number | undefined }> 
 
 async function todayFigures(branch: "B1" | null = null) {
   const { rows } = await rowsNow()
-  return sumRows(rows.filter((r) => r.date === today && (!branch || r.branch === branch)))
+  return sumRows(
+    rows.filter((r) => r.date === today && (!branch || r.branch === branch))
+  )
 }
 
 describe("today = baseline + live records", () => {
@@ -82,11 +87,12 @@ describe("today = baseline + live records", () => {
     const stats = await loadDailyStats(db, today)
     const baseline = stats.filter((s) => s.date === today)
     const start = startOfDhakaDay(today)
-    const inDay = (ms?: number) => ms !== undefined && ms >= start && ms < start + 86_400_000
+    const inDay = (ms?: number) =>
+      ms !== undefined && ms >= start && ms < start + 86_400_000
 
-    const invoices = (await db.invoices.where("date").equals(today).toArray()).filter(
-      (i) => i.status !== "void"
-    )
+    const invoices = (
+      await db.invoices.where("date").equals(today).toArray()
+    ).filter((i) => i.status !== "void")
     expect(invoices.length).toBeGreaterThan(0)
     const credited = (await db.creditNotes.toArray())
       .filter((n) => inDay(n.createdAt) && n.kind !== "corporate-dispute")
@@ -100,14 +106,21 @@ describe("today = baseline + live records", () => {
       )
       .reduce((s, p) => s + p.amountP, 0)
     const refunded = (await db.refunds.toArray())
-      .filter((r) => r.status === "completed" && r.tender !== "corporate" && inDay(r.completedAt))
+      .filter(
+        (r) =>
+          r.status === "completed" &&
+          r.tender !== "corporate" &&
+          inDay(r.completedAt)
+      )
       .reduce((s, r) => s + r.amountP, 0)
-    const checkedIn = (await db.appointments.where("date").equals(today).toArray()).filter(
-      (a) => inDay(a.checkedInAt) && a.status !== "cancelled"
-    ).length
+    const checkedIn = (
+      await db.appointments.where("date").equals(today).toArray()
+    ).filter((a) => inDay(a.checkedInAt) && a.status !== "cancelled").length
 
     const sum = (key: "billedP" | "collectedP" | "visits", dept?: string) =>
-      baseline.filter((b) => !dept || b.dept === dept).reduce((s, b) => s + b[key], 0)
+      baseline
+        .filter((b) => !dept || b.dept === dept)
+        .reduce((s, b) => s + b[key], 0)
     const figures = await todayFigures()
     expect(figures.billedP).toBe(
       sum("billedP") + invoices.reduce((s, i) => s + i.totalP, 0) - credited
@@ -152,7 +165,9 @@ describe("today = baseline + live records", () => {
     )
     const confirmed = await todayFigures("B1")
     expect(confirmed.collectedP - before.collectedP).toBe(hero.totalP)
-    expect((await loadBalances(db, today)).receivables.B1.unpaidP).toBe(beforeReceivables.unpaidP)
+    expect((await loadBalances(db, today)).receivables.B1.unpaidP).toBe(
+      beforeReceivables.unpaidP
+    )
 
     // Each line lands on its service: consultation (Medicine), lab section,
     // X-ray, and the medicines' categories.
@@ -179,11 +194,21 @@ describe("drill-down", () => {
         const branch = sumRows(view.periodRows.filter((r) => r.branch === code))
         branchSum += branch.billedP
         const depts = deptParts(view.periodRows, code)
-        expect(depts.reduce((s, d) => s + d.billedP, 0), `${period} ${code}`).toBe(branch.billedP)
+        expect(
+          depts.reduce((s, d) => s + d.billedP, 0),
+          `${period} ${code}`
+        ).toBe(branch.billedP)
         expect(depts.reduce((s, d) => s + d.visits, 0)).toBe(branch.visits)
         for (const dept of depts) {
-          const services = serviceParts(view.periodRows, code, dept.key as "lab")
-          expect(services.reduce((s, x) => s + x.billedP, 0), `${period} ${code} ${dept.key}`).toBe(dept.billedP)
+          const services = serviceParts(
+            view.periodRows,
+            code,
+            dept.key as "lab"
+          )
+          expect(
+            services.reduce((s, x) => s + x.billedP, 0),
+            `${period} ${code} ${dept.key}`
+          ).toBe(dept.billedP)
           expect(services.reduce((s, x) => s + x.visits, 0)).toBe(dept.visits)
         }
       }
@@ -212,8 +237,13 @@ describe("trends", () => {
     const yesterday = addDaysISO(today, -1)
     for (const period of ["today", "7d", "30d", "90d"] as const) {
       const view = buildView({ rows, asAt, period, today, branch: null })
-      expect(tatPeak(view.tat), period).toMatchObject({ branch: "B3", date: yesterday })
-      expect(view.tat.find((p) => p.date === yesterday)!.B3).toBeGreaterThan(390)
+      expect(tatPeak(view.tat), period).toMatchObject({
+        branch: "B3",
+        date: yesterday,
+      })
+      expect(view.tat.find((p) => p.date === yesterday)!.B3).toBeGreaterThan(
+        390
+      )
     }
     const month = buildView({ rows, asAt, period: "30d", today, branch: null })
     expect(month.trend).toHaveLength(30)
@@ -228,8 +258,13 @@ describe("balances", () => {
   it("values stock at cost from the stock levels and flags the planted low stock at B1", async () => {
     const stock = await loadStock(db)
     const levels = await db.stockLevels.where("branchId").equals("B1").toArray()
-    const batches = new Map((await db.batches.toArray()).map((b) => [b.id, b.costP]))
-    const value = levels.reduce((s, l) => s + Math.max(0, l.qty) * (batches.get(l.batchId) ?? 0), 0)
+    const batches = new Map(
+      (await db.batches.toArray()).map((b) => [b.id, b.costP])
+    )
+    const value = levels.reduce(
+      (s, l) => s + Math.max(0, l.qty) * (batches.get(l.batchId) ?? 0),
+      0
+    )
     expect(stock.B1.valueP).toBe(value)
     expect(stock.B1.lowCount).toBeGreaterThan(0)
     expect(stock.B4.valueP).toBe(0)
@@ -237,12 +272,22 @@ describe("balances", () => {
 
   it("counts the companies' shares of corporate bills as receivables", async () => {
     const { receivables, payables } = await loadBalances(db, today)
-    const corporate = await db.payments.where("tender").equals("corporate").toArray()
+    const corporate = await db.payments
+      .where("tender")
+      .equals("corporate")
+      .toArray()
     const byBranch = (code: string) =>
       corporate
-        .filter((p) => p.branchId === code && (p.status === "confirmed" || p.status === "refunded"))
+        .filter(
+          (p) =>
+            p.branchId === code &&
+            (p.status === "confirmed" || p.status === "refunded")
+        )
         .reduce((s, p) => s + p.amountP, 0)
-    const total = BRANCH_CODES.reduce((s, c) => s + receivables[c].corporateP, 0)
+    const total = BRANCH_CODES.reduce(
+      (s, c) => s + receivables[c].corporateP,
+      0
+    )
     expect(total).toBeGreaterThan(0)
     expect(receivables.B1.corporateP).toBe(byBranch("B1"))
     // One seeded payable is still open.

@@ -69,7 +69,9 @@ export function ExceptionRail({
   className?: string
 }) {
   const [open, setOpen] = React.useState<ExceptionKind | null>(null)
-  const summaries = EXCEPTION_KINDS.map((kind) => summarise(items ?? [], kind, branch))
+  const summaries = EXCEPTION_KINDS.map((kind) =>
+    summarise(items ?? [], kind, branch)
+  )
   const openSummary = open ? summaries.find((s) => s.kind === open) : undefined
 
   return (
@@ -96,10 +98,22 @@ export function ExceptionRail({
           ))}
         </ul>
       </div>
-      <Dialog open={open !== null} onOpenChange={(next) => !next && setOpen(null)}>
-        <DialogContent className="sm:max-w-lg" data-testid="exception-list" data-kind={open ?? ""}>
+      <Dialog
+        open={open !== null}
+        onOpenChange={(next) => !next && setOpen(null)}
+      >
+        <DialogContent
+          className="sm:max-w-lg"
+          data-testid="exception-list"
+          data-kind={open ?? ""}
+        >
           {openSummary ? (
-            <ExceptionList summary={openSummary} nowMs={nowMs} netOf={netOf} f={f} />
+            <ExceptionList
+              summary={openSummary}
+              nowMs={nowMs}
+              netOf={netOf}
+              f={f}
+            />
           ) : null}
         </DialogContent>
       </Dialog>
@@ -146,10 +160,20 @@ function ExceptionTile({
         <Icon className="size-4" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[0.8125rem] font-semibold">
+        <span className="line-clamp-2 text-[0.8125rem] leading-snug font-semibold">
           {f.tk(`dashboards.exceptions.kinds.${summary.kind}`)}
         </span>
-        <span className="block truncate text-xs text-muted-foreground">
+        <span
+          className="block truncate text-xs text-muted-foreground"
+          title={
+            oldest
+              ? f.t("dashboards.exceptions.oldest", {
+                  age: f.age(nowMs - oldest.since),
+                  branch: oldest.branch,
+                })
+              : undefined
+          }
+        >
           {oldest
             ? f.t("dashboards.exceptions.oldest", {
                 age: f.age(nowMs - oldest.since),
@@ -157,7 +181,12 @@ function ExceptionTile({
               })
             : f.t("dashboards.exceptions.none")}
           {offline.length ? (
-            <span className={cn("ml-1.5 inline-flex items-center gap-1", TONE_TEXT.warning)}>
+            <span
+              className={cn(
+                "ml-1.5 inline-flex items-center gap-1",
+                TONE_TEXT.warning
+              )}
+            >
               <WifiOff className="size-3" />
               {offline.join(", ")}
             </span>
@@ -167,7 +196,9 @@ function ExceptionTile({
       <span
         className={cn(
           "nums flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full px-1.5 text-xs font-semibold tabular-nums",
-          summary.count > 0 ? "count-badge" : "bg-surface-raised text-muted-foreground"
+          summary.count > 0
+            ? "count-badge"
+            : "bg-surface-raised text-muted-foreground"
         )}
       >
         {f.num(summary.count)}
@@ -203,15 +234,25 @@ function ExceptionList({
   return (
     <>
       <DialogHeader>
-        <DialogTitle>{f.tk(`dashboards.exceptions.kinds.${summary.kind}`)}</DialogTitle>
+        <DialogTitle>
+          {f.tk(`dashboards.exceptions.kinds.${summary.kind}`)}
+        </DialogTitle>
         <DialogDescription>
-          {f.t("dashboards.exceptions.listSubtitle", { count: f.num(summary.count) })}
+          {f.t("dashboards.exceptions.listSubtitle", {
+            count: f.num(summary.count),
+          })}
         </DialogDescription>
       </DialogHeader>
       {offline.map((b) => {
         const net = netOf(b)
         return (
-          <p key={b} className={cn("flex items-center gap-1.5 text-xs", TONE_TEXT.warning)}>
+          <p
+            key={b}
+            className={cn(
+              "flex items-center gap-1.5 text-xs",
+              TONE_TEXT.warning
+            )}
+          >
             <WifiOff className="size-3.5" />
             {f.t("dashboards.freshness.offline", {
               code: b,
@@ -235,7 +276,9 @@ function ExceptionList({
               className="grid grid-cols-[minmax(0,1fr)_6.5rem_minmax(0,1fr)] items-center gap-3 border-b border-hairline px-3 py-2.5 text-[0.8125rem] last:border-0"
             >
               <span className="truncate">{f.branchLabel(item.branch)}</span>
-              <span className="nums tabular-nums">{f.age(nowMs - item.since)}</span>
+              <span className="nums tabular-nums">
+                {f.age(nowMs - item.since)}
+              </span>
               <span className="truncate font-mono text-xs">
                 {item.refs.length ? item.refs.join(" · ") : "-"}
               </span>

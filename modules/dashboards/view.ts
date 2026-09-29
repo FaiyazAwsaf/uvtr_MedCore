@@ -33,7 +33,9 @@ export type Comparison =
  * seeded activity stops there; the demo's live records add on top). Without
  * a baseline (the demo clock moved past midnight) today is live records only
  * and has no comparison. A multi-day period is compared with the equal
- * period before it, when the history covers every day of it.
+ * period before it, when the history covers every day of it. On Today the
+ * billing trend and sparklines show each earlier day up to the same time of
+ * day, so today's partial figures sit among like-for-like points.
  */
 export function buildView(input: {
   rows: DayRow[]
@@ -59,13 +61,28 @@ export function buildView(input: {
       prev = sumRows(scaleToHour(prevRows, hourOfDay(asAt, today)))
       comparison = { kind: "yesterday", asAt }
     }
-  } else if (new Set(prevRows.map((r) => r.date)).size === win.prevDates.length) {
+  } else if (
+    new Set(prevRows.map((r) => r.date)).size === win.prevDates.length
+  ) {
     prev = sumRows(prevRows)
     comparison = { kind: "previous", days: PERIOD_DAYS[period] }
   } else {
     comparison = { kind: "no-earlier" }
   }
-  const chartRows = filterRows(rows, { dates: win.chartDates })
+  // Today's charts compare like with like: each earlier day cut to the
+  // baseline's time of day, today as it stands (baseline plus live).
+  const chartCut = period === "today" ? asAt : undefined
+  const inChart = filterRows(rows, { dates: win.chartDates })
+  const chartRows =
+    chartCut === undefined
+      ? inChart
+      : [
+          ...scaleToHour(
+            inChart.filter((r) => r.date !== today),
+            hourOfDay(chartCut, today)
+          ),
+          ...inChart.filter((r) => r.date === today),
+        ]
   return {
     win,
     /** Every branch's rows for the period (the table and the drill-down) */
@@ -75,6 +92,8 @@ export function buildView(input: {
     comparison,
     /** Every branch's rows for the chart window (sparklines) */
     chartRows,
+    /** Set when the charts show each day up to this time of day (Today) */
+    chartCut,
     trend: dailyTotals(chartRows, win.chartDates, branch),
     tat: tatByBranch(chartRows, win.chartDates),
   }

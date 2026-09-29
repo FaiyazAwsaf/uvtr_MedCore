@@ -69,7 +69,8 @@ export async function loadLiveInput(
 ): Promise<{ input: LiveInput; lookups: Lookups }> {
   const start = startOfDhakaDay(today)
   const end = start + DAY
-  const inDay = (ms: Ms | undefined) => ms !== undefined && ms >= start && ms < end
+  const inDay = (ms: Ms | undefined) =>
+    ms !== undefined && ms >= start && ms < end
 
   const [todays, payments, refunds, creditNotes, dispenses, appointments] =
     await Promise.all([
@@ -118,11 +119,15 @@ export async function loadLiveInput(
   )
 
   const lookups = await loadLookups(db, {
-    labItemIds: lines.filter((l) => l.sourceType === "test").map((l) => l.sourceId),
+    labItemIds: lines
+      .filter((l) => l.sourceType === "test")
+      .map((l) => l.sourceId),
     imagingOrderIds: lines
       .filter((l) => l.sourceType === "imaging")
       .map((l) => l.sourceId),
-    rxLineIds: lines.filter((l) => l.sourceType === "rx-line").map((l) => l.sourceId),
+    rxLineIds: lines
+      .filter((l) => l.sourceType === "rx-line")
+      .map((l) => l.sourceId),
   })
 
   return {
@@ -152,19 +157,29 @@ export async function loadLookups(
   db: MedcoreDb,
   refs: { labItemIds: Id[]; imagingOrderIds: Id[]; rxLineIds: Id[] }
 ): Promise<Lookups> {
-  const [doctors, specialties, wards, beds, admissions, labItems, imaging, rxLines] =
-    await Promise.all([
-      db.doctors.toArray(),
-      db.specialties.toArray(),
-      db.wards.toArray(),
-      db.beds.toArray(),
-      db.admissions.toArray(),
-      db.labOrderItems.bulkGet(uniq(refs.labItemIds)),
-      db.imagingOrders.bulkGet(uniq(refs.imagingOrderIds)),
-      db.rxLines.bulkGet(uniq(refs.rxLineIds)),
-    ])
+  const [
+    doctors,
+    specialties,
+    wards,
+    beds,
+    admissions,
+    labItems,
+    imaging,
+    rxLines,
+  ] = await Promise.all([
+    db.doctors.toArray(),
+    db.specialties.toArray(),
+    db.wards.toArray(),
+    db.beds.toArray(),
+    db.admissions.toArray(),
+    db.labOrderItems.bulkGet(uniq(refs.labItemIds)),
+    db.imagingOrders.bulkGet(uniq(refs.imagingOrderIds)),
+    db.rxLines.bulkGet(uniq(refs.rxLineIds)),
+  ])
   const items = present(labItems)
-  const tests = present(await db.labTests.bulkGet(uniq(items.map((i) => i.testId))))
+  const tests = present(
+    await db.labTests.bulkGet(uniq(items.map((i) => i.testId)))
+  )
   const lines = present(rxLines)
   const brands = present(
     await db.brands.bulkGet(
@@ -182,9 +197,14 @@ export async function loadLookups(
     ),
     testOfLabItem: new Map(items.map((i) => [i.id, i.testId])),
     labTests: new Map(
-      tests.map((t) => [t.id, { section: t.section, kind: t.kind, modality: t.modality }])
+      tests.map((t) => [
+        t.id,
+        { section: t.section, kind: t.kind, modality: t.modality },
+      ])
     ),
-    modalityOfImagingOrder: new Map(present(imaging).map((o) => [o.id, o.modality])),
+    modalityOfImagingOrder: new Map(
+      present(imaging).map((o) => [o.id, o.modality])
+    ),
     brandOfRxLine: new Map(lines.map((l) => [l.id, l.brandId])),
     categoryOfBrand: new Map(brands.map((b) => [b.id, b.category])),
     wardKindOfBed: new Map(
@@ -207,7 +227,9 @@ export async function loadLiveFacts(
 }
 
 /** Specialty names by code (OPD service labels come from the table, EN and BN). */
-export async function loadSpecialtyNames(db: MedcoreDb): Promise<SpecialtyNames> {
+export async function loadSpecialtyNames(
+  db: MedcoreDb
+): Promise<SpecialtyNames> {
   const rows = await db.specialties.toArray()
   return new Map(rows.map((s) => [s.code, s.name]))
 }
@@ -252,9 +274,14 @@ export async function loadBalances(
     [...corporateRefunds, ...disputes].map((r) => r.invoiceId)
   )
   const invoiceBranch = new Map(
-    present(await db.invoices.bulkGet(invoiceIds)).map((i) => [i.id, i.branchId])
+    present(await db.invoices.bulkGet(invoiceIds)).map((i) => [
+      i.id,
+      i.branchId,
+    ])
   )
-  const pos = present(await db.purchaseOrders.bulkGet(uniq(payables.map((p) => p.poId))))
+  const pos = present(
+    await db.purchaseOrders.bulkGet(uniq(payables.map((p) => p.poId)))
+  )
   return {
     receivables: receivablesByBranch({
       openInvoices,
@@ -277,14 +304,15 @@ export async function loadBalances(
 
 /** Every open exception across the network (counts, branches, ages, references). */
 export async function loadExceptions(db: MedcoreDb): Promise<ExceptionItem[]> {
-  const [calls, validated, signed, awaiting, matches, admitted] = await Promise.all([
-    db.criticalCalls.toArray(),
-    db.results.where("status").equals("validated").toArray(),
-    db.labReports.where("status").equals("signed").toArray(),
-    db.rxLines.where("status").equals("awaiting-prescriber").toArray(),
-    db.threeWayMatches.where("status").equals("mismatch").toArray(),
-    db.admissions.where("status").equals("admitted").toArray(),
-  ])
+  const [calls, validated, signed, awaiting, matches, admitted] =
+    await Promise.all([
+      db.criticalCalls.toArray(),
+      db.results.where("status").equals("validated").toArray(),
+      db.labReports.where("status").equals("signed").toArray(),
+      db.rxLines.where("status").equals("awaiting-prescriber").toArray(),
+      db.threeWayMatches.where("status").equals("mismatch").toArray(),
+      db.admissions.where("status").equals("admitted").toArray(),
+    ])
   const criticalResults = validated.filter((r) => r.critical)
   const itemIds = uniq([
     ...calls.map((c) => c.labOrderItemId),
@@ -296,7 +324,9 @@ export async function loadExceptions(db: MedcoreDb): Promise<ExceptionItem[]> {
   )
   const orderNo = new Map(orders.map((o) => [o.id, o.orderNo]))
 
-  const rx = present(await db.prescriptions.bulkGet(uniq(awaiting.map((l) => l.rxId))))
+  const rx = present(
+    await db.prescriptions.bulkGet(uniq(awaiting.map((l) => l.rxId)))
+  )
   const requests = awaiting.length
     ? await db.substitutionRequests
         .where("rxLineId")
@@ -306,10 +336,15 @@ export async function loadExceptions(db: MedcoreDb): Promise<ExceptionItem[]> {
   const requestedAt = new Map<Id, Ms>()
   for (const r of requests) {
     if (r.status !== "pending") continue
-    requestedAt.set(r.rxLineId, Math.max(requestedAt.get(r.rxLineId) ?? 0, r.createdAt))
+    requestedAt.set(
+      r.rxLineId,
+      Math.max(requestedAt.get(r.rxLineId) ?? 0, r.createdAt)
+    )
   }
 
-  const pos = present(await db.purchaseOrders.bulkGet(uniq(matches.map((m) => m.poId))))
+  const pos = present(
+    await db.purchaseOrders.bulkGet(uniq(matches.map((m) => m.poId)))
+  )
   const vis = present(
     await db.vendorInvoices.bulkGet(uniq(matches.map((m) => m.vendorInvoiceId)))
   )
@@ -318,14 +353,19 @@ export async function loadExceptions(db: MedcoreDb): Promise<ExceptionItem[]> {
     calls,
     criticalResults,
     labItemInfo: new Map(
-      items.map((i) => [i.id, { branch: i.branchId, orderNo: orderNo.get(i.labOrderId) }])
+      items.map((i) => [
+        i.id,
+        { branch: i.branchId, orderNo: orderNo.get(i.labOrderId) },
+      ])
     ),
     reports: signed,
     rxLines: awaiting,
     rxNoOf: new Map(rx.map((p) => [p.id, p.rxNo])),
     requestedAt,
     matches,
-    poInfo: new Map(pos.map((p) => [p.id, { poNo: p.poNo, branch: p.branchId }])),
+    poInfo: new Map(
+      pos.map((p) => [p.id, { poNo: p.poNo, branch: p.branchId }])
+    ),
     vendorInvoiceNo: new Map(vis.map((v) => [v.id, v.vendorInvoiceNo])),
     admissions: admitted,
   })

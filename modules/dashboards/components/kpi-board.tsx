@@ -109,10 +109,10 @@ export function KpiBoard({
   return (
     <section
       aria-label={t("dashboards.kpi.label")}
-      className="flex flex-col gap-3 @min-[60rem]/kpis:gap-4"
+      className="flex flex-col gap-3"
     >
       <div className="@container/kpis">
-        <div className="grid grid-cols-2 gap-3 @min-[40rem]/kpis:grid-cols-4 @min-[66rem]/kpis:gap-4">
+        <div className="grid grid-cols-2 gap-3 @min-[58rem]/kpis:grid-cols-4 @min-[66rem]/kpis:gap-4">
           <FlashCard
             testId="kpi-billed"
             value={current?.billedP}
@@ -161,7 +161,10 @@ export function KpiBoard({
                   <NumberTicker
                     value={Math.round(rate * 1000) / 10}
                     suffix="%"
-                    format={{ minimumFractionDigits: 1, maximumFractionDigits: 1 }}
+                    format={{
+                      minimumFractionDigits: 1,
+                      maximumFractionDigits: 1,
+                    }}
                   />
                 )}
               </Figure>
@@ -186,7 +189,7 @@ export function KpiBoard({
       </div>
 
       <div className="@container/tiles">
-        <div className="grid grid-cols-2 gap-3 @min-[34rem]/tiles:grid-cols-3 @min-[52rem]/tiles:grid-cols-5 @min-[66rem]/tiles:gap-4">
+        <div className="grid grid-cols-2 gap-3 @min-[34rem]/tiles:grid-cols-3 @min-[46rem]/tiles:grid-cols-5 @min-[66rem]/tiles:gap-4">
           <StatTile
             f={f}
             testId="kpi-visits"
@@ -194,16 +197,18 @@ export function KpiBoard({
             scope={scope}
             icon={Users}
             label={t("dashboards.kpi.visits")}
-            figure={
-              current ? <NumberTicker value={current.opdVisits} /> : "-"
-            }
+            figure={current ? <NumberTicker value={current.opdVisits} /> : "-"}
             delta={pctChange(current?.opdVisits, prev?.opdVisits)}
             higherIsBetter
           />
           <StatTile
             f={f}
             testId="kpi-wait"
-            value={current?.waitMin === null ? undefined : Math.round(current?.waitMin ?? 0)}
+            value={
+              current?.waitMin === null
+                ? undefined
+                : Math.round(current?.waitMin ?? 0)
+            }
             scope={scope}
             icon={Clock3}
             label={t("dashboards.kpi.wait")}
@@ -214,7 +219,11 @@ export function KpiBoard({
           <StatTile
             f={f}
             testId="kpi-tat"
-            value={current?.tatMin === null ? undefined : Math.round(current?.tatMin ?? 0)}
+            value={
+              current?.tatMin === null
+                ? undefined
+                : Math.round(current?.tatMin ?? 0)
+            }
             scope={scope}
             icon={FlaskConical}
             label={t("dashboards.kpi.tat")}
@@ -236,7 +245,9 @@ export function KpiBoard({
                 <span
                   data-testid="kpi-low-stock"
                   data-count={stock.lowCount}
-                  className={cn(stock.lowCount > 0 ? TONE_TEXT.warning : TONE_TEXT.muted)}
+                  className={cn(
+                    stock.lowCount > 0 ? TONE_TEXT.warning : TONE_TEXT.muted
+                  )}
                 >
                   {t("dashboards.kpi.lowStock", { count: num(stock.lowCount) })}
                 </span>
@@ -385,14 +396,18 @@ function StatTile({
         <span className="icon-well flex size-8 shrink-0 items-center justify-center text-link">
           <Icon className="size-4" />
         </span>
-        <span className="min-w-0 truncate text-[0.8125rem] text-muted-foreground">
+        <span
+          title={label}
+          className="min-w-0 truncate text-[0.8125rem] text-muted-foreground"
+        >
           {label}
         </span>
       </div>
-      <div className="flex min-w-0 items-end justify-between gap-2">
+      {/* The change wraps under the figure when the tile is narrow. */}
+      <div className="flex min-w-0 flex-wrap items-end justify-between gap-x-2 gap-y-1">
         <span
           title={title}
-          className="figure min-w-0 truncate text-[1.25rem] leading-tight @min-[66rem]/tiles:text-[1.375rem]"
+          className="figure max-w-full shrink-0 truncate text-[1.125rem] leading-tight @min-[66rem]/tiles:text-[1.375rem]"
         >
           {figure}
         </span>

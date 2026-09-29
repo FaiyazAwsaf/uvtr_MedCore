@@ -6,12 +6,7 @@ import { useLiveQuery } from "dexie-react-hooks"
 import { useDb } from "@/core/db/DbProvider"
 import type { ISODate } from "@/core/db/schema"
 
-import {
-  baselineAsAt,
-  dayRowOf,
-  todayRows,
-  type DayRow,
-} from "../metrics"
+import { baselineAsAt, dayRowOf, todayRows, type DayRow } from "../metrics"
 import {
   loadBalances,
   loadDailyStats,

@@ -47,7 +47,9 @@ export function DashboardHeader({
   offline: { branch: BranchCode; net: BranchNet }[]
   f: DashFormat
 }) {
-  const scope = branch ? f.branchLabel(branch) : f.t("dashboards.branchFilter.all")
+  const scope = branch
+    ? f.branchLabel(branch)
+    : f.t("dashboards.branchFilter.all")
   return (
     <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
       <div className="min-w-0">
@@ -92,9 +94,16 @@ export function DashboardHeader({
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL}>{f.t("dashboards.branchFilter.all")}</SelectItem>
+            <SelectItem value={ALL}>
+              {f.t("dashboards.branchFilter.all")}
+            </SelectItem>
             {BRANCH_CODES.map((code) => (
-              <SelectItem key={code} value={code} data-testid="ceo-branch-option" data-branch={code}>
+              <SelectItem
+                key={code}
+                value={code}
+                data-testid="ceo-branch-option"
+                data-branch={code}
+              >
                 <span className="truncate">{f.branchName(code)}</span>
                 <span className="ml-auto pl-3 font-mono text-[0.6875rem] text-muted-foreground">
                   {code}

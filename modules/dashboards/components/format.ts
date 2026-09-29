@@ -24,7 +24,10 @@ export function useDashFormat(specialties?: SpecialtyNames) {
       if (value === null || value === undefined) return "-"
       const { h, m } = splitMinutes(value)
       return h > 0
-        ? t("dashboards.units.hoursMinutes", { h: digits(String(h)), m: digits(String(m)) })
+        ? t("dashboards.units.hoursMinutes", {
+            h: digits(String(h)),
+            m: digits(String(m)),
+          })
         : t("dashboards.units.minutes", { value: digits(String(m)) })
     }
     return {
@@ -38,7 +41,10 @@ export function useDashFormat(specialties?: SpecialtyNames) {
       /** How long something has been open: minutes, hours, days */
       age: (ms: number): string => {
         const totalMin = Math.max(0, Math.floor(ms / 60_000))
-        if (totalMin < 60) return t("dashboards.units.minutes", { value: digits(String(totalMin)) })
+        if (totalMin < 60)
+          return t("dashboards.units.minutes", {
+            value: digits(String(totalMin)),
+          })
         const days = Math.floor(totalMin / 1440)
         if (days >= 1) {
           const hours = Math.floor((totalMin % 1440) / 60)
@@ -62,7 +68,8 @@ export function useDashFormat(specialties?: SpecialtyNames) {
         return label.startsWith("dashboards.") ? key : label
       },
       /** DD-MM for chart axes (Bangla digits in Bangla) */
-      dayMonth: (date: ISODate) => digits(`${date.slice(8, 10)}-${date.slice(5, 7)}`),
+      dayMonth: (date: ISODate) =>
+        digits(`${date.slice(8, 10)}-${date.slice(5, 7)}`),
       /** DD-MM-YYYY for a calendar day */
       day: (date: ISODate) => dmy(atDhaka(date, "12:00")),
     }
