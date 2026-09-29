@@ -7,6 +7,7 @@ import { useLiveQuery } from "dexie-react-hooks"
 import { FileCheck2, FileText, PackageOpen, Printer, Send } from "lucide-react"
 import { toast } from "sonner"
 
+import { DateField } from "@/components/shared/date-field"
 import { DateText } from "@/components/shared/date-text"
 import { EmptyState } from "@/components/shared/empty-state"
 import { KeyValueGrid } from "@/components/shared/key-value"
@@ -24,7 +25,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
   Table,
@@ -346,12 +346,11 @@ function IssueDialog({ item, onClose }: { item: PrItem | null; onClose: () => vo
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="po-expected">{t("procurement.orders.issueDialog.expected")}</Label>
-            <Input
+            <DateField
               id="po-expected"
               data-testid="po-expected"
-              type="date"
               value={expected}
-              onChange={(event) => setExpected(event.target.value)}
+              onChange={setExpected}
               className="w-44"
             />
           </div>

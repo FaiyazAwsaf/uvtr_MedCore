@@ -4,6 +4,7 @@ import * as React from "react"
 import { useLiveQuery } from "dexie-react-hooks"
 import { AlertTriangle, CheckCircle2, FileCheck2 } from "lucide-react"
 
+import { DateField } from "@/components/shared/date-field"
 import { MoneyText } from "@/components/shared/money-text"
 import { Button } from "@/components/ui/button"
 import {
@@ -219,13 +220,7 @@ function InvoiceForm({ detail, onClose }: { detail: PoDetail; onClose: () => voi
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="vi-date">{t("procurement.invoice.date")}</Label>
-          <Input
-            id="vi-date"
-            data-testid="vi-date"
-            type="date"
-            value={date}
-            onChange={(event) => setDate(event.target.value)}
-          />
+          <DateField id="vi-date" data-testid="vi-date" value={date} onChange={setDate} />
         </div>
       </div>
       {nothing ? (

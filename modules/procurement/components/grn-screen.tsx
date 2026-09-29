@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
+import { DateField } from "@/components/shared/date-field"
 import { DateText } from "@/components/shared/date-text"
 import { EmptyState } from "@/components/shared/empty-state"
 import { MoneyText } from "@/components/shared/money-text"
@@ -482,11 +483,10 @@ function LotRow({
       </label>
       <label className={field}>
         {t("procurement.grn.form.expiry")}
-        <Input
+        <DateField
           data-testid="grn-expiry"
-          type="date"
           value={lot.expiry}
-          onChange={(event) => onChange({ expiry: event.target.value })}
+          onChange={(expiry) => onChange({ expiry })}
           aria-invalid={short || undefined}
           className="h-8"
         />

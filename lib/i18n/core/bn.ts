@@ -11,6 +11,7 @@ export const coreBn: typeof coreEn = {
   common: {
     search: "অনুসন্ধান",
     searchPlaceholder: "যেকোনো কিছু খুঁজুন…",
+    dmyPlaceholder: "দিন-মাস-বছর",
     filter: "ফিল্টার",
     sort: "সাজান",
     sortBy: "সাজানোর ভিত্তি",

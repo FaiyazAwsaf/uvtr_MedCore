@@ -15,6 +15,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
+import { DateField } from "@/components/shared/date-field"
 import { SectionCard } from "@/components/shared/section-card"
 import { StatusPill } from "@/components/shared/status"
 import { EmptyState } from "@/components/shared/empty-state"
@@ -668,13 +669,12 @@ export function RxPad({
             </span>
             {canWrite ? (
               <>
-                <Input
-                  type="date"
+                <DateField
                   className="h-9"
                   value={followUp}
                   min={addDaysISO(today, 1)}
                   data-testid="rx-follow-up"
-                  onChange={(e) => changeDraftMeta(advice, e.target.value)}
+                  onChange={(iso) => changeDraftMeta(advice, iso)}
                 />
                 <div className="flex flex-wrap gap-1">
                   {[7, 14].map((d) => (

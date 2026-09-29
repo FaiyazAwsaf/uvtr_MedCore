@@ -13,6 +13,7 @@ export const coreEn = {
   common: {
     search: "Search",
     searchPlaceholder: "Search anything…",
+    dmyPlaceholder: "DD-MM-YYYY",
     filter: "Filter",
     sort: "Sort",
     sortBy: "Sort by",
