@@ -62,7 +62,7 @@ export const prescribingScenarios: ScenarioDef[] = [
       const encounterId = await openEncounter(kit, { patientId: patient.id })
       return {
         refs: { patientId: patient.id, encounterId },
-        params: { name: patient.nameEn },
+        params: { name: patient.nameEn, nameBn: patient.nameBn },
       }
     },
     route: ({ refs }) => `/doctor/encounter/${refs?.encounterId}`,

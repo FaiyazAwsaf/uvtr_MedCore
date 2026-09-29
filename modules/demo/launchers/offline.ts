@@ -174,6 +174,7 @@ export const offlineScenarios: ScenarioDef[] = [
         refs: { patientId: online.patientId },
         params: {
           name: person.en,
+          nameBn: person.bn,
           variant: person.variant,
           offlineUhid: offline.uhid,
         },
