@@ -5,8 +5,10 @@
  * deposit is running low (feeds the deposit threshold alert).
  */
 
+import { rules } from "@/config/rules.config"
 import type { Tender } from "@/core/db/schema"
 import { counterKey, docNo } from "@/core/db/numbering"
+import { bedDays, dailyChargeP } from "@/core/inpatient/interim"
 
 import type { SeedCtx } from "../context"
 import { ADMISSION_REASONS, WARDS, wardId } from "../content/org"
@@ -70,8 +72,8 @@ export function seedInpatient(
           ward.code === "4B" ? true : ward.code === "4A" ? false : undefined
         const patient = pick(w.branch, w.kind === "paediatric", female)
         const lowDeposit = !lowDepositDone && w.kind === "cabin"
-        const days = lowDeposit ? 5 : rng.int(1, 9)
-        const admittedAt = ctx.now - days * DAY - rng.int(1, 10) * HOUR
+        const stayDays = lowDeposit ? 5 : rng.int(1, 9)
+        const admittedAt = ctx.now - stayDays * DAY - rng.int(1, 10) * HOUR
         const consultant = rng.pick(
           consultants.length
             ? consultants
@@ -105,29 +107,42 @@ export function seedInpatient(
         bed.admissionId = admission.id
         bed.updatedAt = admittedAt
 
-        // Deposits: one at admission, sometimes a top-up; a cabin stay with a low balance.
-        const rate = ward.bedDayRateP
-        const first = lowDeposit
-          ? 15_000_00
-          : Math.max(
-              10_000_00,
-              Math.round((rate * rng.int(3, 6)) / 100_000) * 100_000
-            )
-        const deposits: [number, number][] = [[first, admittedAt + 20 * MINUTE]]
-        if (!lowDeposit && days > 4 && rng.bool(0.5))
-          deposits.push([
-            Math.round(first / 2 / 100_000) * 100_000 || 5_000_00,
-            admittedAt + 3 * DAY,
-          ])
+        // Deposits sized with the interim bill (core/inpatient/interim.ts): an
+        // admission deposit for about three days plus the alert threshold,
+        // and top-ups every three days, so every stay keeps at least two days
+        // of charges above the threshold. The one planted cabin stay has a
+        // single deposit that its charges have almost used up (deposit alert).
+        const daily = dailyChargeP(ward, consultant.followUpTaka * 100)
+        const days = bedDays(admittedAt, ctx.now)
+        const roundUp = (p: number) => Math.ceil(p / 5_000_00) * 5_000_00
+        const deposits: [number, number][] = []
+        if (lowDeposit) {
+          const charged = daily * days
+          // ৳4,000 to ৳9,000 left: below the ৳10,000 alert threshold.
+          const amountP = Math.floor((charged + 9_000_00) / 5_000_00) * 5_000_00
+          deposits.push([Math.max(5_000_00, amountP), admittedAt + 20 * MINUTE])
+        } else {
+          const needed = daily * (days + 2) + rules.depositThresholdP
+          let paid = roundUp(daily * 3 + rules.depositThresholdP)
+          deposits.push([paid, admittedAt + 20 * MINUTE])
+          for (let k = 1; paid < needed; k++) {
+            const top = roundUp(daily * 3)
+            const at = Math.min(admittedAt + k * 3 * DAY, ctx.now - rng.int(1, 5) * HOUR)
+            deposits.push([top, at])
+            paid += top
+          }
+        }
         deposits.forEach(([amountP, at]) => {
           bag.put("deposits", ctx.seq("dep"), at, {
             admissionId: admission.id,
             patientId: patient.id,
+            branchId: w.branch,
             amountP,
             tender: rng.pick<Tender>(["cash", "cash", "bkash", "card"]),
             at,
           })
         })
+        if (lowDeposit) admission.depositAlertAt = ctx.now - 2 * HOUR
         if (lowDeposit) lowDepositDone = true
       } else if (i < occupied + (w.beds >= 12 ? 2 : 1)) {
         bed.status = "cleaning"
@@ -167,6 +182,7 @@ export function seedInpatient(
       bag.put("deposits", ctx.seq("dep"), admittedAt + 30 * MINUTE, {
         admissionId: admission.id,
         patientId: patient.id,
+        branchId: w.branch,
         amountP: 20_000_00,
         tender: "cash",
         at: admittedAt + 30 * MINUTE,

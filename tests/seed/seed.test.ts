@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { MedcoreDb } from "@/core/db/database"
+import { interimBill } from "@/core/inpatient/interim"
 import { isValidUhid } from "@/core/db/numbering"
 import type { PatientRow } from "@/core/db/schema"
 import { TABLE_NAMES } from "@/core/db/tables"
@@ -609,9 +610,10 @@ describe("seed: history (plan §7.3, §7.4)", () => {
   })
 
   it("has 90 days of dashboard history with the planted stories", async () => {
-    const stats = await db.dailyStats.toArray()
+    const all = await db.dailyStats.toArray()
+    const stats = all.filter((s) => s.date !== TODAY)
     expect(new Set(stats.map((s) => s.date)).size).toBe(90)
-    expect(stats.some((s) => s.date === TODAY)).toBe(false)
+    expect(stats.every((s) => s.asAt === undefined)).toBe(true)
     const b3 = stats.filter((s) => s.branchId === "B3" && s.dept === "lab")
     const y = b3.find((s) => s.date === YESTERDAY)!
     const others = b3
@@ -622,6 +624,83 @@ describe("seed: history (plan §7.3, §7.4)", () => {
     const collected = sum(stats.map((s) => s.collectedP))
     expect(collected / billed).toBeGreaterThan(0.8)
     expect(collected / billed).toBeLessThan(0.9)
+  })
+
+  it("splits every day by service exactly, and has today's baseline up to the seed moment", async () => {
+    const all = await db.dailyStats.toArray()
+    for (const row of all) {
+      expect(row.services?.length, row.id).toBeGreaterThan(0)
+      expect(sum(row.services!.map((x) => x.visits)), row.id).toBe(row.visits)
+      expect(sum(row.services!.map((x) => x.billedP)), row.id).toBe(row.billedP)
+    }
+    const today = all.filter((s) => s.date === TODAY)
+    const yesterday = all.filter((s) => s.date === YESTERDAY)
+    expect(today.map((s) => `${s.branchId}:${s.dept}`).sort()).toEqual(
+      yesterday.map((s) => `${s.branchId}:${s.dept}`).sort()
+    )
+    for (const row of today) {
+      expect(row.asAt).toBe(NOW)
+      expect(row.outstandingP).toBe(row.billedP - row.collectedP)
+    }
+    // 11:30 is early in the day: today so far is well below a full day.
+    const opd = (rows: typeof all) =>
+      sum(rows.filter((r) => r.dept === "opd").map((r) => r.visits))
+    expect(opd(today)).toBeLessThan(opd(yesterday) * 0.5)
+    expect(opd(today)).toBeGreaterThan(0)
+  })
+
+  it("routes seeded purchase requests by value, never to the requester", async () => {
+    const prs = await db.purchaseRequests.toArray()
+    const submitted = prs.filter((p) => p.status === "submitted")
+    expect(submitted.map((p) => p.approvalTier).sort()).toEqual([
+      "cfo",
+      "procurement-head",
+    ])
+    const cfo = submitted.find((p) => p.approvalTier === "cfo")!
+    expect(cfo.totalP).toBeGreaterThan(5_00_000_00)
+    for (const pr of prs.filter((p) => p.approvalId)) {
+      const approval = (await db.approvals.get(pr.approvalId!))!
+      expect(approval.approverId).not.toBe(pr.requestedBy)
+    }
+  })
+})
+
+describe("seed: inpatient deposits (plan §5.8)", () => {
+  it("keeps every stay above the deposit alert except the one planted cabin stay", async () => {
+    const admitted = await db.admissions.where("status").equals("admitted").toArray()
+    expect(admitted.length).toBeGreaterThan(10)
+    const low: string[] = []
+    for (const a of admitted) {
+      const bed = (await db.beds.get(a.bedId))!
+      const ward = (await db.wards.get(bed.wardId))!
+      const consultant = (await db.doctors.get(a.consultantId))!
+      const deposits = await db.deposits.where("admissionId").equals(a.id).toArray()
+      for (const d of deposits) expect(d.branchId).toBe(a.branchId)
+      const bill = interimBill({
+        admittedAt: a.admittedAt,
+        at: NOW,
+        ward,
+        consultantRoundP: consultant.followUpFeeP,
+        depositsP: sum(deposits.map((d) => d.amountP)),
+      })
+      if (bill.low) {
+        low.push(ward.kind)
+        expect(a.depositAlertAt).toBeDefined()
+        expect(bill.balanceP).toBeGreaterThan(0)
+      } else {
+        expect(a.depositAlertAt).toBeUndefined()
+        // A day of fast-forward still leaves the deposit above the alert.
+        const tomorrow = interimBill({
+          admittedAt: a.admittedAt,
+          at: NOW + 24 * 60 * 60 * 1000,
+          ward,
+          consultantRoundP: consultant.followUpFeeP,
+          depositsP: bill.depositsP,
+        })
+        expect(tomorrow.low, a.id).toBe(false)
+      }
+    }
+    expect(low).toEqual(["cabin"])
   })
 })
 

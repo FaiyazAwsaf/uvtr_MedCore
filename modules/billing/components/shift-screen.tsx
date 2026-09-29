@@ -202,6 +202,14 @@ function OpenShift({ shift }: { shift: ShiftRow }) {
                 items={[
                   { label: t("billing.shift.float"), value: <MoneyText poisha={shift.floatP} /> },
                   { label: t("billing.shift.cashIn"), value: <MoneyText poisha={summary.cashInP} /> },
+                  ...(summary.cashDepositsP > 0
+                    ? [
+                        {
+                          label: t("billing.shift.cashDeposits"),
+                          value: <MoneyText poisha={summary.cashDepositsP} />,
+                        },
+                      ]
+                    : []),
                   {
                     label: t("billing.shift.cashRefunds"),
                     value: <MoneyText poisha={-summary.cashRefundsP} />,

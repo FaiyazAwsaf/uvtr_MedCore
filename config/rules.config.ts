@@ -30,6 +30,12 @@ export const rules = {
   /** PRD §8.7. Three-way match tolerances (invoice vs PO vs GRN). */
   threeWayMatch: { quantityTolerance: 0, priceTolerancePct: 2 },
 
+  /** PRD §9 Procurement (CONFIRM: HOSPITAL). A delivered lot expiring sooner than this is refused as short expiry and held in quarantine for the vendor. */
+  grnMinShelfLifeDays: 180,
+
+  /** Store view: stock expiring within this many days is listed as expiring soon. */
+  nearExpiryDays: 90,
+
   /** PRD §10.9. Consultant fee share. */
   feeShare: {
     consultationPct: 70,

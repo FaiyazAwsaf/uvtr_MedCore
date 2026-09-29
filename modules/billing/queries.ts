@@ -386,7 +386,9 @@ export type ShiftSummary = {
   counts: Partial<Record<Tender, number>>
   cashInP: Poisha
   cashRefundsP: Poisha
-  /** Float plus cash taken minus cash refunded: what the drawer should hold */
+  /** Inpatient deposits taken in cash on this shift */
+  cashDepositsP: Poisha
+  /** Float plus cash taken and cash deposits, minus cash refunded: what the drawer should hold */
   expectedCashP: Poisha
   pendingMfsP: Poisha
   payments: (PaymentRow & { invoiceNo?: string; patient?: PatientRow })[]
@@ -429,7 +431,8 @@ export async function shiftSummary(
     counts[payment.tender] = (counts[payment.tender] ?? 0) + 1
   }
   const refunds = await db.refunds.where("status").equals("completed").toArray()
-  const cash = shiftCash(shift, payments, refunds)
+  const deposits = await db.deposits.filter((d) => d.shiftId === shift.id).toArray()
+  const cash = shiftCash(shift, payments, refunds, deposits)
 
   const invoiceIds = [...new Set(payments.map((p) => p.invoiceId))]
   const invoices = await db.invoices.bulkGet(invoiceIds)
@@ -452,6 +455,7 @@ export async function shiftSummary(
     counts,
     cashInP: cash.cashInP,
     cashRefundsP: cash.cashRefundsP,
+    cashDepositsP: cash.cashDepositsP,
     expectedCashP: cash.expectedP,
     pendingMfsP,
     payments: rows,

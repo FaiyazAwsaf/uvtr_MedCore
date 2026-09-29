@@ -4,11 +4,11 @@
  * three-way price mismatch in the finance worklist, partially received with a
  * quarantined short-expiry lot, cancelled, issued), their purchase requests,
  * goods receipts, vendor invoices, matches and payables. The counter makes
- * the next order PO-1042 (scenario S12). Two more requests wait in approval.
+ * the next order PO-1042 (scenario S12). Two requests wait in approval (one
+ * for the procurement head, one above ৳5,00,000 for the CFO) and one is a draft.
  */
 
 import type { BranchCode } from "@/config/brand.config"
-import { rules } from "@/config/rules.config"
 import { counterKey, docNo } from "@/core/db/numbering"
 import type {
   Id,
@@ -18,10 +18,13 @@ import type {
   PurchaseRequestRow,
 } from "@/core/db/schema"
 
+import { approvalTierFor } from "@/core/procurement/rules"
+
 import type { SeedCtx } from "../context"
 import { VENDORS } from "../content/partners"
+import { PERSONAS } from "../content/personas"
 import { SEED_REFS } from "../content/seed-refs"
-import { ACTOR } from "../content/staff"
+import { ACTOR, STAFF } from "../content/staff"
 import { DAY, HOUR, isoAddDays, MINUTE } from "../time"
 import type { StockLedger } from "./stock"
 
@@ -112,11 +115,13 @@ const PLANS: PoPlan[] = [
   },
 ]
 
-export function tierFor(totalP: number): PurchaseRequestRow["approvalTier"] {
-  const tier =
-    rules.prApproval.find((t) => totalP < t.maxP) ??
-    rules.prApproval[rules.prApproval.length - 1]
-  return tier.approver as PurchaseRequestRow["approvalTier"]
+/** Authorities of a seeded staff member (persona staff included). */
+function authoritiesOf(staffId: Id): readonly string[] {
+  return (
+    STAFF.find((s) => s.id === staffId)?.authorities ??
+    PERSONAS.find((p) => p.staff?.id === staffId)?.staff?.authorities ??
+    []
+  )
 }
 
 const APPROVER: Record<PurchaseRequestRow["approvalTier"], Id> = {
@@ -151,7 +156,8 @@ export function seedProcurement(ctx: SeedCtx, ledger: StockLedger): void {
     note?: string
   ): PurchaseRequestRow => {
     const totalP = items.reduce((s, i) => s + i.qty * costOf(i.brandId), 0)
-    const tier = tierFor(totalP)
+    // Same rule as procurement.submitPr: by value, never the requester's own approval.
+    const tier = approvalTierFor(totalP, authoritiesOf(requestedBy))
     const pr = bag.put("purchaseRequests", ctx.seq("pr"), at, {
       prNo: "",
       branchId: branch,
@@ -407,6 +413,19 @@ export function seedProcurement(ctx: SeedCtx, ledger: StockLedger): void {
     ctx.now - 5 * HOUR,
     [{ brandId: "brd_fexo_120mg", qty: 400 }],
     "draft"
+  )
+  // Above ৳5,00,000: waits in the CFO's approvals inbox (/finance/approvals).
+  newPr(
+    "B2",
+    "stf_b2_anisur",
+    ctx.now - 3 * HOUR,
+    [
+      { brandId: "brd_ceftron_2g_injection", qty: 1200 },
+      { brandId: "brd_traxon_1g_injection", qty: 600 },
+      { brandId: "brd_pantonix_40mg_injection", qty: 500 },
+    ],
+    "submitted",
+    "Quarterly injectables for the Uttara wards"
   )
 
   ctx.numbers.base(counterKey.purchaseOrder(), 1035)
