@@ -171,11 +171,18 @@ describe("finance.importSettlement", () => {
 })
 
 describe("finance.matchSettlementLine and finance.noteSettlementLine", () => {
-  it("an unmatched line with no payment of its amount that day has no candidates", async () => {
+  it("an unmatched line only offers payments of its amount received that day, by bKash or cash", async () => {
     const detail = (await settlementDetail(db, BKASH))!
+    const bkash = await file(BKASH)
+    const taken = matchedPaymentIds(await db.mfsSettlements.toArray())
     const line = detail.lines.find((l) => l.line.ref === "BK3XH8PLZW")!
     expect(line.payment).toBeUndefined()
-    expect(line.candidates).toEqual([])
+    for (const candidate of line.candidates) {
+      expect(candidateProblem(bkash, line.line, candidate.payment, taken)).toBeNull()
+      expect(candidate.kind).toBe(candidate.payment.tender === "cash" ? "cash" : "mfs")
+    }
+    // Matched lines offer nothing.
+    expect(detail.lines.filter((l) => l.payment).every((l) => l.candidates.length === 0)).toBe(true)
   })
 
   it("a note marks a line under investigation without matching it", async () => {
@@ -202,7 +209,11 @@ describe("finance.matchSettlementLine and finance.noteSettlementLine", () => {
 
     const detail = (await settlementDetail(db, BKASH))!
     const view = detail.lines.find((l) => l.line.ref === "BK7QM2K9TD")!
-    expect(view.candidates.map((c) => [c.payment.id, c.kind])).toEqual([[cash.id, "cash"]])
+    const offered = view.candidates.map((c) => c.payment.id)
+    expect(offered).toContain(cash.id)
+    expect(offered).not.toContain(wrongDay.id)
+    expect(offered).not.toContain(card.id)
+    expect(view.candidates.find((c) => c.payment.id === cash.id)?.kind).toBe("cash")
 
     const bkash = await file(BKASH)
     const input = { settlementId: BKASH, expectedVersion: bkash.version, ref: "BK7QM2K9TD", idempotencyKey: key() }

@@ -432,7 +432,7 @@ function PrintDialog({
   monthText: string
   onClose: () => void
 }) {
-  const { t, money, num, dmy } = useLocale()
+  const { t, money, num, dmy, uhid } = useLocale()
   const { persona } = useFinancePersona()
   const totals = statement.totals
   return (
@@ -484,7 +484,7 @@ function PrintDialog({
                       {line.invoice?.invoiceNo ?? ""}
                     </td>
                     <td className="py-0.5 pr-2 font-mono" lang="en">
-                      {line.accrual.patientUhid ?? ""}
+                      {line.accrual.patientUhid ? uhid(line.accrual.patientUhid) : ""}
                     </td>
                     <td className="py-0.5 pr-2 text-right">{money(line.accrual.netP)}</td>
                     <td className="py-0.5 pr-2 text-right">{money(line.accrual.shareP)}</td>
