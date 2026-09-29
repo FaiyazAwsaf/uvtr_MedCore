@@ -21,7 +21,7 @@ import {
   nextVendorInvoiceNo,
 } from "@/core/engine/docNumbers"
 import { defineCommand } from "@/core/engine/defineCommand"
-import type { Tx } from "@/core/engine/types"
+import type { NewRow, Tx } from "@/core/engine/types"
 import { createPayable } from "@/core/finance/payables"
 import { approvalTierFor, mayApprovePr, threeWayMatch, type PrTier } from "@/core/procurement/rules"
 import { formatMoney } from "@/lib/i18n/format"
@@ -29,7 +29,6 @@ import { brandLabel, levelFor, moveStock, watchReorder } from "@/modules/invento
 
 import {
   acceptedNotInvoiced,
-  acceptedOf,
   costPerBaseUnitP,
   isSettled,
   isShortExpiry,
@@ -70,13 +69,6 @@ function tierParams(tier: PrTier): Record<string, string> {
     tier: procurementEn.procurement.tier[tier],
     tierBn: procurementBn.procurement.tier[tier],
   }
-}
-
-/** DD-MM-YYYY with Latin digits and its Bangla twin, for event params. */
-function dateParams(iso: string, key = "date"): Record<string, string> {
-  const dmy = iso.split("-").reverse().join("-")
-  const bn = dmy.replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[Number(d)])
-  return { [key]: dmy, [`${key}Bn`]: bn }
 }
 
 /**
@@ -596,7 +588,7 @@ export const receiveGoods = defineCommand({
           },
         })
       }
-      const grnLine: Omit<GrnLineRow, keyof import("@/core/db/schema").BaseRow> = {
+      const grnLine: NewRow<"grnLines"> = {
         grnId: grn.id,
         poLineId: line.id,
         brandId: brand.id,
@@ -788,6 +780,3 @@ export const recordVendorInvoice = defineCommand({
     }
   },
 })
-
-/** Accepted units so far on an order line, re-exported for screens. */
-export { acceptedOf, dateParams }
