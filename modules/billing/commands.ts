@@ -671,7 +671,7 @@ export const closeShift = defineCommand({
     if (shift.status !== "open") tx.reject("SHIFT_CLOSED", {})
     const payments = await tx.list("payments", "shiftId", shift.id)
     const refunds = await tx.list("refunds", "status", "completed")
-    const { expectedP } = shiftCash(shift, payments, refunds, tx.now())
+    const { expectedP } = shiftCash(shift, payments, refunds)
     const denominations: Record<string, number> = {}
     for (const [value, count] of Object.entries(input.denominations)) {
       if (count && count > 0) denominations[value] = count

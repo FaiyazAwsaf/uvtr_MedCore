@@ -24,9 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { getBranch, type BranchCode } from "@/config/brand.config"
-import { now } from "@/core/clock/clock"
 import { newId } from "@/core/db/ids"
-import { useNow } from "@/core/clock/useNow"
 import { useDb } from "@/core/db/DbProvider"
 import type { Id, PaymentRow, ShiftRow } from "@/core/db/schema"
 import { usePersona } from "@/core/session/persona"
@@ -169,11 +167,7 @@ function OpenShiftForm() {
 function OpenShift({ shift }: { shift: ShiftRow }) {
   const db = useDb()
   const { t, tk, time, dmy, locale } = useLocale()
-  const nowMs = useNow(30_000)
-  const summary = useLiveQuery(
-    () => shiftSummary(db, shift, nowMs || now()),
-    [db, shift, nowMs]
-  )
+  const summary = useLiveQuery(() => shiftSummary(db, shift), [db, shift])
   const tenders = ["cash", "card", "bkash", "nagad", "corporate"] as const
 
   return (

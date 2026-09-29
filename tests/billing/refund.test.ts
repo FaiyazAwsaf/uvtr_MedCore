@@ -1,6 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
-import { now } from "@/core/clock/clock"
 import type { MedcoreDb } from "@/core/db/database"
 import type { Id, InvoiceLineRow } from "@/core/db/schema"
 import { commit } from "@/core/engine/commit"
@@ -174,7 +173,7 @@ describe("cancellation after payment by stage", () => {
 
   it("before collection: cancelled and refunded at once, pro rata over bKash and cash", async () => {
     const shift = (await openShiftFor(db, RAFIQ.staffId, "B1"))!
-    const before = await shiftSummary(db, shift, now())
+    const before = await shiftSummary(db, shift)
     const cbcItem = abdul.labItemIds[0]
     const line = await lineOf(invoiceId, cbcItem)
     const { result, commitId } = await commit(
@@ -232,7 +231,7 @@ describe("cancellation after payment by stage", () => {
     ).toBe(true)
 
     // The cash part came out of Rafiq's drawer.
-    const after = await shiftSummary(db, shift, now())
+    const after = await shiftSummary(db, shift)
     expect(after.cashRefundsP - before.cashRefundsP).toBe(byTender.cash)
     expect(before.expectedCashP - after.expectedCashP).toBe(byTender.cash)
 

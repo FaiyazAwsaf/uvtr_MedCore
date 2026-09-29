@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
-import { applyClockOffset, now } from "@/core/clock/clock"
+import { applyClockOffset } from "@/core/clock/clock"
 import { getCentralDb } from "@/core/db/database"
 import { commit } from "@/core/engine/commit"
 import { resetDemo } from "@/core/demo/reset"
@@ -203,7 +203,7 @@ describe("S13 cashier variance", () => {
     const shift = (await openShiftFor(db, RAFIQ.staffId, "B1"))!
     return {
       shift,
-      expectedP: (await shiftSummary(db, shift, now())).expectedCashP,
+      expectedP: (await shiftSummary(db, shift)).expectedCashP,
     }
   }
 

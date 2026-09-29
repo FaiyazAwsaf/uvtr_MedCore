@@ -340,7 +340,7 @@ export function RefundDialog({
                 onClick={onClose}
                 disabled={busy}
               >
-                {t("common.cancel")}
+                {t("common.close")}
               </Button>
               {mode === "cancel" && info.rule === "blocked" ? (
                 <>

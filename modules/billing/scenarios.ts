@@ -183,7 +183,7 @@ async function setupS13(kit: ScenarioKit) {
     if (!shift) throw new Error("S13 setup: Rafiq has no open shift")
     return {
       shift,
-      expectedP: (await shiftSummary(db, shift, kit.now())).expectedCashP,
+      expectedP: (await shiftSummary(db, shift)).expectedCashP,
     }
   }
 

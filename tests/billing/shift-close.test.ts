@@ -2,7 +2,6 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import { z } from "zod"
 
 import { rules } from "@/config/rules.config"
-import { now } from "@/core/clock/clock"
 import type { MedcoreDb } from "@/core/db/database"
 import type { ShiftRow } from "@/core/db/schema"
 import { commit } from "@/core/engine/commit"
@@ -47,7 +46,7 @@ afterAll(async () => {
 })
 
 async function expectedOf(shift: ShiftRow): Promise<number> {
-  return (await shiftSummary(db, shift, now())).expectedCashP
+  return (await shiftSummary(db, shift)).expectedCashP
 }
 
 /** A count that is `offsetP` away from what the drawer should hold (whole taka). */
@@ -211,7 +210,7 @@ describe("closing a shift", () => {
       expect.arrayContaining(["VarianceApproved", "ShiftClosed"])
     )
 
-    const report = await shiftReport(db, closed, now())
+    const report = await shiftReport(db, closed)
     expect(report.approver).toEqual({
       en: "Nasrin Jahan",
       bn: expect.any(String),

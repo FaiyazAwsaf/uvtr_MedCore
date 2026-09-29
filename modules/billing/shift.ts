@@ -68,8 +68,7 @@ export function shiftCash(
   refunds: readonly Pick<
     RefundRow,
     "tender" | "status" | "createdBy" | "createdAt" | "amountP"
-  >[],
-  nowMs: Ms
+  >[]
 ): ShiftCash {
   const cashInP = payments
     .filter(
@@ -79,7 +78,8 @@ export function shiftCash(
         (p.status === "confirmed" || p.status === "refunded")
     )
     .reduce((sum, p) => sum + p.amountP, 0)
-  const until = shift.closedAt ?? nowMs
+  // An open shift takes every refund since it opened; a closed one stops at its close.
+  const until = shift.closedAt ?? Number.POSITIVE_INFINITY
   const cashRefundsP = refunds
     .filter((r) => isShiftCashRefund(r, shift.cashierId, shift.openedAt, until))
     .reduce((sum, r) => sum + r.amountP, 0)

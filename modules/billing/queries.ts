@@ -412,8 +412,7 @@ export async function openShiftFor(
  */
 export async function shiftSummary(
   db: MedcoreDb,
-  shift: ShiftRow,
-  nowMs: Ms
+  shift: ShiftRow
 ): Promise<ShiftSummary> {
   const payments = await db.payments.where("shiftId").equals(shift.id).toArray()
   const byTender = emptyTotals()
@@ -430,7 +429,7 @@ export async function shiftSummary(
     counts[payment.tender] = (counts[payment.tender] ?? 0) + 1
   }
   const refunds = await db.refunds.where("status").equals("completed").toArray()
-  const cash = shiftCash(shift, payments, refunds, nowMs)
+  const cash = shiftCash(shift, payments, refunds)
 
   const invoiceIds = [...new Set(payments.map((p) => p.invoiceId))]
   const invoices = await db.invoices.bulkGet(invoiceIds)
@@ -506,11 +505,10 @@ export type ShiftReport = ShiftSummary & {
 /** Everything the Z-report prints for a shift (plan §9 shift close). */
 export async function shiftReport(
   db: MedcoreDb,
-  shift: ShiftRow,
-  nowMs: Ms
+  shift: ShiftRow
 ): Promise<ShiftReport> {
-  const summary = await shiftSummary(db, shift, nowMs)
-  const until = shift.closedAt ?? nowMs
+  const summary = await shiftSummary(db, shift)
+  const until = shift.closedAt ?? Number.POSITIVE_INFINITY
   const refunds = (await db.refunds.where("status").equals("completed").toArray()).filter(
     (r) =>
       r.createdBy === shift.cashierId && r.createdAt >= shift.openedAt && r.createdAt <= until

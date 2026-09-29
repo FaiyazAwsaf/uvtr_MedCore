@@ -32,7 +32,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { getBranch } from "@/config/brand.config"
 import { rules } from "@/config/rules.config"
-import { now } from "@/core/clock/clock"
 import { useDb } from "@/core/db/DbProvider"
 import { newId } from "@/core/db/ids"
 import type { ShiftRow } from "@/core/db/schema"
@@ -288,7 +287,7 @@ export function ClosedShiftCard({ shift }: { shift: ShiftRow }) {
   const db = useDb()
   const { t, dmy, time, locale } = useLocale()
   const [open, setOpen] = React.useState(false)
-  const report = useLiveQuery(() => shiftReport(db, shift, now()), [db, shift])
+  const report = useLiveQuery(() => shiftReport(db, shift), [db, shift])
   const varianceP = shift.varianceP ?? 0
   return (
     <section
@@ -320,6 +319,7 @@ export function ClosedShiftCard({ shift }: { shift: ShiftRow }) {
           type="button"
           variant="outline"
           size="sm"
+          className="ml-auto"
           data-testid="shift-z-report"
           disabled={!report}
           onClick={() => setOpen(true)}
