@@ -54,3 +54,15 @@ describe("route access", () => {
     expect(canAccess("ceo", "/patient-360/p1")).toBe(true)
   })
 })
+
+describe("Bangla clock time", () => {
+  it("says the day period in words, before the time, with Bangla digits", async () => {
+    const { formatDateTime, formatTime } = await import("@/lib/i18n/format")
+    const at = (h: number, m: number) => Date.UTC(2026, 8, 29, h - 6, m)
+    expect(formatTime(at(11, 30), "bn")).toBe("সকাল ১১:৩০")
+    expect(formatTime(at(17, 5), "bn")).toBe("বিকাল ৫:০৫")
+    expect(formatTime(at(11, 30), "en")).toMatch(/^11:30\s?am$/i)
+    expect(formatDateTime(at(19, 45), "bn")).toMatch(/^২৯ .+, সন্ধ্যা ৭:৪৫$/)
+    expect(formatTime(at(11, 30), "bn")).not.toMatch(/[AP]M/)
+  })
+})
