@@ -43,6 +43,47 @@ export const billingEn = {
       feeShareAccrued: "Fee share of {amount} accrued for {doctor}",
       discountApproved: "{pct}% discount approved by {approver}",
       shiftOpened: "{cashier} opened a cash shift with a float of {amount}",
+      shiftClosed:
+        "{cashier} closed the cash shift: counted {counted}, variance {variance}",
+      varianceApproved: "{approver} approved a cash variance of {amount}",
+      refundApproved: "{approver} approved {what} of {amount}",
+      serviceCancelled: "{item} ({orderNo}) cancelled after payment: {stage}",
+      refundIssued: "{tender} refund of {amount} issued ({refundNo})",
+      creditNoteIssued: "Credit note {creditNoteNo} of {amount} on {invoiceNo}",
+      feeShareReversed: "Fee share of {amount} reversed for {doctor}",
+    },
+    approvalKind: {
+      discount: "a discount",
+      "cancel-after-collection": "a cancellation after collection",
+      refund: "a refund",
+      variance: "a cash variance",
+      pr: "a purchase request",
+      merge: "a merge",
+      "payment-override": "a payment override",
+      goodwill: "a goodwill refund",
+    },
+    stage: {
+      "lab-awaiting": "Paid, sample not taken",
+      "lab-collected": "Sample taken",
+      "lab-validated": "Result validated",
+      "imaging-pending": "Paid, scan not done",
+      "imaging-done": "Scan done",
+      "imaging-reported": "Report written",
+      "consult-open": "Appointment still on",
+      "consult-seen": "Patient seen",
+      "consult-cancelled": "Appointment cancelled",
+      medicine: "Medicine",
+      "source-cancelled": "Order cancelled",
+      other: "Service",
+      "line-cancelled": "Cancelled and refunded",
+      "line-refunded": "Refunded",
+    },
+    notices: {
+      refundIssued: "Refund issued",
+    },
+    sms: {
+      refundIssued:
+        "{hospital}: A refund of {amount} has been issued. Credit note {creditNoteNo}. Thank you.",
     },
     consumers: {
       lab: "Lab",
@@ -93,6 +134,40 @@ export const billingEn = {
       INVOICE_NOT_OPEN: "Invoice {invoiceNo} has nothing left to pay.",
       MFS_STILL_PENDING:
         "A bKash or Nagad request on invoice {invoiceNo} is still waiting. Wait for it or let it time out first.",
+      REFUND_WRONG_BRANCH:
+        "Invoice {invoiceNo} was billed at another branch. Refund it there.",
+      INVOICE_NOT_PAID:
+        "Invoice {invoiceNo} is not fully paid, so nothing on it can be refunded yet.",
+      LINE_NOT_ACTIVE: "{item} is already cancelled or refunded.",
+      USE_REFUND: "{item} was already cancelled elsewhere. Refund it instead.",
+      NOT_CANCELLABLE_GOODWILL:
+        "{item} can't be cancelled because the service was given. Only a goodwill refund is possible.",
+      MEDICINE_RETURN_AT_PHARMACY:
+        "Medicines are returned at the pharmacy counter, which puts them back in stock.",
+      CONSULT_CANCEL_AT_RECEPTION:
+        "Cancel the appointment at reception first, then refund it here.",
+      CANCEL_AFTER_VALIDATION:
+        "Blocked: {item} already has a validated result, so it can't be cancelled and the result stays. The attempt is recorded in the audit log. Only a goodwill refund is possible.",
+      CANCEL_APPROVAL_REQUIRED:
+        "The sample for {item} was already taken. A supervisor must approve the cancellation.",
+      REFUND_APPROVAL_REQUIRED: "Refunds above {limitP} need a supervisor's approval.",
+      GOODWILL_APPROVAL_REQUIRED: "A goodwill refund always needs a supervisor's approval.",
+      APPROVAL_SAME_PERSON: "The approval must come from a second person.",
+      APPROVER_NOT_ALLOWED: "{name} can't approve this.",
+      LINES_MIXED_INVOICE: "Refund the lines of one invoice at a time.",
+      LINE_STILL_ACTIVE:
+        "{item} is still going ahead. Cancel it instead, so the lab or imaging stops it too.",
+      GOODWILL_ONLY:
+        "{item} can't be refunded as a cancellation. Use a goodwill refund.",
+      NOTHING_TO_REFUND: "There is nothing left to refund on invoice {invoiceNo}.",
+      NO_OPEN_SHIFT_REFUND:
+        "Part of this refund is cash from your drawer. Open a cash shift first.",
+      REFUND_OFFLINE_CASH_ONLY:
+        "While the branch is offline, refunds can be paid in cash only.",
+      SHIFT_NOT_YOURS: "You can close only your own shift.",
+      SHIFT_CLOSED: "This shift is closed and locked.",
+      VARIANCE_APPROVAL_REQUIRED:
+        "The count is {varianceP} off. Above {limitP} either way, a supervisor must approve the variance.",
     },
     cashier: {
       heading: "Patient bill",
@@ -102,6 +177,7 @@ export const billingEn = {
         "Open since {time}. Expected cash, tenders and this shift's payments are on the shift page.",
       noShift: "No open shift",
       noShiftHint: "Open a cash shift to take payments.",
+      openShiftNow: "Open shift ({amount} float)",
       openShiftLink: "Open a shift",
       openShiftPage: "Shift details",
       selectHint: "Tick at least one item to bill.",
@@ -291,6 +367,206 @@ export const billingEn = {
       floatLabel: "Opening float",
       floatHint: "The drawer starts with {amount}.",
       open: "Open shift",
+      close: {
+        title: "Close shift",
+        subtitle: "Count the drawer by denomination",
+        notes: "Notes",
+        small: "Small notes and coins",
+        countOf: "Number of {value}",
+        counted: "Counted",
+        expected: "Expected",
+        variance: "Variance",
+        within: "Within {limit} either way: the shift closes directly.",
+        above: "More than {limit} off: a supervisor must approve the variance.",
+        button: "Close shift",
+        approveButton: "Close with supervisor approval",
+        clear: "Clear count",
+        approvalTitle: "Approve a cash variance",
+        approvalBody:
+          "Counted {counted} against {expected} expected: a variance of {variance}.",
+        working: "Closing the shift…",
+      },
+      closed: {
+        title: "Shift closed and locked",
+        body: "Closed {date} at {time}. No more payments can be taken on it.",
+        approvedBy: "Variance approved by {name}",
+        zReport: "Z-report",
+        openNew: "Open a new shift to take payments again.",
+      },
+      z: {
+        title: "Z-report: shift close",
+        previewBody: "The end-of-shift summary. Print it and sign it.",
+        cashier: "Cashier",
+        branch: "Branch",
+        opened: "Opened",
+        closed: "Closed",
+        float: "Opening float",
+        cashIn: "Cash taken",
+        cashRefunds: "Cash refunded",
+        expected: "Expected cash",
+        counted: "Counted cash",
+        variance: "Variance",
+        approvedBy: "Approved by",
+        reason: "Reason",
+        byTender: "Takings by tender",
+        refunds: "Refunds by tender",
+        noRefunds: "No refunds on this shift",
+        denominations: "Drawer count",
+        payments: "Payments: {count}",
+        cashierSign: "Cashier",
+        supervisorSign: "Supervisor",
+      },
+    },
+    refunds: {
+      title: "Refunds and cancellations",
+      subtitle: "{branch} · cancel paid work by stage, refund to the original tender",
+      find: {
+        title: "Find a paid bill",
+        hint: "A patient by UHID, name or phone, or an invoice number",
+        invoiceLabel: "Invoice number",
+        invoiceGo: "Open",
+        invoiceMissing: "No invoice {invoiceNo} at this branch.",
+      },
+      change: "Change",
+      bills: "Paid bills",
+      noBills: "No paid bills at this branch for this patient.",
+      invoice: {
+        paidOn: "Paid {date} at {time}",
+        paidBy: "Paid by",
+        total: "Total",
+        refunded: "Refunded {amount}",
+        status: {
+          paid: "Paid",
+          partRefunded: "Part refunded",
+          refunded: "Fully refunded",
+        },
+        missing: "This invoice was not found.",
+      },
+      col: {
+        item: "Item",
+        stage: "Stage",
+        amount: "Amount",
+        action: "Action",
+      },
+      action: {
+        cancel: "Cancel",
+        refund: "Refund",
+        goodwill: "Goodwill refund",
+        pharmacy: "Return at the pharmacy",
+        reception: "Cancel at reception first",
+      },
+      history: {
+        title: "Refunds on this invoice",
+        creditNote: "Credit note {creditNoteNo}",
+        approvedBy: "Approved by {name}",
+        reversal: "Fee share reversed",
+      },
+      requests: {
+        title: "Refund requested",
+        subtitle: "Appointments cancelled after a doctor delay",
+        empty: "No refunds waiting",
+        refund: "Refund",
+        visit: "{doctor} · {date}",
+        reason: "Doctor delay: the patient chose a refund",
+      },
+      recent: {
+        title: "Refunds today",
+        empty: "No refunds today yet",
+      },
+      dialog: {
+        cancelTitle: "Cancel and refund",
+        refundTitle: "Refund",
+        goodwillTitle: "Goodwill refund",
+        stageNow: "Stage now",
+        whatHappens: "What happens",
+        outcome: {
+          "lab-awaiting":
+            "The sample hasn't been taken. The test is cancelled and {amount} is refunded straight away, to how it was paid.",
+          "lab-collected":
+            "The sample was already taken. A supervisor must approve; then the test is cancelled and {amount} is refunded to how it was paid.",
+          "lab-validated":
+            "The result is validated. The test can't be cancelled and the result stays: trying is blocked and recorded in the audit log. Only a goodwill refund is possible, with a supervisor.",
+          "imaging-pending":
+            "The scan hasn't been done. It is cancelled and {amount} is refunded to how it was paid.",
+          "imaging-done":
+            "The scan was done. A supervisor must approve; then it is cancelled and {amount} is refunded.",
+          "imaging-reported":
+            "The report is written. The study can't be cancelled; only a goodwill refund is possible, with a supervisor.",
+          refund: "The service is already off. {amount} is refunded to how it was paid.",
+          goodwill:
+            "The service and any result stay as they are. A supervisor approves a goodwill refund of {amount}.",
+        },
+        aboveLimit: "Above your {limit} refund limit: a supervisor approves the refund.",
+        split: "The refund goes back to",
+        tenderRow: {
+          cash: "Cash from your drawer",
+          card: "Card reversal on the terminal",
+          bkash: "bKash merchant refund",
+          nagad: "Nagad merchant refund",
+          deposit: "Back to the deposit",
+          corporate: "Back to the company account",
+        },
+        feeShare: "Fee share to reverse",
+        reason: "Reason",
+        reasonPlaceholder: "Why is this being cancelled or refunded?",
+        confirmCancel: "Cancel and refund {amount}",
+        confirmRefund: "Refund {amount}",
+        tryCancel: "Try to cancel",
+        askSupervisor: "Ask a supervisor",
+        goodwillInstead: "Goodwill refund instead",
+        approvalTitle: {
+          "cancel-after-collection": "Approve a cancellation after collection",
+          refund: "Approve a refund",
+          goodwill: "Approve a goodwill refund",
+        },
+        approvalBody: "{item} on {invoiceNo}: refund {amount} to {patient}.",
+        working: "Processing the refund…",
+        done: {
+          title: "Refunded {amount}",
+          body: "The patient gets an SMS and an app notice with the amount only.",
+          creditNote: "Credit note",
+          ref: "Ref {ref}",
+          reversal: "{share} (tax {wht})",
+          sms: "SMS to {phone}",
+          close: "Done",
+        },
+      },
+    },
+    scenarios: {
+      S9: {
+        title: "Cancellation after payment by stage",
+        summary:
+          "Three paid tests at three stages: refunded at once, refunded with approval, or blocked.",
+        cue: {
+          1: "{name} paid for three tests by bKash and cash: Lipid profile not collected, HbA1c collected, CBC validated.",
+          2: "Cancel the Lipid profile: it is cancelled and refunded at once, half to bKash and half in cash.",
+          3: "Cancel the HbA1c: the sample was taken, so a supervisor approves (Nasrin, PIN 1234).",
+          4: "Cancel the CBC: it is blocked because the result is validated, and the attempt is audited.",
+          5: "Offer a goodwill refund instead: the supervisor approves and the result stays.",
+        },
+      },
+      S10: {
+        title: "Refund to the original tender",
+        summary:
+          "A bKash payment goes back to bKash, with a credit note and a fee-share reversal.",
+        cue: {
+          1: "{name} paid {amount} by bKash for an ultrasound of the whole abdomen; the radiologist's fee share is accrued.",
+          2: "Cancel the ultrasound: the scan hasn't been done, but {amount} is above the cashier's refund limit.",
+          3: "Ask a supervisor: Nasrin approves with PIN 1234.",
+          4: "See the bKash merchant refund (simulated), the credit note number and the fee-share reversal line.",
+        },
+      },
+      S13: {
+        title: "Cashier variance at shift close",
+        summary:
+          "A count more than ৳500 short needs a supervisor, then the shift locks.",
+        cue: {
+          1: "Rafiq's open shift expects {expected} in the drawer.",
+          2: "Count {counted} by denomination, for example 40 × ৳1,000, 10 × ৳500, 20 × ৳100 and 2 × ৳50.",
+          3: "The variance is {variance}, more than ৳500: close with supervisor approval (Nasrin, PIN 1234).",
+          4: "The shift is closed and locked, with its Z-report. Open a new shift from the patient bill screen.",
+        },
+      },
     },
   },
 }

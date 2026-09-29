@@ -45,3 +45,19 @@ export function mfsTrxId(tender: Tender, seed: string): string {
 export function corporateRef(clientCode: string, seed: string): string {
   return `${clientCode}/${code(seed, 6)}`
 }
+
+/**
+ * Reference of a simulated refund back to where the money came from: a
+ * bKash or Nagad merchant refund ("BKR" / "NGR" and 8 characters) or a card
+ * reversal on the terminal ("POS-RV-" and 6 digits). Cash and corporate
+ * refunds have none. Derived from the refund id, so it never changes.
+ */
+export function merchantRefundRef(tender: Tender, refundId: string): string | undefined {
+  if (tender === "bkash" || tender === "nagad") {
+    return `${tender === "nagad" ? "NGR" : "BKR"}${code(`refund:${refundId}`, 8)}`
+  }
+  if (tender === "card") {
+    return `POS-RV-${String(100000 + (hash(`refund:${refundId}`) % 900000))}`
+  }
+  return undefined
+}
