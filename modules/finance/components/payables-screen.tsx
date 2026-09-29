@@ -305,6 +305,7 @@ function ScheduleDialog({
 }) {
   const { t } = useLocale()
   const schedule = useFinanceCommand(schedulePayable)
+  const [actionKey] = useActionKey()
   const [date, setDate] = React.useState(() => row?.payable.scheduledFor ?? nextPaymentRun(today))
   const days = useDayOptions(today, 28)
   if (!row) return null
@@ -319,6 +320,7 @@ function ScheduleDialog({
               payableId: row.payable.id,
               expectedVersion: row.payable.version,
               scheduledFor: date,
+              idempotencyKey: actionKey,
             })
             if (done) onClose()
           }}

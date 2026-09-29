@@ -35,6 +35,7 @@ import {
   DocNo,
   downloadText,
   LiveChip,
+  OfflineBranchesNotice,
   PageBody,
   PageHeader,
   useActionKey,
@@ -93,6 +94,7 @@ export function ExportScreen() {
     <PageBody className="@container/page" data-testid="export-screen">
       <PageHeader title={t("finance.export.title")} subtitle={t("finance.export.subtitle")} actions={<LiveChip />} />
 
+      <OfflineBranchesNotice />
       <div className="flex flex-wrap items-end gap-3">
         <div className="flex w-72 max-w-full flex-col gap-1.5">
           <Label htmlFor="export-company">{t("finance.export.company")}</Label>

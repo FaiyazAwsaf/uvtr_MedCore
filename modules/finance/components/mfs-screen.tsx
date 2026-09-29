@@ -439,6 +439,7 @@ function NoteDialog({
 }) {
   const { t } = useLocale()
   const note = useFinanceCommand(noteSettlementLine)
+  const [actionKey] = useActionKey()
   const [text, setText] = React.useState(view.line.note ?? "")
   return (
     <Dialog open onOpenChange={(open) => (open ? undefined : onClose())}>
@@ -453,6 +454,7 @@ function NoteDialog({
               expectedVersion: file.version,
               ref: view.line.ref,
               note: text.trim(),
+              idempotencyKey: actionKey,
             })
             if (done) onClose()
           }}

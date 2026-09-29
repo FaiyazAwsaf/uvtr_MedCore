@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { WifiOff } from "lucide-react"
 import type { z } from "zod"
 
 import { KpiCard, type KpiVariant } from "@/components/shared/kpi-card"
@@ -10,6 +11,7 @@ import { addDaysISO, dhakaDate } from "@/core/clock/dates"
 import { useNow } from "@/core/clock/useNow"
 import type { CommandDef } from "@/core/engine/types"
 import { useCommand } from "@/core/engine/useCommand"
+import { useDbInfo } from "@/core/db/DbProvider"
 import { usePersona } from "@/core/session/persona"
 import { cn } from "@/lib/utils"
 import { useLocale } from "@/lib/i18n/provider"
@@ -89,6 +91,36 @@ export function BranchFilter({
 export function branchLabel(code: BranchCode | null | undefined, locale: "en" | "bn"): string {
   const branch = branches.find((b) => b.code === code)
   return branch ? `${branch.name[locale]} (${branch.code})` : (code ?? "")
+}
+
+/* ---------------- Offline branches (HAZ-15) ---------------- */
+
+/**
+ * Finance works on the central store: while a branch is offline its counters
+ * write to the branch server, so their work since then is not in these
+ * figures until it reconnects. Says so for each offline branch.
+ */
+export function OfflineBranchesNotice() {
+  const { network } = useDbInfo()
+  const { t, time, locale } = useLocale()
+  const offline = network.filter((n) => n.status !== "online")
+  if (!offline.length) return null
+  return (
+    <div data-testid="finance-offline-notice" className="flex flex-col gap-1">
+      {offline.map((n) => (
+        <p
+          key={n.branchId}
+          className="flex items-center gap-2 rounded-md bg-[color-mix(in_oklch,var(--warning)_16%,transparent)] px-3 py-2 text-[0.8125rem] font-medium"
+        >
+          <WifiOff className="size-4 shrink-0" />
+          {t("finance.common.offline", {
+            branch: branchLabel(n.branchId, locale),
+            time: n.since ? time(n.since) : "",
+          })}
+        </p>
+      ))}
+    </div>
+  )
 }
 
 /* ---------------- KPI row (compact in a 960x600 quadrant) ---------------- */

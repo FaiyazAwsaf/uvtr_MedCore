@@ -236,6 +236,8 @@ export const noteSettlementLine = defineCommand({
     expectedVersion: z.number().int().positive(),
     ref: z.string().min(1),
     note: z.string().trim().min(1).max(200),
+    /** Optional: a double click saves the note once */
+    idempotencyKey: idempotencyKey.optional(),
   }),
   async run(tx: Tx, input) {
     const file = await tx.get("mfsSettlements", input.settlementId, {
@@ -363,6 +365,8 @@ export const schedulePayable = defineCommand({
     payableId: z.string().min(1),
     expectedVersion: z.number().int().positive(),
     scheduledFor: isoDate,
+    /** Optional: a double click schedules once */
+    idempotencyKey: idempotencyKey.optional(),
   }),
   async run(tx: Tx, input) {
     const payable = await tx.get("payables", input.payableId, {

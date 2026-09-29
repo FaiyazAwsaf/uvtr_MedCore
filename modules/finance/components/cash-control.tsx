@@ -42,6 +42,7 @@ import {
   DocNo,
   FinanceKpis,
   LiveChip,
+  OfflineBranchesNotice,
   PageBody,
   PageHeader,
   TenderTag,
@@ -75,6 +76,7 @@ export function CashControlScreen() {
   return (
     <PageBody className="@container/page" data-testid="cash-control">
       <PageHeader title={t("finance.cash.title")} subtitle={t("finance.cash.subtitle")} actions={<LiveChip />} />
+      <OfflineBranchesNotice />
       <BranchFilter value={branch} onChange={setBranch} />
 
       <FinanceKpis
