@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { SCENARIOS } from "@/core/scenarios/registry"
 import { updateSession, useSession } from "@/core/session/session"
+import { localizeDigits } from "@/lib/i18n/format"
 import { useLocale } from "@/lib/i18n/provider"
 import { cn } from "@/lib/utils"
 
@@ -22,7 +23,7 @@ import { cn } from "@/lib/utils"
  * steps with the current one highlighted. Renders nothing otherwise.
  */
 export function CueCard() {
-  const { t, tk, num } = useLocale()
+  const { t, tk, num, locale } = useLocale()
   const { cue } = useSession()
   const [minimised, setMinimised] = React.useState(false)
   const scenario = cue
@@ -34,6 +35,14 @@ export function CueCard() {
   const step = Math.min(Math.max(cue.step, 0), Math.max(total - 1, 0))
   const title = tk(scenario.titleKey)
   const params = cue.params ?? {}
+  // Numbers read in the window's numerals; strings (names, UHIDs, Rx and
+  // accession numbers) are shown as the setup gave them.
+  const shown = Object.fromEntries(
+    Object.entries(params).map(([key, value]) => [
+      key,
+      typeof value === "number" ? localizeDigits(String(value), locale) : value,
+    ])
+  )
   const go = (next: number) =>
     updateSession({ cue: { scenarioId: scenario.id, step: next, params } })
   const close = () => updateSession({ cue: null })
@@ -126,7 +135,7 @@ export function CueCard() {
                 {i < step ? <Check className="size-2.5" /> : num(i + 1)}
               </span>
               <span className={cn(i === step && "font-medium")}>
-                {tk(key, params)}
+                {tk(key, shown)}
               </span>
             </button>
           </li>
