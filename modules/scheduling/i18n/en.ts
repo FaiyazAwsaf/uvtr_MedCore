@@ -6,10 +6,13 @@ export const schedulingEn = {
       delays: "Doctor delays",
     },
     events: {
-      appointmentBooked: "Appointment booked with {doctor} at {time} ({source})",
-      sessionDelayed: "{doctor} running {minutes} min late: {count} patients told",
+      appointmentBooked:
+        "Appointment booked with {doctor} at {time} ({source})",
+      sessionDelayed:
+        "{doctor} running {minutes} min late: {count} patients told",
       delayChoiceRecorded: "A patient will wait for {doctor}",
-      appointmentRebooked: "Appointment moved to {date} at {time} with {doctor}",
+      appointmentRebooked:
+        "Appointment moved to {date} at {time} with {doctor}",
       appointmentCancelled: "Appointment with {doctor} cancelled for a refund",
     },
     consumers: {
@@ -26,7 +29,8 @@ export const schedulingEn = {
       title: "Doctor delays",
       subtitle:
         "Today's sessions at {branch}. Tell every booked patient at once, then apply each one's choice.",
-      noBranch: "Delays are recorded at a branch. Switch to a branch front desk persona.",
+      noBranch:
+        "Delays are recorded at a branch. Switch to a branch front desk persona.",
       noSessions: "No sessions today at this branch",
       waitingCount: "{count} waiting",
       late: "{minutes} min late",
@@ -52,12 +56,15 @@ export const schedulingEn = {
         en: "English",
         bn: "Bangla",
       },
-      laneCount: "Recipients: {count} · parts each: {parts} · {chars} characters",
+      laneCount:
+        "Recipients: {count} · parts each: {parts} · {chars} characters",
       gsm: "GSM: 160 characters in one part, 153 per part when longer",
       ucs2: "Bangla (UCS-2): 70 characters in one part, 67 per part when longer",
       totalParts: "{parts} SMS parts for {messages} messages",
-      noSms: "{count} without a mobile number or SMS consent get the app notice only",
-      smsSafe: "The message names the doctor and the minutes only: no reason, no clinical details.",
+      noSms:
+        "{count} without a mobile number or SMS consent get the app notice only",
+      smsSafe:
+        "The message names the doctor and the minutes only: no reason, no clinical details.",
       send: "Send delay notice",
       sent: "Delay sent: {sms} SMS and {app} app notices",
       choice: {
@@ -82,13 +89,14 @@ export const schedulingEn = {
     scenarios: {
       S11: {
         title: "Doctor delay",
-        summary: "One delay notice reaches every booked patient; each chooses wait, rebook or refund.",
+        summary:
+          "One delay notice reaches every booked patient; each chooses wait, rebook or refund.",
         cue: {
-          1: "{doctor}'s session at {time} has {count} patients waiting, Tanvir Karim among them.",
+          1: "{doctor}'s session at {time} has {count} patients waiting, among them Nusrat Karim, Tanvir's daughter.",
           2: "Press Record delay: 45 minutes and a reason. Check the SMS parts counter for English and Bangla.",
           3: "Send: each patient gets an SMS in their language (no clinical content) and an app notice.",
           4: "Apply choices per patient: Wait, Rebook (the doctor's next session) or Refund.",
-          5: "In Tanvir's patient app, his appointment shows the delay and the same three choices.",
+          5: "In Tanvir's patient app, switch to Nusrat: her appointment shows the delay and the same three choices.",
         },
       },
     },
@@ -152,12 +160,14 @@ export const schedulingEn = {
     },
     book: {
       title: "Book an appointment",
-      subtitle: "One scheduler for the counter, the call centre and the patient app.",
+      subtitle:
+        "One scheduler for the counter, the call centre and the patient app.",
       frontDesk: "Front desk",
       changePatient: "Change patient",
       whoFor: "Who is the appointment for?",
       pickDoctor: "Pick a doctor",
-      pickDoctorHint: "Doctors consulting today are listed first. Filter by specialty or search by name.",
+      pickDoctorHint:
+        "Doctors consulting today are listed first. Filter by specialty or search by name.",
       allDoctors: "All doctors",
       date: "Day",
       sessions: "Sessions on {date}",
@@ -189,22 +199,33 @@ export const schedulingEn = {
       another: "Book another",
     },
     rules: {
-      SESSION_UNAVAILABLE: "This session is not taking bookings. Pick another session.",
+      SESSION_UNAVAILABLE:
+        "This session is not taking bookings. Pick another session.",
       VISIT_TYPE_UNAVAILABLE: "This session does not take that kind of visit.",
       ALREADY_BOOKED: "UHID {uhid} already has a place in this session.",
       WALK_IN_QUOTA_FULL: "The walk-in places for this session are used up.",
-      WALK_IN_NOT_TODAY: "Walk-ins join a session on the same day. This session is on {date}.",
-      SESSION_FULL: "Every bookable place in this session is taken. Try another session or a walk-in.",
+      WALK_IN_NOT_TODAY:
+        "Walk-ins join a session on the same day. This session is on {date}.",
+      SESSION_FULL:
+        "Every bookable place in this session is taken. Try another session or a walk-in.",
       SESSION_ENDED: "This session has already ended.",
       SLOT_TAKEN: "That time was just taken. Pick another free time.",
-      SESSION_OTHER_BRANCH: "This session is at {branch}. That branch's front desk handles it.",
-      SESSION_NOT_RUNNING: "This session is blocked or closed, so no delay can be recorded.",
-      DELAY_NOT_TODAY: "Delays are recorded on the day. This session is on {date}.",
-      SESSION_NOT_DELAYED: "This session is running on time, so there is nothing to choose.",
-      APPOINTMENT_NOT_WAITING: "This appointment is no longer waiting to be seen.",
-      ALREADY_CHECKED_IN: "The patient has already checked in, so they can only wait.",
-      NO_LATER_SESSION: "The doctor has no later session with a free place at this branch.",
-      NOT_YOUR_APPOINTMENT: "This appointment belongs to someone you don't manage in the app.",
+      SESSION_OTHER_BRANCH:
+        "This session is at {branch}. That branch's front desk handles it.",
+      SESSION_NOT_RUNNING:
+        "This session is blocked or closed, so no delay can be recorded.",
+      DELAY_NOT_TODAY:
+        "Delays are recorded on the day. This session is on {date}.",
+      SESSION_NOT_DELAYED:
+        "This session is running on time, so there is nothing to choose.",
+      APPOINTMENT_NOT_WAITING:
+        "This appointment is no longer waiting to be seen.",
+      ALREADY_CHECKED_IN:
+        "The patient has already checked in, so they can only wait.",
+      NO_LATER_SESSION:
+        "The doctor has no later session with a free place at this branch.",
+      NOT_YOUR_APPOINTMENT:
+        "This appointment belongs to someone you don't manage in the app.",
     },
   },
 }

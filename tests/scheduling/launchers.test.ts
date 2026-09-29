@@ -17,7 +17,8 @@ const scenario = (id: string) => SCENARIOS.find((s) => s.id === id)!
 const desk = actorFor(findPersona("per_reception_farhana")!)
 const tanvirApp = actorFor(findPersona("per_patient_tanvir")!)
 const SESSION = SEED_REFS.session.arifToday
-const TANVIR = HERO.patient.tanvirKarim
+// Dr. Arif is a paediatrician: Nusrat is booked; her guardian Tanvir answers.
+const CHILD = HERO.patient.nusratKarim
 
 beforeAll(async () => {
   await resetDemo()
@@ -29,7 +30,7 @@ afterAll(async () => {
 })
 
 describe("S11 doctor delay launcher", () => {
-  it("puts Dr. Arif's session back on time with one booking for Tanvir, twice in a row, and the delay records each time", async () => {
+  it("puts Dr. Arif's session back on time with one booking for Nusrat, twice in a row, and the delay records each time", async () => {
     const central = getCentralDb()
     for (let run = 1; run <= 2; run++) {
       const { outcome, route } = await runScenario(scenario("S11"))
@@ -43,11 +44,11 @@ describe("S11 doctor delay launcher", () => {
         .where("sessionId")
         .equals(SESSION)
         .toArray()
-      const tanvirs = inSession.filter(
-        (a) => a.patientId === TANVIR && isActiveAppointment(a)
+      const bookings = inSession.filter(
+        (a) => a.patientId === CHILD && isActiveAppointment(a)
       )
-      expect(tanvirs).toHaveLength(1)
-      expect(tanvirs[0].id).toBe(outcome.refs?.appointmentId)
+      expect(bookings).toHaveLength(1)
+      expect(bookings[0].id).toBe(outcome.refs?.appointmentId)
       // No answer from an earlier run is left on the patients still waiting.
       expect(inSession.filter(isAwaiting).every((a) => !a.delayChoice)).toBe(
         true
@@ -63,10 +64,13 @@ describe("S11 doctor delay launcher", () => {
       expect(sent.result.recipients).toBeGreaterThan(0)
       expect((await central.sessions.get(SESSION))?.status).toBe("delayed")
 
-      // Tanvir answers in the app: rebook on the first run, wait on the second.
+      // Tanvir answers for Nusrat in his app: rebook on the first run, wait on the second.
       await commit(
         applyDelayChoice,
-        { appointmentId: tanvirs[0].id, choice: run === 1 ? "rebook" : "wait" },
+        {
+          appointmentId: bookings[0].id,
+          choice: run === 1 ? "rebook" : "wait",
+        },
         { db: central, actor: tanvirApp }
       )
     }

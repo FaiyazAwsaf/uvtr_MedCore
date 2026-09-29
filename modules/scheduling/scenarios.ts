@@ -13,13 +13,15 @@ import { isActiveAppointment, slotTimes } from "./slots"
 
 /**
  * S11 doctor delay (plan §10): Dr. Arif's session later today, with its seeded
- * bookings and Tanvir Karim (the patient-app persona) among them, back on
+ * bookings and Nusrat Karim (Tanvir's daughter, in his app) among them, back on
  * time so a delay can be recorded, sent and answered again on every run.
  */
 
 const DESK = "per_reception_farhana"
 const SESSION = SEED_REFS.session.arifToday
-const TANVIR = HERO.patient.tanvirKarim
+// Dr. Arif is a paediatrician: the family member booked with him is Nusrat,
+// 8, whose guardian Tanvir answers for her in his patient app.
+const CHILD = HERO.patient.nusratKarim
 
 /**
  * Put the session back on time: no delay, and no "wait" answers left on the
@@ -49,25 +51,25 @@ async function resetDelay(kit: ScenarioKit): Promise<SessionRow> {
 }
 
 /**
- * Tanvir holds one booking in the session: reused when he still has one,
+ * Nusrat holds one booking in the session: reused when she still has one,
  * otherwise booked at the counter through the one scheduler. When no slot is
- * left to book (late in the day, or full), he is placed on the last free time.
+ * left to book (late in the day, or full), she is placed on the last free time.
  */
-async function ensureTanvirBooked(
+async function ensureChildBooked(
   kit: ScenarioKit,
   session: SessionRow
 ): Promise<Id> {
   const db = await kit.db()
   const existing = (
     await db.appointments.where("sessionId").equals(session.id).toArray()
-  ).find((a) => a.patientId === TANVIR && isActiveAppointment(a))
+  ).find((a) => a.patientId === CHILD && isActiveAppointment(a))
   if (existing) return existing.id
   try {
     const booked = await kit.run(
       bookAppointment,
       {
         sessionId: session.id,
-        patientId: TANVIR,
+        patientId: CHILD,
         source: "counter",
         visitType: "first",
         smsLang: "bn",
@@ -77,7 +79,7 @@ async function ensureTanvirBooked(
     return booked.appointmentId
   } catch (error) {
     if (!(error instanceof RuleViolation)) throw error
-    return kit.fixture("place Tanvir in the session", async (tx) => {
+    return kit.fixture("place Nusrat in the session", async (tx) => {
       const current = await tx.get("sessions", session.id)
       const appointments = await tx.list(
         "appointments",
@@ -97,7 +99,7 @@ async function ensureTanvirBooked(
       const staff = await tx.get("staff", doctor.staffId)
       const appointmentId = newId("apt")
       const fee = tx.insert("basketLines", {
-        patientId: TANVIR,
+        patientId: CHILD,
         branchId: current.branchId,
         sourceType: "consult",
         sourceId: appointmentId,
@@ -113,7 +115,7 @@ async function ensureTanvirBooked(
       const row: NewRow<"appointments"> = {
         id: appointmentId,
         sessionId: current.id,
-        patientId: TANVIR,
+        patientId: CHILD,
         doctorId: doctor.id,
         branchId: current.branchId,
         date: current.date,
@@ -147,7 +149,7 @@ export const schedulingScenarios: ScenarioDef[] = [
         )
       }
       const session = await resetDelay(kit)
-      const appointmentId = await ensureTanvirBooked(kit, session)
+      const appointmentId = await ensureChildBooked(kit, session)
       const doctor = await db.doctors.get(session.doctorId)
       const staff = doctor ? await db.staff.get(doctor.staffId) : undefined
       const waiting = (
@@ -156,7 +158,7 @@ export const schedulingScenarios: ScenarioDef[] = [
       const run =
         (await db.scenarioRuns.where("scenarioId").equals("S11").count()) + 1
       return {
-        refs: { sessionId: session.id, appointmentId, patientId: TANVIR },
+        refs: { sessionId: session.id, appointmentId, patientId: CHILD },
         params: {
           run,
           doctor: staff?.nameEn ?? "",

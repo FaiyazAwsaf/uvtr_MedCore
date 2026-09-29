@@ -84,7 +84,7 @@ test("S1 from the demo panel: the prefilled form warns, Same and Different are r
   }
 })
 
-test("S11 by URL: record a 45 minute delay with the SMS parts counter, apply choices, and Tanvir chooses in the app", async ({
+test("S11 by URL: record a 45 minute delay with the SMS parts counter, apply choices, and Tanvir chooses for Nusrat in the app", async ({
   page,
   context,
 }) => {
@@ -145,14 +145,21 @@ test("S11 by URL: record a 45 minute delay with the SMS parts counter, apply cho
     ).toHaveAttribute("data-status", "rebooked")
 
     if (run === 1) {
-      // Tanvir sees the delay on his appointment and answers in the app.
+      // Tanvir sees the delay on his daughter Nusrat's appointment and
+      // answers for her in his app.
       const app = await context.newPage()
       await app.goto("/app?persona=per_patient_tanvir")
       await app.getByTestId("app-lang-en").click()
       await app.getByTestId("app-otp-send").click()
       await app.getByTestId("app-otp-code").fill("123456")
       await app.getByTestId("app-otp-verify").click()
-      await app.goto("/app/appointments")
+      await app.getByTestId("app-family-switch").click()
+      await app
+        .locator(
+          '[data-testid="app-family-member"][data-patient-id="pat_nusrat_karim"]'
+        )
+        .click()
+      await app.getByTestId("app-tab-appointments").click()
       const notice = app.getByTestId("app-delay")
       await expect(notice).toBeVisible()
       await expect(notice).toContainText("45 minutes late")
