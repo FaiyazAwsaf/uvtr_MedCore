@@ -431,11 +431,11 @@ function CounterApprovals() {
             <TableRow>
               <TableHead>{t("procurement.approvals.counter.col.kind")}</TableHead>
               <TableHead>{t("procurement.approvals.counter.col.approver")}</TableHead>
-              <TableHead className="hidden @min-[40rem]/t:table-cell">
+              <TableHead className="hidden @min-[46rem]/t:table-cell">
                 {t("procurement.approvals.counter.col.requester")}
               </TableHead>
               <TableHead className="text-right">{t("procurement.approvals.counter.col.amount")}</TableHead>
-              <TableHead className="hidden @min-[52rem]/t:table-cell">
+              <TableHead className="hidden @min-[72rem]/t:table-cell">
                 {t("procurement.approvals.counter.col.reason")}
               </TableHead>
               <TableHead className="hidden @min-[34rem]/t:table-cell">
@@ -451,14 +451,22 @@ function CounterApprovals() {
                     {t(`procurement.approvals.kind.${approval.kind}`)}
                   </StatusText>
                 </TableCell>
-                <TableCell>{approver ? nameIn(approver, locale) : ""}</TableCell>
-                <TableCell className="hidden @min-[40rem]/t:table-cell">
+                <TableCell>
+                  {approver ? nameIn(approver, locale) : ""}
+                  <span
+                    className="block max-w-72 truncate text-xs text-muted-foreground @min-[72rem]/t:hidden"
+                    title={approval.reason}
+                  >
+                    {approval.reason}
+                  </span>
+                </TableCell>
+                <TableCell className="hidden @min-[46rem]/t:table-cell">
                   {requester ? nameIn(requester, locale) : ""}
                 </TableCell>
                 <TableCell className="text-right">
                   {approval.amountP !== undefined ? <MoneyText poisha={approval.amountP} /> : "-"}
                 </TableCell>
-                <TableCell className="hidden max-w-80 truncate text-[0.8125rem] text-muted-foreground @min-[52rem]/t:table-cell">
+                <TableCell className="hidden max-w-80 truncate text-[0.8125rem] text-muted-foreground @min-[72rem]/t:table-cell">
                   <span title={approval.reason}>{approval.reason}</span>
                 </TableCell>
                 <TableCell className="hidden text-xs text-muted-foreground @min-[34rem]/t:table-cell">

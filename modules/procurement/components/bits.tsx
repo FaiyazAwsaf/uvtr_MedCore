@@ -141,7 +141,10 @@ export function QtyText({
   return (
     <span className={className}>
       <span className="nums">
-        {t("procurement.common.packsOf", { count: num(qty), pack: pack.label })}
+        {t(qty === 1 ? "procurement.common.packsOfOne" : "procurement.common.packsOf", {
+          count: num(qty),
+          pack: pack.label,
+        })}
       </span>
       {showUnits ? (
         <span className="nums block text-xs text-muted-foreground">
@@ -152,6 +155,18 @@ export function QtyText({
         </span>
       ) : null}
     </span>
+  )
+}
+
+/** "1 item" or "3 items" in the window's language. */
+export function useItemsText() {
+  const { t, num } = useLocale()
+  return React.useCallback(
+    (count: number) =>
+      t(count === 1 ? "procurement.common.itemsOne" : "procurement.common.items", {
+        count: num(count),
+      }),
+    [t, num]
   )
 }
 

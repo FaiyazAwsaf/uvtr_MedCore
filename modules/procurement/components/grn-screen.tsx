@@ -54,7 +54,7 @@ import {
 import { isShortExpiry, minExpiryFor, pendingOf, unitsPer } from "../calc"
 import { receiveGoods } from "../commands"
 import { loadPoDetail, loadPos, type PoDetail } from "../queries"
-import { PoStatusPill, ProgressText, QtyText, unitWord } from "./bits"
+import { PoStatusPill, ProgressText, QtyText, unitWord, useItemsText } from "./bits"
 import { GrnSheet, PrintDialog } from "./print"
 import { StoreBranchPicker, useStoreBranch } from "./store-context"
 import { VendorInvoiceDialog } from "./vendor-invoice-dialog"
@@ -80,11 +80,12 @@ export function GrnScreen() {
  * ================================================================== */
 
 function AwaitingList() {
-  const { t, num, locale } = useLocale()
+  const { t, locale } = useLocale()
   const db = useDb()
   const router = useRouter()
   const { branch, label } = useStoreBranch()
   const today = dhakaDate(useNow(60_000) || now())
+  const itemsText = useItemsText()
   const data = useLiveQuery(
     () => loadPos(db, branch, { status: ["issued", "partial"] }),
     [db, branch]
@@ -143,7 +144,7 @@ function AwaitingList() {
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {!branch ? `${branchName(po.branchId, locale)} · ` : ""}
-                        {t("procurement.common.items", { count: num(lines.length) })}
+                        {itemsText(lines.length)}
                       </span>
                     </TableCell>
                     <TableCell className="hidden max-w-64 truncate @min-[36rem]/t:table-cell">
@@ -603,7 +604,12 @@ function Done({ detail, posted }: { detail: PoDetail; posted: Posted }) {
         {posted.quarantinedLots > 0 ? (
           <StatusText tone="warning" className="text-[0.8125rem]">
             <ShieldAlert className="size-4" />
-            {t("procurement.grn.done.quarantined", { count: num(posted.quarantinedLots) })}
+            {t(
+              posted.quarantinedLots === 1
+                ? "procurement.grn.done.quarantinedOne"
+                : "procurement.grn.done.quarantined",
+              { count: num(posted.quarantinedLots) }
+            )}
           </StatusText>
         ) : null}
         <div className="flex flex-wrap gap-2">

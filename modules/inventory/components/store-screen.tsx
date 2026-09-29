@@ -345,7 +345,7 @@ function LowStockList({ rows, network }: { rows: StockRow[]; network: boolean })
                 </span>
                 <span className="nums block text-xs text-muted-foreground">
                   {pack
-                    ? t("inventory.store.low.suggest", {
+                    ? t(packs === 1 ? "inventory.store.low.suggestOne" : "inventory.store.low.suggest", {
                         packs: num(packs),
                         pack: pack.label,
                         units: num(units),

@@ -32,6 +32,7 @@ export const inventoryEn = {
         out: "{item} out of stock",
         detail: "{onHand} on hand · reorder level {reorderLevel}",
         suggest: "Suggested order: {packs} packs of {pack} ({units} {unit})",
+        suggestOne: "Suggested order: {packs} pack of {pack} ({units} {unit})",
         suggestLoose: "Suggested order: {units} {unit}",
         add: "Add to purchase request",
         empty: "Nothing is below its reorder level",

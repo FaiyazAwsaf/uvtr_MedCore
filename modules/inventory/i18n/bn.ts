@@ -34,6 +34,7 @@ export const inventoryBn: typeof inventoryEn = {
         out: "{item} মজুদ শেষ",
         detail: "হাতে আছে {onHand} · রিঅর্ডার লেভেল {reorderLevel}",
         suggest: "প্রস্তাবিত অর্ডার: {pack}-এর {packs} প্যাক ({units} {unit})",
+        suggestOne: "প্রস্তাবিত অর্ডার: {pack}-এর {packs} প্যাক ({units} {unit})",
         suggestLoose: "প্রস্তাবিত অর্ডার: {units} {unit}",
         add: "ক্রয় অনুরোধে যোগ করুন",
         empty: "কিছুই রিঅর্ডার লেভেলের নিচে নেই",

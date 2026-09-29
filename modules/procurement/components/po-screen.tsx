@@ -213,13 +213,17 @@ function PoList() {
                       <MoneyText poisha={po.totalP} />
                     </TableCell>
                     <TableCell className="text-[0.8125rem]">
-                      <ProgressText
-                        lines={lines}
-                        data-testid="po-pending"
-                        data-po-no={po.poNo}
-                        data-pending={progress.pending}
-                        className="nums whitespace-nowrap"
-                      />
+                      {po.status === "cancelled" ? (
+                        <span className="text-muted-foreground">-</span>
+                      ) : (
+                        <ProgressText
+                          lines={lines}
+                          data-testid="po-pending"
+                          data-po-no={po.poNo}
+                          data-pending={progress.pending}
+                          className="nums whitespace-nowrap"
+                        />
+                      )}
                     </TableCell>
                     <TableCell>
                       <PoStatusPill status={po.status} />
@@ -470,13 +474,15 @@ function PoDetailView({ poId }: { poId: Id }) {
             {t("procurement.orders.detail.sent")}
             <SimulatedBadge />
           </span>
-          <ProgressText
-            lines={lines}
-            data-testid="po-pending"
-            data-po-no={po.poNo}
-            data-pending={progress.pending}
-            className="nums ml-auto font-semibold"
-          />
+          {po.status !== "cancelled" ? (
+            <ProgressText
+              lines={lines}
+              data-testid="po-pending"
+              data-po-no={po.poNo}
+              data-pending={progress.pending}
+              className="nums ml-auto font-semibold"
+            />
+          ) : null}
         </div>
       </section>
 

@@ -47,7 +47,7 @@ import {
 import { estUnitCostP, latestBatch, suggestedVendorId, unitsPer } from "../calc"
 import { savePr, submitPr } from "../commands"
 import { loadPr, loadPrs, type PrData, type PrItem } from "../queries"
-import { PrStatusPill, QtyText, unitWord, useTierText } from "./bits"
+import { PrStatusPill, QtyText, unitWord, useItemsText, useTierText } from "./bits"
 import { STOCK_BRANCHES, StoreBranchPicker, useStoreBranch } from "./store-context"
 
 /**
@@ -85,7 +85,7 @@ export function RequestsScreen() {
  * ================================================================== */
 
 function RequestsList() {
-  const { t, num, locale } = useLocale()
+  const { t, locale } = useLocale()
   const db = useDb()
   const router = useRouter()
   const { branch, label } = useStoreBranch()
@@ -95,6 +95,7 @@ function RequestsList() {
     (item) => filter === "all" || ["draft", "submitted", "approved"].includes(item.pr.status)
   )
   const tierText = useTierText()
+  const itemsText = useItemsText()
 
   return (
     <PageBody data-testid="requests-screen">
@@ -177,7 +178,7 @@ function RequestsList() {
                     {requester ? nameIn(requester, locale) : ""}
                   </TableCell>
                   <TableCell className="nums hidden text-muted-foreground @min-[52rem]/t:table-cell">
-                    {t("procurement.common.items", { count: num(lines.length) })}
+                    {itemsText(lines.length)}
                   </TableCell>
                   <TableCell className="text-right">
                     <MoneyText poisha={pr.totalP} className="font-medium" />
