@@ -1,5 +1,6 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { DepositsScreen } from "@/modules/inpatient/components/deposits-screen"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.cashier" phase={4} />
+/** "/cashier/deposits": inpatient deposits and the interim bill (plan §9). */
+export default function CashierDepositsPage() {
+  return <DepositsScreen />
 }

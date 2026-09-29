@@ -1,5 +1,6 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { BedBoardScreen } from "@/modules/inpatient/components/bed-board-screen"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.reception" phase={4} />
+/** "/reception/inpatient": Inpatient billing and beds, the bed board (plan §9). */
+export default function ReceptionInpatientPage() {
+  return <BedBoardScreen />
 }
