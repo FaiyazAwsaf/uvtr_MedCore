@@ -1,3 +1,4 @@
+import { rules } from "@/config/rules.config"
 import type {
   AppointmentRow,
   ApprovalKind,
@@ -19,12 +20,10 @@ import type { RowReader } from "./settle"
  */
 
 /**
- * What a cashier may refund on their own in one action. Above it a
- * supervisor approves the refund (approval kind "refund"). A demo value
- * (CONFIRM: HOSPITAL): consultation fees fit under it, a ৳1,800 ultrasound
- * does not.
+ * What a cashier may refund on their own in one action (rules.config
+ * `cashierRefundLimitP`). Above it a supervisor approves the refund.
  */
-export const CASHIER_REFUND_LIMIT_P: Poisha = 1_500_00
+export const CASHIER_REFUND_LIMIT_P: Poisha = rules.cashierRefundLimitP
 
 /** Approval kinds used by cancellations and refunds, with the authority each needs. */
 export type RefundApprovalKind = Extract<

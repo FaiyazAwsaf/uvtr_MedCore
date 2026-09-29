@@ -24,6 +24,9 @@ export const rules = {
   /** PRD §9. Shift variance (either direction) above this needs supervisor approval; the shift then locks. */
   cashVarianceThresholdP: taka(500),
 
+  /** PRD §9. A cashier refunds up to this alone; above it a supervisor approves (a ৳1,800 ultrasound needs one). */
+  cashierRefundLimitP: taka(1_500),
+
   /** PRD §8.7. Three-way match tolerances (invoice vs PO vs GRN). */
   threeWayMatch: { quantityTolerance: 0, priceTolerancePct: 2 },
 

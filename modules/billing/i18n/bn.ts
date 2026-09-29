@@ -53,7 +53,8 @@ export const billingBn: typeof billingEn = {
       refundApproved: "{approverBn} {amountBn}-এর {whatBn} অনুমোদন করেছেন",
       serviceCancelled: "পেমেন্টের পর {item} ({orderNo}) বাতিল: {stageBn}",
       refundIssued: "{tenderBn}-এ {amountBn} ফেরত দেওয়া হয়েছে ({refundNo})",
-      creditNoteIssued: "{invoiceNo}-এ {amountBn}-এর ক্রেডিট নোট {creditNoteNo}",
+      creditNoteIssued:
+        "{invoiceNo}-এ {amountBn}-এর ক্রেডিট নোট {creditNoteNo}",
       feeShareReversed: "{doctorBn}-এর {amountBn} ফি শেয়ার বাতিল করা হয়েছে",
     },
     approvalKind: {
@@ -84,10 +85,6 @@ export const billingBn: typeof billingEn = {
     },
     notices: {
       refundIssued: "টাকা ফেরত দেওয়া হয়েছে",
-    },
-    sms: {
-      refundIssued:
-        "{hospital}: {amount} ফেরত দেওয়া হয়েছে। ক্রেডিট নোট {creditNoteNo}। ধন্যবাদ।",
     },
     consumers: {
       lab: "ল্যাব",
@@ -139,7 +136,8 @@ export const billingBn: typeof billingEn = {
       INVOICE_NOT_PAID:
         "ইনভয়েস {invoiceNo} পুরো পরিশোধ হয়নি, তাই এখনো এর কিছু ফেরত দেওয়া যাবে না।",
       LINE_NOT_ACTIVE: "{item} আগেই বাতিল বা ফেরত দেওয়া হয়েছে।",
-      USE_REFUND: "{item} অন্য জায়গা থেকে আগেই বাতিল হয়েছে। এর বদলে টাকা ফেরত দিন।",
+      USE_REFUND:
+        "{item} অন্য জায়গা থেকে আগেই বাতিল হয়েছে। এর বদলে টাকা ফেরত দিন।",
       NOT_CANCELLABLE_GOODWILL:
         "সেবা দেওয়া হয়ে গেছে, তাই {item} বাতিল করা যাবে না। শুধু সৌজন্যমূলক ফেরত সম্ভব।",
       MEDICINE_RETURN_AT_PHARMACY:
@@ -150,18 +148,23 @@ export const billingBn: typeof billingEn = {
         "আটকানো হয়েছে: {item}-এর ফলাফল যাচাই হয়ে গেছে, তাই এটি বাতিল করা যাবে না এবং ফলাফল থেকে যাবে। এই চেষ্টা অডিট লগে লেখা হয়েছে। শুধু সৌজন্যমূলক ফেরত সম্ভব।",
       CANCEL_APPROVAL_REQUIRED:
         "{item}-এর নমুনা আগেই নেওয়া হয়েছে। বাতিলের জন্য একজন সুপারভাইজারের অনুমোদন লাগবে।",
-      REFUND_APPROVAL_REQUIRED: "{limitP}-এর বেশি ফেরতের জন্য সুপারভাইজারের অনুমোদন লাগে।",
-      GOODWILL_APPROVAL_REQUIRED: "সৌজন্যমূলক ফেরতের জন্য সবসময় সুপারভাইজারের অনুমোদন লাগে।",
-      APPROVAL_SAME_PERSON: "অনুমোদন অবশ্যই দ্বিতীয় একজন ব্যক্তির কাছ থেকে আসতে হবে।",
+      REFUND_APPROVAL_REQUIRED:
+        "{limitP}-এর বেশি ফেরতের জন্য সুপারভাইজারের অনুমোদন লাগে।",
+      GOODWILL_APPROVAL_REQUIRED:
+        "সৌজন্যমূলক ফেরতের জন্য সবসময় সুপারভাইজারের অনুমোদন লাগে।",
+      APPROVAL_SAME_PERSON:
+        "অনুমোদন অবশ্যই দ্বিতীয় একজন ব্যক্তির কাছ থেকে আসতে হবে।",
       APPROVER_NOT_ALLOWED: "{name} এটি অনুমোদন করতে পারেন না।",
       LINES_MIXED_INVOICE: "একবারে একটি ইনভয়েসের লাইন ফেরত দিন।",
       LINE_STILL_ACTIVE:
         "{item} এখনো চলছে। এর বদলে এটি বাতিল করুন, যাতে ল্যাব বা ইমেজিংও এটি থামায়।",
-      GOODWILL_ONLY: "{item} বাতিল হিসেবে ফেরত দেওয়া যাবে না। সৌজন্যমূলক ফেরত দিন।",
+      GOODWILL_ONLY:
+        "{item} বাতিল হিসেবে ফেরত দেওয়া যাবে না। সৌজন্যমূলক ফেরত দিন।",
       NOTHING_TO_REFUND: "ইনভয়েস {invoiceNo}-এ ফেরত দেওয়ার মতো আর কিছু নেই।",
       NO_OPEN_SHIFT_REFUND:
         "এই ফেরতের একটি অংশ আপনার ড্রয়ারের ক্যাশ। আগে একটি ক্যাশ শিফট খুলুন।",
-      REFUND_OFFLINE_CASH_ONLY: "শাখা অফলাইন থাকার সময় শুধু ক্যাশে ফেরত দেওয়া যায়।",
+      REFUND_OFFLINE_CASH_ONLY:
+        "শাখা অফলাইন থাকার সময় শুধু ক্যাশে ফেরত দেওয়া যায়।",
       SHIFT_NOT_YOURS: "আপনি শুধু নিজের শিফট বন্ধ করতে পারেন।",
       SHIFT_CLOSED: "এই শিফট বন্ধ ও লক করা হয়েছে।",
       VARIANCE_APPROVAL_REQUIRED:
@@ -382,7 +385,8 @@ export const billingBn: typeof billingEn = {
         approveButton: "সুপারভাইজারের অনুমোদনে বন্ধ করুন",
         clear: "গণনা মুছুন",
         approvalTitle: "ক্যাশ গরমিল অনুমোদন",
-        approvalBody: "প্রত্যাশিত {expected}-এর বিপরীতে গণনা {counted}: গরমিল {variance}।",
+        approvalBody:
+          "প্রত্যাশিত {expected}-এর বিপরীতে গণনা {counted}: গরমিল {variance}।",
         working: "শিফট বন্ধ হচ্ছে…",
       },
       closed: {
@@ -418,7 +422,8 @@ export const billingBn: typeof billingEn = {
     },
     refunds: {
       title: "টাকা ফেরত ও বাতিল",
-      subtitle: "{branch} · ধাপ অনুযায়ী পরিশোধিত কাজ বাতিল, মূল মাধ্যমে টাকা ফেরত",
+      subtitle:
+        "{branch} · ধাপ অনুযায়ী পরিশোধিত কাজ বাতিল, মূল মাধ্যমে টাকা ফেরত",
       find: {
         title: "পরিশোধিত বিল খুঁজুন",
         hint: "ইউএইচআইডি, নাম বা ফোন দিয়ে রোগী, অথবা ইনভয়েস নম্বর",
@@ -491,11 +496,13 @@ export const billingBn: typeof billingEn = {
             "স্ক্যান হয়ে গেছে। সুপারভাইজারকে অনুমোদন করতে হবে; তারপর এটি বাতিল হবে এবং {amount} ফেরত যাবে।",
           "imaging-reported":
             "রিপোর্ট লেখা হয়ে গেছে। স্টাডিটি বাতিল করা যাবে না; শুধু সুপারভাইজারের অনুমোদনে সৌজন্যমূলক ফেরত সম্ভব।",
-          refund: "সেবাটি আগেই বন্ধ হয়েছে। {amount} পরিশোধের মাধ্যমে ফেরত যাবে।",
+          refund:
+            "সেবাটি আগেই বন্ধ হয়েছে। {amount} পরিশোধের মাধ্যমে ফেরত যাবে।",
           goodwill:
             "সেবা ও ফলাফল যেমন আছে তেমনই থাকবে। সুপারভাইজার {amount} সৌজন্যমূলক ফেরত অনুমোদন করবেন।",
         },
-        aboveLimit: "আপনার {limit} ফেরতের সীমার বেশি: সুপারভাইজার ফেরত অনুমোদন করবেন।",
+        aboveLimit:
+          "আপনার {limit} ফেরতের সীমার বেশি: সুপারভাইজার ফেরত অনুমোদন করবেন।",
         split: "টাকা ফেরত যাবে",
         tenderRow: {
           cash: "আপনার ড্রয়ার থেকে ক্যাশ",

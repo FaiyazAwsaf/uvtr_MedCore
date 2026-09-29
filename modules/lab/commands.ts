@@ -202,7 +202,11 @@ export const printSpecimenLabel = defineCommand({
   input: z.object({ specimenId: z.string() }),
   async run(tx, input) {
     const specimen = await tx.get("specimens", input.specimenId)
-    if (specimen.status === "rejected" || specimen.status === "consumed") {
+    if (
+      specimen.status === "rejected" ||
+      specimen.status === "consumed" ||
+      specimen.status === "cancelled"
+    ) {
       tx.reject("LAB_SPECIMEN_STATE", {
         accessionNo: specimen.accessionNo,
         status: specimen.status,
@@ -290,7 +294,9 @@ export const rejectSpecimen = defineCommand({
     const tests = await testsOf(tx, all)
     const used = all.find(
       (i) =>
-        i.status !== "collected" && i.status !== "received" && !isWaitingAddOn(i)
+        i.status !== "collected" &&
+        i.status !== "received" &&
+        !isWaitingAddOn(i)
     )
     if (used) {
       tx.reject("LAB_SPECIMEN_IN_USE", {

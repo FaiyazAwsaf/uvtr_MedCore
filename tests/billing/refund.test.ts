@@ -204,7 +204,7 @@ describe("cancellation after payment by stage", () => {
     // The work stops: item cancelled, its own tube retired, the order goes on (CRP is live).
     const item = (await db.labOrderItems.get(cbcItem))!
     expect(item).toMatchObject({ status: "cancelled", paymentCleared: false })
-    expect((await specimenOf(cbcItem)).status).toBe("consumed")
+    expect((await specimenOf(cbcItem)).status).toBe("cancelled")
     expect((await db.labOrders.get(abdul.labOrderId))!.status).not.toBe(
       "cancelled"
     )
@@ -328,7 +328,7 @@ describe("cancellation after payment by stage", () => {
       amountP: line.netP,
     })
     // Every item on the order is off now: the tube and the order are retired too.
-    expect((await specimenOf(crpItem)).status).toBe("consumed")
+    expect((await specimenOf(crpItem)).status).toBe("cancelled")
     expect((await db.labOrders.get(abdul.labOrderId))!.status).toBe("cancelled")
     const audit = (
       await db.audit.where("commitId").equals(commitId).toArray()

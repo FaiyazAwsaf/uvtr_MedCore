@@ -636,13 +636,7 @@ export type ImagingOrderRow = BaseRow & {
   bodyPart: string
   indication: string
   contrast: boolean
-  status:
-    | "ordered"
-    | "paid"
-    | "done"
-    | "reported"
-    | "released"
-    | "cancelled"
+  status: "ordered" | "paid" | "done" | "reported" | "released" | "cancelled"
   basketLineId?: Id
   paymentCleared: boolean
   reportId?: Id
@@ -737,7 +731,15 @@ export type LabTestRow = BaseRow & {
   section: LabSection
   kind: "lab" | "imaging"
   modality?: Modality
-  specimen: "blood" | "serum" | "plasma" | "urine" | "stool" | "swab" | "tissue" | "none"
+  specimen:
+    | "blood"
+    | "serum"
+    | "plasma"
+    | "urine"
+    | "stool"
+    | "swab"
+    | "tissue"
+    | "none"
   container: Container
   volumeMl: number
   method?: string
@@ -759,7 +761,13 @@ export type SpecimenRow = BaseRow & {
   labOrderId: Id
   itemIds: Id[]
   container: Container
-  status: "awaiting-collection" | "collected" | "received" | "rejected" | "consumed"
+  status:
+    | "awaiting-collection"
+    | "collected"
+    | "received"
+    | "rejected"
+    | "consumed"
+    | "cancelled"
   collectedAt?: Ms
   collectedBy?: Id
   receivedAt?: Ms
@@ -1039,12 +1047,14 @@ export type TransferLineRow = BaseRow & {
  * ================================================================== */
 
 export type PayerType = "self" | "corporate"
-export type Tender = "cash" | "card" | "bkash" | "nagad" | "deposit" | "corporate"
+export type Tender =
+  "cash" | "card" | "bkash" | "nagad" | "deposit" | "corporate"
 
 export type BasketLineRow = BaseRow & {
   patientId: Id
   branchId: BranchCode
-  sourceType: "consult" | "test" | "imaging" | "rx-line" | "bed" | "procedure" | "other"
+  sourceType:
+    "consult" | "test" | "imaging" | "rx-line" | "bed" | "procedure" | "other"
   sourceId: Id
   serviceType: ServiceType
   description: string
@@ -1439,7 +1449,11 @@ export type NotificationRow = BaseRow & {
 }
 
 export type SyncExceptionRow = BaseRow & {
-  kind: "stock-negative" | "version-conflict" | "identity-conflict" | "rule-violation"
+  kind:
+    | "stock-negative"
+    | "version-conflict"
+    | "identity-conflict"
+    | "rule-violation"
   branchId: BranchCode
   table: string
   rowId: Id

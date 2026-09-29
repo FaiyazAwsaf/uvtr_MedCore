@@ -81,10 +81,6 @@ export const billingEn = {
     notices: {
       refundIssued: "Refund issued",
     },
-    sms: {
-      refundIssued:
-        "{hospital}: A refund of {amount} has been issued. Credit note {creditNoteNo}. Thank you.",
-    },
     consumers: {
       lab: "Lab",
       imaging: "Imaging",
@@ -150,8 +146,10 @@ export const billingEn = {
         "Blocked: {item} already has a validated result, so it can't be cancelled and the result stays. The attempt is recorded in the audit log. Only a goodwill refund is possible.",
       CANCEL_APPROVAL_REQUIRED:
         "The sample for {item} was already taken. A supervisor must approve the cancellation.",
-      REFUND_APPROVAL_REQUIRED: "Refunds above {limitP} need a supervisor's approval.",
-      GOODWILL_APPROVAL_REQUIRED: "A goodwill refund always needs a supervisor's approval.",
+      REFUND_APPROVAL_REQUIRED:
+        "Refunds above {limitP} need a supervisor's approval.",
+      GOODWILL_APPROVAL_REQUIRED:
+        "A goodwill refund always needs a supervisor's approval.",
       APPROVAL_SAME_PERSON: "The approval must come from a second person.",
       APPROVER_NOT_ALLOWED: "{name} can't approve this.",
       LINES_MIXED_INVOICE: "Refund the lines of one invoice at a time.",
@@ -159,7 +157,8 @@ export const billingEn = {
         "{item} is still going ahead. Cancel it instead, so the lab or imaging stops it too.",
       GOODWILL_ONLY:
         "{item} can't be refunded as a cancellation. Use a goodwill refund.",
-      NOTHING_TO_REFUND: "There is nothing left to refund on invoice {invoiceNo}.",
+      NOTHING_TO_REFUND:
+        "There is nothing left to refund on invoice {invoiceNo}.",
       NO_OPEN_SHIFT_REFUND:
         "Part of this refund is cash from your drawer. Open a cash shift first.",
       REFUND_OFFLINE_CASH_ONLY:
@@ -419,7 +418,8 @@ export const billingEn = {
     },
     refunds: {
       title: "Refunds and cancellations",
-      subtitle: "{branch} · cancel paid work by stage, refund to the original tender",
+      subtitle:
+        "{branch} · cancel paid work by stage, refund to the original tender",
       find: {
         title: "Find a paid bill",
         hint: "A patient by UHID, name or phone, or an invoice number",
@@ -492,11 +492,13 @@ export const billingEn = {
             "The scan was done. A supervisor must approve; then it is cancelled and {amount} is refunded.",
           "imaging-reported":
             "The report is written. The study can't be cancelled; only a goodwill refund is possible, with a supervisor.",
-          refund: "The service is already off. {amount} is refunded to how it was paid.",
+          refund:
+            "The service is already off. {amount} is refunded to how it was paid.",
           goodwill:
             "The service and any result stay as they are. A supervisor approves a goodwill refund of {amount}.",
         },
-        aboveLimit: "Above your {limit} refund limit: a supervisor approves the refund.",
+        aboveLimit:
+          "Above your {limit} refund limit: a supervisor approves the refund.",
         split: "The refund goes back to",
         tenderRow: {
           cash: "Cash from your drawer",

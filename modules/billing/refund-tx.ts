@@ -1,10 +1,9 @@
 import {
   fiscalYearTag,
   getBranch,
-  hospital,
   type BranchCode,
 } from "@/config/brand.config"
-import { notifyPatient, smsParts } from "@/core/comms/sms"
+import { notifyPatient, queueSms } from "@/core/comms/sms"
 import type {
   ApprovalKind,
   Id,
@@ -155,13 +154,14 @@ export async function cancelWork(
         )
           live = true
       }
-      // No "cancelled" state for a tube: an unused one is retired as used up.
+      // A tube with nothing live left on it is cancelled with its tests.
       if (
         !live &&
         specimen.status !== "rejected" &&
-        specimen.status !== "consumed"
+        specimen.status !== "consumed" &&
+        specimen.status !== "cancelled"
       ) {
-        await tx.update("specimens", specimen.id, { status: "consumed" })
+        await tx.update("specimens", specimen.id, { status: "cancelled" })
       }
     }
     const items = await tx.list("labOrderItems", "labOrderId", item.labOrderId)
@@ -534,24 +534,11 @@ function queueRefundSms(
     creditNoteNo: string
   }
 ): void {
-  const template = (opts.lang === "bn" ? billingBn : billingEn).billing.sms
-    .refundIssued
-  const text = template
-    .replace("{hospital}", hospital.shortName[opts.lang])
-    .replace("{amount}", opts.amount)
-    .replace("{creditNoteNo}", opts.creditNoteNo)
-  const { parts, encoding } = smsParts(text)
-  tx.insert("sms", {
+  queueSms(tx, {
     to: opts.to,
     patientId: opts.patientId,
-    branchId: tx.actor.branchId ?? undefined,
     lang: opts.lang,
     templateId: "refund-issued",
-    text,
-    parts,
-    encoding,
-    kind: "transactional",
-    status: tx.isEdge ? "held-offline" : "queued",
-    queuedAt: tx.now(),
+    params: { amount: opts.amount, creditNoteNo: opts.creditNoteNo },
   })
 }

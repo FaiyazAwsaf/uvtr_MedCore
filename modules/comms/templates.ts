@@ -32,6 +32,11 @@ export const SMS_TEMPLATES = {
     en: "{hospital}: {doctor} is running about {minutes} minutes late today. Open the app or call {helpline} to wait, rebook or get a refund.",
     bn: "{hospital}: আজ {doctor} প্রায় {minutes} মিনিট দেরিতে আছেন। অপেক্ষা, নতুন সময় বা টাকা ফেরতের জন্য অ্যাপ খুলুন অথবা {helpline} নম্বরে ফোন করুন।",
   },
+  // Refund (S9, S10): the amount and the credit note only, never the service.
+  "refund-issued": {
+    en: "{hospital}: A refund of {amount} has been issued. Credit note {creditNoteNo}. Thank you.",
+    bn: "{hospital}: {amount} ফেরত দেওয়া হয়েছে। ক্রেডিট নোট {creditNoteNo}। ধন্যবাদ।",
+  },
   "follow-up-reminder": {
     en: "{hospital}: Reminder of your follow-up visit on {date}. Book in the app or call {helpline}.",
     bn: "{hospital}: {date} তারিখে আপনার ফলো-আপ ভিজিটের কথা মনে করিয়ে দিচ্ছি। অ্যাপে বুক করুন অথবা {helpline} নম্বরে ফোন করুন।",
@@ -58,7 +63,8 @@ export function renderSms(
     helpline: hospital.helpline,
     ...params,
   }
-  return SMS_TEMPLATES[templateId][lang].replace(/\{(\w+)\}/g, (match, name: string) =>
-    name in values ? String(values[name]) : match
+  return SMS_TEMPLATES[templateId][lang].replace(
+    /\{(\w+)\}/g,
+    (match, name: string) => (name in values ? String(values[name]) : match)
   )
 }
