@@ -76,7 +76,7 @@ describe("pharmacy.requestSubstitution", () => {
     expect(item).toMatchObject({
       kind: "substitution",
       status: "unread",
-      titleKey: "consultation.inbox.kind.substitution",
+      titleKey: "pharmacy.inbox.substitution",
       params: { rxNo, from: "Monas 10 mg", to: "Montair 10 mg" },
     })
     const line = await db.rxLines.get(lineIds[0])
@@ -101,6 +101,35 @@ describe("pharmacy.requestSubstitution", () => {
         { db, actor: shirin }
       )
     ).rejects.toMatchObject({ code: "LINE_NOT_OPEN" })
+  })
+
+  it("proposes only another brand of the same medicine and strength that is in stock here", async () => {
+    const montair5 = (await db.brands.where("genericId").equals(SEED_REFS.generic.montelukast).toArray())
+      .find((b) => b.name === "Montair" && b.strength === "5 mg")!
+    const { lineIds } = await signedRx(db, [
+      { brandId: B.monas10, dosePattern: "0+0+1", days: 14 },
+      { brandId: B.azithrocin500, dosePattern: "1+0+0", days: 3 },
+    ])
+    const ask = (rxLineId: string, proposedBrandId: string) =>
+      commit(
+        requestSubstitution,
+        { rxLineId, proposedBrandId, reason: "Out of stock at B1" },
+        { db, actor: shirin }
+      )
+    // Another strength changes the dose; another generic is another medicine.
+    await expect(ask(lineIds[0], montair5.id)).rejects.toMatchObject({
+      code: "SUBSTITUTE_NOT_EQUIVALENT",
+    })
+    await expect(ask(lineIds[0], B.fexo120)).rejects.toMatchObject({
+      code: "SUBSTITUTE_NOT_EQUIVALENT",
+    })
+    // Zimax 500 is the same medicine and strength, but out at Dhanmondi.
+    await expect(ask(lineIds[1], B.zimax500)).rejects.toMatchObject({
+      code: "SUBSTITUTE_OUT_OF_STOCK",
+    })
+    // Nothing was held for the doctor.
+    const lines = await db.rxLines.bulkGet(lineIds)
+    expect(lines.map((l) => l?.status)).toEqual(["open", "open"])
   })
 })
 

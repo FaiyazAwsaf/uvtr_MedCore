@@ -8,12 +8,16 @@ import {
   courseEndDate,
   dispenseBlock,
   expiresBeforeCourseEnd,
+  isEquivalentBrand,
   matchIdentity,
   packBreakdown,
+  paidAndOwed,
+  paidUnitsOf,
   queueStatusFor,
   roundToStrips,
   shownQueueStatus,
   stripSizeOf,
+  unpaidBilledLines,
 } from "@/modules/pharmacy/rules"
 
 const line = (patch: Partial<Parameters<typeof dispenseBlock>[0]> = {}) => ({
@@ -160,5 +164,59 @@ describe("dispensing label", () => {
     expect(label.given).toBe("Given: 14 capsules")
     expect(label.outstanding).toBe("Nothing left to collect")
     expect(label.dose).toContain("morning and night")
+  })
+})
+
+describe("paid quantity (a later balance is paid before it is handed over)", () => {
+  const rxLine = { id: "rxl_1", paymentCleared: true, qtyPrescribed: 28, dispensedQty: 0 }
+  const billed = (id: string, qty: number, status: "open" | "invoiced" | "removed", payerType: "self" | "corporate" = "self") => ({
+    id,
+    sourceType: "rx-line" as const,
+    sourceId: "rxl_1",
+    status,
+    qty,
+    payerType,
+  })
+
+  it("counts only paid billing lines of the line", () => {
+    const baskets = [billed("bl_1", 14, "invoiced"), billed("bl_2", 14, "open"), billed("bl_3", 5, "removed")]
+    expect(paidUnitsOf(rxLine, baskets)).toBe(14)
+    expect(paidUnitsOf({ ...rxLine, paymentCleared: false }, baskets)).toBe(0)
+    // After 14 are handed over the balance is not paid: the gate closes again.
+    const after = { ...rxLine, dispensedQty: 14, status: "partial" as const, brandId: "brd_x", balanceUntil: undefined }
+    expect(paidAndOwed(after, 14)).toBe(0)
+    expect(dispenseBlock(after, 0, 14)).toBe("unpaid")
+    expect(dispenseBlock(after, 0, 28)).toBeNull()
+    expect(paidAndOwed(after, 28)).toBe(14)
+  })
+
+  it("treats corporate cover and lines cleared without a bill of their own as paid in full", () => {
+    expect(paidUnitsOf(rxLine, [])).toBe(28)
+    expect(paidUnitsOf(rxLine, [billed("bl_1", 14, "open", "corporate")])).toBe(28)
+  })
+
+  it("never counts a billing line whose invoice is not fully paid, or was refunded", () => {
+    const baskets = [billed("bl_1", 14, "invoiced"), billed("bl_2", 14, "invoiced"), billed("bl_3", 7, "invoiced")]
+    const unpaid = unpaidBilledLines(
+      baskets,
+      [
+        { basketLineId: "bl_1", invoiceId: "inv_paid", status: "active" },
+        { basketLineId: "bl_2", invoiceId: "inv_pending", status: "active" },
+        { basketLineId: "bl_3", invoiceId: "inv_paid", status: "refunded" },
+      ],
+      (id) => (id === "inv_paid" ? "paid" : "partial")
+    )
+    expect([...unpaid].sort()).toEqual(["bl_2", "bl_3"])
+    expect(paidUnitsOf(rxLine, baskets, unpaid)).toBe(14)
+  })
+})
+
+describe("substitution candidates", () => {
+  it("are other brands of the same generic and strength", () => {
+    const monas10 = { id: "monas10", genericId: "montelukast", strength: "10 mg" }
+    expect(isEquivalentBrand(monas10, { id: "lumona10", genericId: "montelukast", strength: "10mg" })).toBe(true)
+    expect(isEquivalentBrand(monas10, { id: "montair5", genericId: "montelukast", strength: "5 mg" })).toBe(false)
+    expect(isEquivalentBrand(monas10, { id: "fexo120", genericId: "fexofenadine", strength: "10 mg" })).toBe(false)
+    expect(isEquivalentBrand(monas10, monas10)).toBe(false)
   })
 })
