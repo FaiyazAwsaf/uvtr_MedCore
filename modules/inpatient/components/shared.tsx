@@ -156,6 +156,14 @@ export const BED_ACCENT: Record<BedRow["status"], string> = {
   reserved: "border-l-info",
 }
 
+/** Status dot of a bed tile. */
+export const BED_DOT: Record<BedRow["status"], string> = {
+  vacant: "bg-success",
+  occupied: "bg-primary",
+  cleaning: "bg-warning",
+  reserved: "bg-info",
+}
+
 export function BedStatusText({
   status,
   className,

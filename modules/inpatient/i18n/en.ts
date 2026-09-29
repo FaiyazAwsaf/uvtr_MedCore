@@ -62,7 +62,6 @@ export const inpatientEn = {
       emptyHint: "Inpatient beds are kept at hospital branches.",
       tile: {
         vacant: "Ready",
-        cleaning: "Being cleaned",
         reserved: "Held for admission",
       },
       bedLabel: "Bed {bed}, {status}",
@@ -246,6 +245,7 @@ export const inpatientEn = {
       qtyTimes: "{qty} x {rate}",
       charges: "Charges to date",
       deposits: "Deposits received",
+      depositsTotal: "Total deposits",
       noDeposits: "No deposits yet",
       left: "Deposit left",
       owed: "Amount owed",

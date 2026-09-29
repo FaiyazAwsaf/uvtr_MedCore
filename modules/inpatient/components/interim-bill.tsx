@@ -109,7 +109,7 @@ export function InterimBillSheet({ stay, bill, at }: { stay: StayView; bill: Int
           />
           <Row
             label={t("inpatient.interim.admittedAt")}
-            value={`${dmy(admission.admittedAt)} ${time(admission.admittedAt)}`}
+            value={`${dmy(admission.admittedAt)}, ${time(admission.admittedAt)}`}
           />
           <Row label={t("inpatient.interim.consultant")} value={doctor} />
           <Row
@@ -177,7 +177,7 @@ export function InterimBillSheet({ stay, bill, at }: { stay: StayView; bill: Int
               />
             ))
           )}
-          <Row label={t("inpatient.interim.deposits")} value={money(bill.depositsP)} strong />
+          <Row label={t("inpatient.interim.depositsTotal")} value={money(bill.depositsP)} strong />
         </div>
 
         <div className="flex items-baseline justify-between gap-4 border-y-2 border-[#111] py-2 text-base font-bold">

@@ -64,7 +64,6 @@ export const inpatientBn: typeof inpatientEn = {
       emptyHint: "ভর্তির শয্যা শুধু হাসপাতাল শাখায় থাকে।",
       tile: {
         vacant: "প্রস্তুত",
-        cleaning: "পরিষ্কার চলছে",
         reserved: "ভর্তির জন্য রাখা",
       },
       bedLabel: "শয্যা {bed}, {status}",
@@ -248,6 +247,7 @@ export const inpatientBn: typeof inpatientEn = {
       qtyTimes: "{qty} x {rate}",
       charges: "এ পর্যন্ত চার্জ",
       deposits: "জমা পাওয়া গেছে",
+      depositsTotal: "মোট জমা",
       noDeposits: "এখনো কোনো জমা নেই",
       left: "অবশিষ্ট জমা",
       owed: "বকেয়া",

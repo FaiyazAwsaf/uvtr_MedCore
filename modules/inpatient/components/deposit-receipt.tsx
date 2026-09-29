@@ -56,7 +56,7 @@ export function DepositReceiptSheet({
       branch={deposit.branchId}
       title={t("inpatient.receipt.title")}
       docNo={deposit.receiptNo}
-      meta={`${dmy(deposit.at)} ${time(deposit.at)}`}
+      meta={`${dmy(deposit.at)}, ${time(deposit.at)}`}
       footer={t("inpatient.receipt.note")}
     >
       <div className="flex flex-col gap-2" data-testid="deposit-receipt-sheet">

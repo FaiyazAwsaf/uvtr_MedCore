@@ -46,6 +46,7 @@ import { AdmitDialog } from "./admit-dialog"
 import { InterimBillDialog } from "./interim-bill"
 import {
   BED_ACCENT,
+  BED_DOT,
   BedStatusText,
   KpiRow,
   NotClinicalNote,
@@ -341,11 +342,17 @@ function BedTile({
         flash
       )}
     >
-      <span className="flex items-center justify-between gap-1">
-        <span lang="en" className="font-mono text-[0.8125rem] font-semibold">
+      <span className="flex items-center justify-between gap-1.5">
+        <span lang="en" className="font-mono text-[0.8125rem] font-semibold whitespace-nowrap">
           {bed.code}
         </span>
-        <BedStatusText status={bed.status} className="text-[0.6875rem]" />
+        {bed.status === "occupied" && bill ? (
+          <span className="nums shrink-0 text-[0.6875rem] font-medium text-link">
+            {t("inpatient.common.day", { count: num(bill.days) })}
+          </span>
+        ) : (
+          <span aria-hidden className={cn("size-2 shrink-0 rounded-full", BED_DOT[bed.status])} />
+        )}
       </span>
       {bed.status === "occupied" && stay ? (
         <>
@@ -356,7 +363,6 @@ function BedTile({
             {age
               ? `${tk(age.unit === "years" ? "common.years" : "common.months", { count: num(age.value) })} · ${tk(`common.sexShort.${patient!.sex}`)}`
               : ""}
-            {bill ? ` · ${t("inpatient.common.day", { count: num(bill.days) })}` : ""}
           </span>
           <span lang="en" className="truncate font-mono text-[0.6875rem] text-muted-foreground">
             {stay.admission.admissionNo}
@@ -366,23 +372,23 @@ function BedTile({
               data-testid="deposit-alert"
               className="mt-auto inline-flex items-center gap-1 text-[0.6875rem] font-medium text-destructive"
             >
-              <Wallet className="size-3" />
-              {t("inpatient.common.lowDeposit")}
+              <Wallet className="size-3 shrink-0" />
+              <span className="truncate">{t("inpatient.common.lowDeposit")}</span>
             </span>
           ) : null}
         </>
       ) : (
-        <span className="mt-auto text-[0.6875rem] text-muted-foreground">
-          {bed.status === "cleaning" ? (
-            <>
-              {t("inpatient.board.tile.cleaning")} ·{" "}
+        <span className="mt-auto flex min-w-0 flex-col gap-0.5 text-[0.6875rem]">
+          <BedStatusText status={bed.status} />
+          <span className="truncate text-muted-foreground">
+            {bed.status === "cleaning" ? (
               <DateText value={bed.updatedAt} variant="relative" />
-            </>
-          ) : bed.status === "reserved" ? (
-            t("inpatient.board.tile.reserved")
-          ) : (
-            t("inpatient.board.tile.vacant")
-          )}
+            ) : bed.status === "reserved" ? (
+              t("inpatient.board.tile.reserved")
+            ) : (
+              t("inpatient.board.tile.vacant")
+            )}
+          </span>
         </span>
       )}
     </button>
