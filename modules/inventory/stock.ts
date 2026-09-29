@@ -168,6 +168,67 @@ export async function adjustInTransit(
   })
 }
 
+/**
+ * Bring a brand's dispensable units at a branch to a planted level (scenario
+ * setups only: "only 14 Seclo 20 on the shelf", "Monas 10 out"). Each change
+ * is an `adjust` movement with the reason, so the movement ledger and the
+ * stock levels still agree. `mode: "at-least"` only tops up. A surplus comes
+ * off the longest-dated batches first and a top-up goes onto the
+ * longest-dated usable batch, so what FEFO picks first stays the same.
+ */
+export async function plantUsableStock(
+  tx: Tx,
+  branch: BranchCode,
+  brandId: string,
+  target: number,
+  opts: { reason: string; mode?: "exactly" | "at-least" }
+): Promise<{ before: number; after: number }> {
+  const today = tx.today()
+  const stock = await brandStockAt(tx, branch, brandId)
+  const batchById = new Map(stock.batches.map((b) => [b.id, b]))
+  const usable = stock.levels
+    .map((level) => ({ level, batch: batchById.get(level.batchId) }))
+    .filter(
+      (x): x is { level: StockLevelRow; batch: BatchRow } =>
+        !!x.batch && x.batch.status === "ok" && x.batch.expiry >= today
+    )
+    .sort(
+      (a, b) =>
+        a.batch.expiry.localeCompare(b.batch.expiry) || a.batch.id.localeCompare(b.batch.id)
+    )
+  const before = usable.reduce((sum, x) => sum + Math.max(0, x.level.qty), 0)
+  let change = target - before
+  if (change === 0 || (change < 0 && opts.mode === "at-least")) {
+    return { before, after: before }
+  }
+  if (change > 0) {
+    let level = usable.at(-1)?.level
+    if (!level) {
+      // Nothing usable here yet: put it on the brand's longest-dated good batch.
+      const [lot] = (await tx.list("batches", "brandId", brandId))
+        .filter((b) => b.status === "ok" && b.expiry >= today)
+        .sort((a, b) => b.expiry.localeCompare(a.expiry) || a.id.localeCompare(b.id))
+      if (!lot) tx.reject("NO_USABLE_BATCH", { brandId, branch })
+      level = await levelFor(tx, branch, brandId, lot.id)
+    }
+    await moveStock(tx, level, { type: "adjust", qty: change, reason: opts.reason })
+  } else {
+    for (const { level } of [...usable].reverse()) {
+      if (change === 0) break
+      const take = Math.min(-change, Math.max(0, level.qty))
+      if (take <= 0) continue
+      await moveStock(tx, level, { type: "adjust", qty: -take, reason: opts.reason })
+      change += take
+    }
+  }
+  const brand = await tx.get("brands", brandId)
+  tx.emit("StockAdjusted", {
+    branchId: branch,
+    params: { item: brandLabel(brand), branch, before, after: target },
+  })
+  return { before, after: target }
+}
+
 /** "Napa 500 mg": how a brand reads in event params and messages (never translated). */
 export function brandLabel(brand: Pick<BrandRow, "name" | "strength">): string {
   return `${brand.name} ${brand.strength}`.trim()

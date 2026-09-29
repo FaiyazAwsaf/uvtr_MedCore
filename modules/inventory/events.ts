@@ -22,6 +22,12 @@ export const inventoryEvents: EventCatalog = {
     consumers: [c("bothBranches"), c("doctor"), c("pharmacy")],
     severity: "success",
   },
+  StockAdjusted: {
+    module: "inventory",
+    labelKey: "inventory.events.stockAdjusted",
+    consumers: [c("store"), c("pharmacy"), c("dashboard")],
+    severity: "info",
+  },
   StockBelowReorder: {
     module: "inventory",
     labelKey: "inventory.events.stockBelowReorder",

@@ -48,6 +48,8 @@ type QueueItem = {
   patient?: PatientRow
   doctor?: { nameEn: string; nameBn: string }
   signedAt: number
+  /** 2 and up once the doctor revised the Rx (for example a substitution) */
+  rxVersion: number
   paid: number
   total: number
   unpaidOpen: number
@@ -83,6 +85,7 @@ function useQueue(branch: string | null): QueueItem[] | undefined {
         patient: patientById.get(entry.patientId),
         doctor: doctor ? { nameEn: doctor.nameEn, nameBn: doctor.nameBn } : undefined,
         signedAt: rx?.signedAt ?? entry.receivedAt,
+        rxVersion: rx?.rxVersion ?? 1,
         paid: own.filter((l) => l.paymentCleared).length,
         total: own.length,
         unpaidOpen: own.filter((l) => !l.paymentCleared && !isFinalLine(l)).length,
@@ -93,38 +96,46 @@ function useQueue(branch: string | null): QueueItem[] | undefined {
 
 /**
  * Rows that arrived after the first render (a doctor signed in another
- * window): they flash turquoise for about 1.2 s and raise a toast.
+ * window), or whose Rx the doctor revised (a new version, for example after
+ * approving a substitution): they flash turquoise for about 1.2 s and raise
+ * a toast.
  */
 function useArrivals(items: QueueItem[] | undefined): Set<string> {
-  const { t, locale } = useLocale()
-  const known = React.useRef<Set<string> | null>(null)
+  const { t, num, locale } = useLocale()
+  /** Queue entry id to the Rx version it pointed at */
+  const known = React.useRef<Map<string, string> | null>(null)
   const [fresh, setFresh] = React.useState<Set<string>>(new Set())
   React.useEffect(() => {
     if (!items) return
     if (!known.current) {
-      known.current = new Set(items.map((i) => i.entry.id))
+      known.current = new Map(items.map((i) => [i.entry.id, i.entry.rxId]))
       return
     }
-    const arrived = items.filter((i) => !known.current!.has(i.entry.id))
-    if (!arrived.length) return
-    for (const item of arrived) {
-      known.current.add(item.entry.id)
+    const changed = items.filter((i) => known.current!.get(i.entry.id) !== i.entry.rxId)
+    if (!changed.length) return
+    for (const item of changed) {
+      const revised = known.current.has(item.entry.id)
+      known.current.set(item.entry.id, item.entry.rxId)
+      const name = item.patient ? nameIn(item.patient, locale) : ""
       toast(
-        t("pharmacy.queue.newRx", {
-          rxNo: item.entry.rxNo,
-          name: item.patient ? nameIn(item.patient, locale) : "",
-        }),
+        revised
+          ? t("pharmacy.queue.revisedRx", {
+              rxNo: item.entry.rxNo,
+              version: num(item.rxVersion),
+              name,
+            })
+          : t("pharmacy.queue.newRx", { rxNo: item.entry.rxNo, name }),
         { icon: <Pill className="size-4 text-primary" /> }
       )
     }
-    const ids = arrived.map((i) => i.entry.id)
+    const ids = changed.map((i) => i.entry.id)
     const start = window.setTimeout(() => setFresh(new Set(ids)), 0)
     const stop = window.setTimeout(() => setFresh(new Set()), 1400)
     return () => {
       window.clearTimeout(start)
       window.clearTimeout(stop)
     }
-  }, [items, t, locale])
+  }, [items, t, num, locale])
   return fresh
 }
 
@@ -272,12 +283,22 @@ export function PharmacyQueueScreen() {
                     key={item.entry.id}
                     data-testid="pharmacy-queue-row"
                     data-rx-id={item.entry.rxId}
+                    data-rx-version={item.rxVersion}
                     data-status={item.status}
                     onClick={() => router.push(href)}
                     className={cn("cursor-pointer", fresh.has(item.entry.id) && "flash-sync")}
                   >
                     <TableCell className="font-mono text-xs whitespace-nowrap" lang="en">
                       {item.entry.rxNo}
+                      {item.rxVersion > 1 ? (
+                        <span
+                          lang={locale}
+                          data-testid="pharmacy-queue-version"
+                          className="ml-1.5 rounded-full bg-primary-soft px-1.5 py-0.5 font-sans text-[0.6875rem] font-semibold text-link"
+                        >
+                          {t("pharmacy.dispense.version", { version: num(item.rxVersion) })}
+                        </span>
+                      ) : null}
                     </TableCell>
                     <TableCell>
                       {item.patient ? (

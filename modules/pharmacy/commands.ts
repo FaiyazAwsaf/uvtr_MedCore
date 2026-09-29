@@ -6,6 +6,8 @@ import type {
   BrandRow,
   DispenseRow,
   Id,
+  InvoiceLineRow,
+  InvoiceRow,
   PharmacyQueueRow,
   RxLineRow,
 } from "@/core/db/schema"
@@ -25,9 +27,13 @@ import {
   balanceDeadline,
   balanceExpired,
   dispenseBlock,
+  isEquivalentBrand,
   isFinalLine,
   outstandingOf,
+  paidAndOwed,
+  paidUnitsOf,
   queueStatusFor,
+  unpaidBilledLines,
 } from "./rules"
 
 /* ================================================================== *
@@ -71,6 +77,27 @@ async function linePrice(tx: Tx, line: RxLineRow, brand: BrandRow): Promise<numb
     (b) => b.sourceType === "rx-line" && b.status !== "removed"
   )
   return basket?.unitPriceP ?? brand.unitPriceP
+}
+
+/** The line's billing lines (not removed) and how many of its units are paid. */
+async function paymentOf(tx: Tx, line: RxLineRow) {
+  const billed = (await tx.list("basketLines", "sourceId", line.id)).filter(
+    (b) => b.sourceType === "rx-line" && b.status !== "removed"
+  )
+  const invoiceLines: InvoiceLineRow[] = []
+  const statuses = new Map<Id, InvoiceRow["status"]>()
+  for (const basket of billed) {
+    if (basket.status !== "invoiced") continue
+    for (const invoiceLine of await tx.list("invoiceLines", "basketLineId", basket.id)) {
+      invoiceLines.push(invoiceLine)
+      if (!statuses.has(invoiceLine.invoiceId)) {
+        const invoice = await tx.find("invoices", invoiceLine.invoiceId)
+        if (invoice) statuses.set(invoice.id, invoice.status)
+      }
+    }
+  }
+  const unpaid = unpaidBilledLines(billed, invoiceLines, (id) => statuses.get(id))
+  return { billed, paidUnits: paidUnitsOf(line, billed, unpaid) }
 }
 
 async function invoiceLineOf(tx: Tx, lineId: Id): Promise<Id | undefined> {
@@ -144,7 +171,8 @@ export const dispense = defineCommand({
       }
       const line = await tx.get("rxLines", request.rxLineId)
       if (line.rxId !== rx.id) tx.reject("LINE_NOT_ON_RX", { rxNo: rx.rxNo })
-      const block = dispenseBlock(line, now)
+      const { paidUnits } = await paymentOf(tx, line)
+      const block = dispenseBlock(line, now, paidUnits)
       if (block === "unpaid") tx.reject("PAYMENT_GATE", { step: "dispense" })
       if (block === "balance-expired") tx.reject("BALANCE_EXPIRED", { rxNo: rx.rxNo })
       if (block) tx.reject("LINE_NOT_DISPENSABLE", { status: line.status })
@@ -152,6 +180,9 @@ export const dispense = defineCommand({
       if (request.qty > outstanding) {
         tx.reject("QTY_ABOVE_OUTSTANDING", { qty: request.qty, outstanding })
       }
+      // Only what is paid is handed over; a later balance is billed and paid first.
+      const paidLeft = paidAndOwed(line, paidUnits)
+      if (request.qty > paidLeft) tx.reject("QTY_ABOVE_PAID", { qty: request.qty, paid: paidLeft })
 
       const brand = await tx.get("brands", line.brandId!)
       if (brand.category === "controlled" && !mayDispenseControlled(tx)) {
@@ -273,10 +304,11 @@ export const dispense = defineCommand({
 
 /**
  * `rx.sign` bills only what is on the shelf when the doctor signs, so a line
- * that was out of stock then has nothing on the patient's bill. Once stock is
- * here (a transfer arrived), the pharmacist sends it to the cashier: one open
- * basket line for what can be given now, priced never above MRP. Paying it at
- * the cashier clears the line for dispensing (INV-10).
+ * that was out of stock then has nothing on the patient's bill, and a partial
+ * dispense leaves a balance nobody has paid for. Once stock is here (a
+ * transfer arrived), the pharmacist sends it to the cashier: one open basket
+ * line for what can be given now, priced never above MRP. Paying it at the
+ * cashier clears it for dispensing (INV-10).
  */
 export const sendToCashier = defineCommand({
   name: "pharmacy.sendToCashier",
@@ -288,18 +320,24 @@ export const sendToCashier = defineCommand({
     if (line.status !== "open" && line.status !== "partial") {
       tx.reject("LINE_NOT_OPEN", { status: line.status })
     }
-    if (line.paymentCleared) tx.reject("LINE_ALREADY_PAID", {})
-    const billed = (await tx.list("basketLines", "sourceId", line.id)).some(
-      (b) => b.sourceType === "rx-line" && b.status !== "removed"
-    )
-    if (billed) tx.reject("LINE_ALREADY_BILLED", {})
+    const { billed, paidUnits } = await paymentOf(tx, line)
+    if (paidUnits >= line.qtyPrescribed) tx.reject("LINE_ALREADY_PAID", {})
+    if (billed.some((b) => b.status === "open")) tx.reject("LINE_ALREADY_BILLED", {})
+    // What is neither billed yet nor already handed over.
+    const billedUnits = billed.reduce((sum, b) => sum + b.qty, 0)
+    const unbilled = line.qtyPrescribed - Math.max(billedUnits, line.dispensedQty)
+    if (unbilled <= 0) tx.reject("LINE_ALREADY_BILLED", {})
     const rx = await tx.get("prescriptions", line.rxId)
     if (rx.status !== "signed") tx.reject("RX_NOT_SIGNED", { rxNo: rx.rxNo })
     const brandId = line.brandId
     if (!brandId) return tx.reject("LINE_NOT_DISPENSABLE", { status: line.status })
     const brand = await tx.get("brands", brandId)
     const stock = await brandStockAt(tx, branch, brand.id)
-    const qty = Math.min(outstandingOf(line), usableUnits(stock.levels, stock.batches, tx.today()))
+    const qty = Math.min(
+      unbilled,
+      outstandingOf(line),
+      usableUnits(stock.levels, stock.batches, tx.today())
+    )
     if (qty <= 0) tx.reject("STOCK_NEGATIVE", { brandId: brand.id, branch })
     const basket = tx.insert("basketLines", {
       patientId: rx.patientId,
@@ -400,12 +438,25 @@ export const requestSubstitution = defineCommand({
     if (input.proposedBrandId === line.brandId) tx.reject("SUBSTITUTE_SAME_BRAND", {})
     const proposed = await tx.get("brands", input.proposedBrandId)
     const current = line.brandId ? await tx.find("brands", line.brandId) : undefined
+    // A substitute is another brand of the same medicine and strength: anything
+    // else changes the treatment or the dose, which only a new Rx can do.
+    if (current && !isEquivalentBrand(current, proposed)) {
+      tx.reject("SUBSTITUTE_NOT_EQUIVALENT", {
+        from: brandLabel(current),
+        to: brandLabel(proposed),
+      })
+    }
     const pending = (await tx.list("substitutionRequests", "rxLineId", line.id)).some(
       (s) => s.status === "pending"
     )
     if (pending) tx.reject("SUBSTITUTION_PENDING", { rxNo: rx.rxNo })
 
     const branch = tx.actor.branchId ?? line.branchId
+    // Only a brand the pharmacy can hand over is worth the doctor's decision.
+    const stock = await brandStockAt(tx, branch, proposed.id)
+    if (usableUnits(stock.levels, stock.batches, tx.today()) <= 0) {
+      tx.reject("SUBSTITUTE_OUT_OF_STOCK", { item: brandLabel(proposed) })
+    }
     const from = current ? brandLabel(current) : (line.nonDictionaryName ?? "")
     const to = brandLabel(proposed)
     const request = tx.insert("substitutionRequests", {
@@ -430,7 +481,8 @@ export const requestSubstitution = defineCommand({
       patientId: rx.patientId,
       kind: "substitution",
       refs,
-      titleKey: "consultation.inbox.kind.substitution",
+      // The inbox row names the Rx and both brands (the card shows the rest).
+      titleKey: "pharmacy.inbox.substitution",
       params: { rxNo: rx.rxNo, from, to },
       status: "unread",
     })

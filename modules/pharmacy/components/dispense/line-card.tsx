@@ -44,6 +44,7 @@ import {
   expiresBeforeCourseEnd,
   outstandingOf,
   packBreakdown,
+  paidAndOwed,
   roundToStrips,
   stripSizeOf,
 } from "../../rules"
@@ -60,13 +61,19 @@ export function lineFacts(
   today: string,
   nowMs: number
 ) {
-  const block = dispenseBlock(data.line, nowMs)
+  const block = dispenseBlock(data.line, nowMs, data.paidUnits)
   const outstanding = outstandingOf(data.line)
   const here = data.levels.filter((l) => l.branchId === branch)
   const batchList = here.map((l) => batches.get(l.batchId)).filter((b): b is BatchRow => !!b)
   const usable = usableUnits(here, batchList, today)
-  const max = block ? 0 : Math.min(outstanding, usable)
-  return { block, outstanding, here, batchList, usable, max }
+  const paid = paidAndOwed(data.line, data.paidUnits)
+  const max = block ? 0 : Math.min(outstanding, usable, paid)
+  // Neither on the bill yet nor handed over: what "Send to cashier" would bill.
+  const unbilled = Math.max(
+    0,
+    data.line.qtyPrescribed - Math.max(data.billedUnits, data.line.dispensedQty)
+  )
+  return { block, outstanding, here, batchList, usable, paid, max, unbilled }
 }
 
 /** The default choice: take everything owed that the shelf can cover. */
@@ -110,7 +117,8 @@ export function LineCard({
   const { t, num, dmy, locale } = useLocale()
   const { line, brand, generic } = data
   const facts = lineFacts(data, branch, batches, today, nowMs)
-  const { block, outstanding, here, batchList, usable, max } = facts
+  const { block, outstanding, here, batchList, usable, max, unbilled } = facts
+  const openBasket = data.basket?.status === "open"
   const final = block === "final"
   const stripSize = brand ? stripSizeOf(brand.packSizes) : undefined
   const qty = Math.min(choice.qty, max)
@@ -193,9 +201,17 @@ export function LineCard({
         <div className="flex shrink-0 flex-col items-end gap-1.5">
           <LineStatusPill status={line.status} />
           {!final ? (
-            line.paymentCleared ? (
+            line.paymentCleared && block === "unpaid" ? (
+              <StatusPill tone="warning" className="h-5 px-2 text-[0.6875rem]">
+                {t("pharmacy.dispense.line.balanceUnpaid")}
+              </StatusPill>
+            ) : line.paymentCleared ? (
               <StatusPill tone="success" className="h-5 px-2 text-[0.6875rem]">
                 {t("pharmacy.dispense.line.paid")}
+              </StatusPill>
+            ) : data.billedUnits === 0 ? (
+              <StatusPill tone="muted" className="h-5 px-2 text-[0.6875rem]">
+                {t("pharmacy.dispense.line.notBilled")}
               </StatusPill>
             ) : (
               <StatusPill tone="warning" className="h-5 px-2 text-[0.6875rem]">
@@ -236,10 +252,12 @@ export function LineCard({
         </p>
       ) : null}
 
-      {block === "unpaid" && !data.basket && usable > 0 ? (
+      {block === "unpaid" && !openBasket && unbilled > 0 && usable > 0 ? (
         <div className="flex flex-wrap items-center gap-2">
           <Notice tone="warning" icon={CircleAlert}>
-            {t("pharmacy.dispense.line.unbilled")}
+            {line.paymentCleared
+              ? t("pharmacy.dispense.line.balanceUnbilled")
+              : t("pharmacy.dispense.line.unbilled")}
           </Notice>
           <Button
             data-testid="send-to-cashier"
@@ -252,7 +270,13 @@ export function LineCard({
             {t("pharmacy.dispense.line.sendToCashier")}
           </Button>
         </div>
-      ) : block === "unpaid" && data.basket ? (
+      ) : block === "unpaid" && !openBasket && unbilled > 0 ? (
+        <Notice tone="warning" icon={CircleAlert}>
+          {line.paymentCleared
+            ? t("pharmacy.dispense.line.balanceUnbilledOut")
+            : t("pharmacy.dispense.line.unbilledOut")}
+        </Notice>
+      ) : block === "unpaid" ? (
         <Notice tone="warning" icon={CircleAlert}>
           {t("pharmacy.dispense.line.unpaidHint")}
         </Notice>
