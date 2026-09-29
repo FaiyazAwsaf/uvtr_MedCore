@@ -4,13 +4,22 @@ import * as React from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { rules } from "@/config/rules.config"
+import { now } from "@/core/clock/clock"
+import { useNow } from "@/core/clock/useNow"
 import { useLocale } from "@/lib/i18n/provider"
 
+import { isCallOverdue } from "../logic"
 import { CriticalTab, useCriticals } from "./critical-tab"
 import { LabPage } from "./lab-ui"
 import { ReportsTab } from "./reports-tab"
 import { SignoffTab } from "./signoff-tab"
-import { useBranch, useLabTests, useStageCounts } from "./use-lab-data"
+import {
+  useBranch,
+  useFocusParam,
+  useLabTests,
+  useStageCounts,
+} from "./use-lab-data"
 
 const TABS = ["signoff", "released", "critical"] as const
 type Tab = (typeof TABS)[number]
@@ -29,7 +38,8 @@ function CountBadge({ count }: { count: number | undefined }) {
  * "/pathology": the pathologist's screen (plan §9): the sign-off queue by
  * order (sign and release, or held for payment), released reports (print,
  * verify, correct to a new version) and critical results with the call log.
- * `?tab=released` and `?tab=critical` deep-link for the scenario launchers.
+ * `?tab=released` and `?tab=critical` deep-link for the scenario launchers,
+ * with `&focus=<report or result id>` to highlight the record.
  */
 export function PathologyScreen() {
   const { t } = useLocale()
@@ -42,7 +52,14 @@ export function PathologyScreen() {
   const tab: Tab = TABS.includes(fromUrl as Tab) ? (fromUrl as Tab) : "signoff"
   const counts = useStageCounts(branch)
   const criticals = useCriticals(branch)
-  const uncalled = criticals?.filter((c) => !c.calls.length).length
+  const focus = useFocusParam()
+  const tick = useNow(15_000)
+  // Critical values still to phone, and open calls past the escalation time.
+  const needsAction = criticals?.filter(
+    (c) =>
+      !c.calls.length ||
+      isCallOverdue(c.calls[0], tick || now(), rules.criticalEscalationMin)
+  ).length
 
   const setTab = (next: Tab) => {
     const query = new URLSearchParams(params.toString())
@@ -75,17 +92,17 @@ export function PathologyScreen() {
           </TabsTrigger>
           <TabsTrigger value="critical" data-testid="pathology-tab-critical">
             {t("lab.signoff.tabs.critical")}
-            <CountBadge count={uncalled} />
+            <CountBadge count={needsAction} />
           </TabsTrigger>
         </TabsList>
         <TabsContent value="signoff">
           <SignoffTab branch={branch} />
         </TabsContent>
         <TabsContent value="released">
-          <ReportsTab branch={branch} />
+          <ReportsTab branch={branch} focus={focus} />
         </TabsContent>
         <TabsContent value="critical">
-          <CriticalTab branch={branch} tests={tests} />
+          <CriticalTab branch={branch} tests={tests} focus={focus} />
         </TabsContent>
       </Tabs>
     </LabPage>

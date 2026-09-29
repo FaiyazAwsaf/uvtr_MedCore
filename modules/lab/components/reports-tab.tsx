@@ -44,14 +44,26 @@ import { flagValue, resultText, toLatinDigits } from "../logic"
 import { useLabCommand } from "./lab-feedback"
 import { FlagText, PatientCell, TestChips } from "./lab-ui"
 import { ReportDialog, useReportDoc } from "./report-document"
-import { loadReportViews, useLabTests, type ReportView } from "./use-lab-data"
+import {
+  FOCUS_ROW,
+  loadReportViews,
+  useLabTests,
+  useScrollToFocus,
+  type ReportView,
+} from "./use-lab-data"
 
 /**
  * Released reports at the branch (last 7 days): print with the QR code,
  * open the public verification page, or correct a report into a new version
  * (plan §6 `lab.correctReport`, scenario S8, HAZ-03).
  */
-export function ReportsTab({ branch }: { branch: BranchCode }) {
+export function ReportsTab({
+  branch,
+  focus,
+}: {
+  branch: BranchCode
+  focus?: string
+}) {
   const { t } = useLocale()
   const db = useDb()
   const tests = useLabTests()
@@ -116,6 +128,7 @@ export function ReportsTab({ branch }: { branch: BranchCode }) {
                   key={row.report.id}
                   row={row}
                   tests={tests}
+                  focused={focus === row.report.id}
                   newerVersion={
                     row.report.status === "superseded"
                       ? (latest.get(row.report.reportNo) ??
@@ -153,12 +166,14 @@ export function ReportsTab({ branch }: { branch: BranchCode }) {
 function ReportRowView({
   row,
   tests,
+  focused,
   newerVersion,
   onPrint,
   onCorrect,
 }: {
   row: ReportView
   tests: Map<string, LabTestRow> | undefined
+  focused: boolean
   newerVersion?: number
   onPrint: () => void
   onCorrect: () => void
@@ -166,13 +181,17 @@ function ReportRowView({
   const { t, num } = useLocale()
   const { report } = row
   const superseded = report.status === "superseded"
+  const ref = useScrollToFocus<HTMLTableRowElement>(focused)
   return (
     <TableRow
+      ref={ref}
       data-testid="report-row"
       data-report-id={report.id}
       data-report-no={report.reportNo}
       data-version={report.reportVersion}
-      className={cn(superseded && "opacity-60")}
+      data-status={report.status}
+      data-focused={focused || undefined}
+      className={cn(superseded && "opacity-60", focused && FOCUS_ROW)}
     >
       <TableCell>
         <span className="flex flex-col gap-0.5">
