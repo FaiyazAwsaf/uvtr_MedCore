@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useLiveQuery } from "dexie-react-hooks"
-import { PhoneCall, Siren } from "lucide-react"
+import { Check, PhoneCall, Siren } from "lucide-react"
 import { labToast as toast } from "./lab-toast"
 
 import { DateText } from "@/components/shared/date-text"
@@ -31,6 +31,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import type { BranchCode } from "@/config/brand.config"
+import { rules } from "@/config/rules.config"
 import { atDhaka, DAY, dhakaDate, dhakaTime, MINUTE } from "@/core/clock/dates"
 import { now } from "@/core/clock/clock"
 import { useNow } from "@/core/clock/useNow"
@@ -47,11 +48,21 @@ import type {
 import { cn } from "@/lib/utils"
 import { useLocale } from "@/lib/i18n/provider"
 
-import { logCriticalCall } from "../commands"
-import { resultText } from "../logic"
+import {
+  acknowledgeCritical,
+  escalateCritical,
+  logCriticalCall,
+} from "../commands"
+import { autoEscalationEnabled } from "../jobs"
+import { escalationDueAt, isCallOverdue, resultText } from "../logic"
 import { useLabCommand } from "./lab-feedback"
 import { FlagText, PatientCell } from "./lab-ui"
-import { staffName, useDoctorStaff } from "./use-lab-data"
+import {
+  FOCUS_ROW,
+  staffName,
+  useDoctorStaff,
+  useScrollToFocus,
+} from "./use-lab-data"
 
 export type CriticalView = {
   result: ResultRow
@@ -110,19 +121,24 @@ export function useCriticals(branch: BranchCode) {
 /**
  * Critical results (HAZ-05): each validated critical value, whether the
  * doctor has been phoned, and a form to log the call with its read-back.
- * The call stays open until acknowledged; minutes since the call are shown
- * against the 30-minute escalation window.
+ * The call stays open until acknowledged. `rules.criticalEscalationMin`
+ * minutes after the call (on the demo clock, live in every window) an open
+ * call turns overdue and the pathologist escalates it to the duty doctor;
+ * with the Tier 2 toggle on, the sweeper does that automatically.
  */
 export function CriticalTab({
   branch,
   tests,
+  focus,
 }: {
   branch: BranchCode
   tests: Map<string, LabTestRow> | undefined
+  focus?: string
 }) {
-  const { t } = useLocale()
+  const { t, num } = useLocale()
   const rows = useCriticals(branch)
   const [logging, setLogging] = React.useState<CriticalView | null>(null)
+  const minutes = rules.criticalEscalationMin
   return (
     <SectionCard
       size="sm"
@@ -130,6 +146,15 @@ export function CriticalTab({
       title={t("lab.critical.title")}
       subtitle={t("lab.critical.subtitle")}
     >
+      <p
+        className="-mt-1 text-xs text-muted-foreground"
+        data-testid="critical-auto"
+        data-enabled={autoEscalationEnabled()}
+      >
+        {autoEscalationEnabled()
+          ? t("lab.critical.autoOn", { minutes: num(minutes) })
+          : t("lab.critical.autoOff", { minutes: num(minutes) })}
+      </p>
       {rows && !rows.length ? (
         <EmptyState size="sm" icon={Siren} title={t("lab.critical.empty")} />
       ) : (
@@ -152,6 +177,7 @@ export function CriticalTab({
                   key={row.result.id}
                   row={row}
                   tests={tests}
+                  focused={focus === row.result.id}
                   onLog={() => setLogging(row)}
                 />
               ))}
@@ -195,26 +221,66 @@ function valueLine(
 function CriticalRowView({
   row,
   tests,
+  focused,
   onLog,
 }: {
   row: CriticalView
   tests: Map<string, LabTestRow> | undefined
+  focused: boolean
   onLog: () => void
 }) {
-  const { t, num, time } = useLocale()
-  const tick = useNow(30_000)
+  const { t, tk, num, time, locale } = useLocale()
+  const tick = useNow(5_000)
+  const doctors = useDoctorStaff()
+  const ref = useScrollToFocus<HTMLTableRowElement>(focused)
+  const ack = useLabCommand(acknowledgeCritical)
+  const escalate = useLabCommand(escalateCritical)
   const call = row.calls[0]
   const line = valueLine(row, tests)
+  const at = tick || now()
+  const limit = rules.criticalEscalationMin
   const minutes = call
-    ? Math.max(0, Math.floor(((tick || now()) - call.calledAt) / MINUTE))
+    ? Math.max(0, Math.floor((at - call.calledAt) / MINUTE))
     : 0
+  const overdue = !!call && isCallOverdue(call, at, limit)
+  const escalatedTo = staffName(doctors, call?.escalatedTo, locale)
+
+  const onAck = async () => {
+    if (!call) return
+    const done = await ack.run({
+      callId: call.id,
+      expectedVersion: call.version,
+    })
+    if (done) toast.success(t("lab.critical.ackedToast", { analyte: line.name }))
+  }
+  const onEscalate = async () => {
+    if (!call) return
+    const done = await escalate.run({
+      callId: call.id,
+      expectedVersion: call.version,
+    })
+    if (done) {
+      toast.warning(
+        t("lab.critical.escalatedToast", {
+          doctor: staffName(doctors, done.escalatedTo, locale) ?? "",
+        })
+      )
+    }
+  }
+
   return (
     <TableRow
+      ref={ref}
       data-testid="critical-row"
       data-result-id={row.result.id}
+      data-item-id={row.item.id}
+      data-call-id={call?.id}
       data-call-status={call?.status ?? "none"}
+      data-overdue={overdue || undefined}
+      data-focused={focused || undefined}
+      className={cn(focused && FOCUS_ROW)}
     >
-      <TableCell className="max-w-[14rem]">
+      <TableCell className="max-w-56">
         <PatientCell patient={row.patient} />
       </TableCell>
       <TableCell>
@@ -241,49 +307,132 @@ function CriticalRowView({
           <StatusText tone="destructive" dot>
             {t("lab.critical.notCalled")}
           </StatusText>
-        ) : call.status === "open" ? (
-          <span className="flex flex-col">
-            <StatusText tone={minutes >= 30 ? "destructive" : "warning"} dot>
-              {t("lab.critical.callOpen", { time: time(call.calledAt) })}
-            </StatusText>
+        ) : (
+          <span className="flex flex-col gap-0.5">
+            {call.status === "open" && overdue ? (
+              <StatusText
+                tone="destructive"
+                dot
+                className="font-semibold whitespace-normal"
+                data-testid="critical-overdue"
+              >
+                {t("lab.critical.overdue")}
+              </StatusText>
+            ) : call.status === "open" ? (
+              <StatusText tone="warning" dot className="whitespace-normal">
+                {t("lab.critical.callOpen", { time: time(call.calledAt) })}
+              </StatusText>
+            ) : call.status === "acknowledged" ? (
+              <StatusText
+                tone="success"
+                dot
+                className="whitespace-normal"
+                data-testid="critical-acked"
+              >
+                {t("lab.critical.acknowledged", {
+                  time: call.ackAt ? time(call.ackAt) : "",
+                })}
+              </StatusText>
+            ) : (
+              <StatusText
+                tone="info"
+                dot
+                className="whitespace-normal"
+                data-testid="critical-escalated"
+              >
+                {t("lab.critical.escalatedTo", {
+                  doctor: escalatedTo ?? "",
+                  time: call.escalatedAt ? time(call.escalatedAt) : "",
+                })}
+                {call.auto ? ` · ${t("lab.critical.auto")}` : ""}
+              </StatusText>
+            )}
+            <span className="pl-3 text-muted-foreground">
+              {t("lab.critical.calledWho", {
+                person: call.calledPerson,
+                role: tk(`lab.critical.roles.${call.calledRole}`),
+                time: time(call.calledAt),
+              })}
+            </span>
             <span
               className={cn(
                 "nums pl-3",
-                minutes >= 30 ? "text-destructive" : "text-muted-foreground"
+                call.status === "open" && overdue
+                  ? "text-destructive"
+                  : "text-muted-foreground"
               )}
             >
-              {t("lab.critical.sinceCall", { minutes: num(minutes) })} ·{" "}
+              {call.status === "open"
+                ? `${t("lab.critical.sinceCall", { minutes: num(minutes) })} · `
+                : ""}
               {call.readBack
                 ? t("lab.critical.readBackYes")
                 : t("lab.critical.readBackNo")}
+              {call.readBackText ? `: "${call.readBackText}"` : ""}
             </span>
+            {call.status === "open" && !overdue ? (
+              <span className="nums pl-3 text-muted-foreground">
+                {t("lab.critical.escalatesIn", {
+                  minutes: num(
+                    Math.max(
+                      1,
+                      Math.ceil(
+                        (escalationDueAt(call, limit) - at) / MINUTE
+                      )
+                    )
+                  ),
+                })}
+              </span>
+            ) : null}
           </span>
-        ) : call.status === "acknowledged" ? (
-          <StatusText tone="success" dot>
-            {t("lab.critical.acknowledged", {
-              time: call.ackAt ? time(call.ackAt) : "",
-            })}
-          </StatusText>
-        ) : (
-          <StatusText tone="info" dot>
-            {t("lab.critical.escalated", {
-              time: call.escalatedAt ? time(call.escalatedAt) : "",
-            })}
-          </StatusText>
         )}
       </TableCell>
       <TableCell className="text-right">
-        <Button
-          size="sm"
-          variant={call ? "neutral" : "default"}
-          data-testid="critical-log"
-          onClick={onLog}
-        >
-          <PhoneCall />
-          <span className="hidden @min-[58rem]/table:inline">
-            {t("lab.critical.logCall")}
-          </span>
-        </Button>
+        <div className="flex flex-wrap justify-end gap-1.5 @min-[58rem]/table:flex-nowrap">
+          {call && call.status === "open" && overdue ? (
+            <Button
+              size="sm"
+              variant="destructive"
+              data-testid="critical-escalate"
+              disabled={escalate.pending}
+              onClick={onEscalate}
+            >
+              <Siren />
+              {t("lab.critical.escalate")}
+            </Button>
+          ) : null}
+          {call && call.status !== "acknowledged" ? (
+            <Button
+              size="sm"
+              variant="neutral"
+              data-testid="critical-ack"
+              disabled={ack.pending}
+              title={t("lab.critical.ack")}
+              onClick={onAck}
+            >
+              <Check />
+              <span className="hidden @min-[58rem]/table:inline">
+                {t("lab.critical.ack")}
+              </span>
+            </Button>
+          ) : null}
+          <Button
+            size="sm"
+            variant={call ? "neutral" : "default"}
+            data-testid="critical-log"
+            title={t("lab.critical.logCall")}
+            onClick={onLog}
+          >
+            <PhoneCall />
+            <span
+              className={cn(
+                call ? "hidden @min-[58rem]/table:inline" : "inline"
+              )}
+            >
+              {t("lab.critical.logCall")}
+            </span>
+          </Button>
+        </div>
       </TableCell>
     </TableRow>
   )

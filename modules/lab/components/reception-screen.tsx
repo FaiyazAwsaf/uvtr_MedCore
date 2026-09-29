@@ -42,13 +42,18 @@ import {
   REJECT_REASONS,
   type RejectReason,
 } from "../commands"
+import { benchReady } from "../logic"
+import { AddOnQueue } from "./addon-queue"
 import { useLabCommand } from "./lab-feedback"
 import { ContainerChip, LabPage, PatientCell, TestChips } from "./lab-ui"
 import {
+  FOCUS_ROW,
   loadSpecimenViews,
   staffName,
   useBranch,
+  useFocusParam,
   useLabTests,
+  useScrollToFocus,
   useSpecimens,
   useStaff,
   useTodayStart,
@@ -56,14 +61,16 @@ import {
 } from "./use-lab-data"
 
 /**
- * "/lab/reception": specimen intake (plan §9). Receive collected specimens
- * at the bench, or reject one with a reason, which orders a free recollection
- * (scenario S5).
+ * "/lab/reception": specimen intake (plan §9). The add-on queue (doctors'
+ * requests to test a stored sample, S6), then receive collected specimens
+ * at the bench, or reject one with a reason, which orders a free
+ * recollection (S5). `?focus=<id>` highlights a specimen or an add-on.
  */
 export function ReceptionScreen() {
   const { t } = useLocale()
   const branch = useBranch()
   const tests = useLabTests()
+  const focus = useFocusParam()
   const inTransit = useSpecimens(branch, ["collected"], {
     sortField: "collectedAt",
   })
@@ -71,9 +78,7 @@ export function ReceptionScreen() {
     sortField: "receivedAt",
     newestFirst: true,
   })
-  const received = receivedAll?.filter((v) =>
-    v.items.some((i) => i.status === "received")
-  )
+  const received = receivedAll?.filter((v) => v.items.some(benchReady))
   const [rejecting, setRejecting] = React.useState<SpecimenView | null>(null)
 
   return (
@@ -86,6 +91,7 @@ export function ReceptionScreen() {
       <div className="@container">
         <div className="grid gap-4 @min-[68rem]:grid-cols-[minmax(0,1fr)_19rem]">
           <div className="flex min-w-0 flex-col gap-4">
+            <AddOnQueue branch={branch} tests={tests} focus={focus} />
             <SectionCard
               size="sm"
               icon={Send}
@@ -102,6 +108,7 @@ export function ReceptionScreen() {
                   rows={inTransit ?? []}
                   tests={tests}
                   mode="transit"
+                  focus={focus}
                   onReject={setRejecting}
                 />
               )}
@@ -122,6 +129,7 @@ export function ReceptionScreen() {
                   rows={received ?? []}
                   tests={tests}
                   mode="received"
+                  focus={focus}
                   onReject={setRejecting}
                 />
               )}
@@ -157,11 +165,13 @@ function SpecimenTable({
   rows,
   tests,
   mode,
+  focus,
   onReject,
 }: {
   rows: SpecimenView[]
   tests: Map<string, LabTestRow> | undefined
   mode: "transit" | "received"
+  focus?: string
   onReject: (view: SpecimenView) => void
 }) {
   const { t } = useLocale()
@@ -190,6 +200,7 @@ function SpecimenTable({
               view={view}
               tests={tests}
               mode={mode}
+              focused={focus === view.specimen.id}
               onReject={() => onReject(view)}
             />
           ))}
@@ -203,27 +214,32 @@ function SpecimenRowView({
   view,
   tests,
   mode,
+  focused,
   onReject,
 }: {
   view: SpecimenView
   tests: Map<string, LabTestRow> | undefined
   mode: "transit" | "received"
+  focused: boolean
   onReject: () => void
 }) {
   const { t, locale } = useLocale()
   const staff = useStaff()
   const receive = useLabCommand(receiveSpecimen)
   const flash = useFlashOnChange(view.specimen.version)
+  const ref = useScrollToFocus<HTMLTableRowElement>(focused)
   const at =
     mode === "transit" ? view.specimen.collectedAt : view.specimen.receivedAt
   const by =
     mode === "transit" ? view.specimen.collectedBy : view.specimen.receivedBy
   return (
     <TableRow
+      ref={ref}
       data-testid={mode === "transit" ? "receive-row" : "received-row"}
       data-specimen-id={view.specimen.id}
       data-accession={view.specimen.accessionNo}
-      className={flash}
+      data-focused={focused || undefined}
+      className={cn(focused && FOCUS_ROW, flash)}
     >
       <TableCell className="max-w-[15rem]">
         <PatientCell patient={view.patient} />
@@ -474,6 +490,8 @@ function RejectedToday({
             <li
               key={view.specimen.id}
               className="border-b border-hairline py-2 last:border-0"
+              data-testid="rejected-row"
+              data-specimen-id={view.specimen.id}
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="truncate text-[0.8125rem] font-medium">
@@ -499,11 +517,16 @@ function RejectedToday({
                 />
               </div>
               {recollection ? (
-                <div className="mt-0.5 text-xs text-info">
+                <div
+                  className="mt-0.5 text-xs text-info"
+                  data-testid="rejected-recollection"
+                  data-accession={recollection.accessionNo}
+                >
                   {t("lab.reception.recollectionAs", {
                     accessionNo: recollection.accessionNo,
                   })}{" "}
-                  · {tk(`lab.status.${recollection.status}`)}
+                  · {t("lab.common.free")} ·{" "}
+                  {tk(`lab.status.${recollection.status}`)}
                 </div>
               ) : null}
             </li>

@@ -68,6 +68,9 @@ export const labEn = {
       uploaded: "uploaded",
       "in-progress": "in progress",
       completed: "completed",
+      open: "open",
+      acknowledged: "acknowledged",
+      escalated: "escalated",
     },
     stages: {
       label: "Specimen flow",
@@ -110,6 +113,7 @@ export const labEn = {
       recentTitle: "Collected today",
       recentEmpty: "Nothing collected yet today.",
       reprint: "Reprint label",
+      awaitingPayment: "Awaiting payment: collect once paid",
       collectedToast: "Specimen {accessionNo} collected. Send it to the lab.",
       dialog: {
         title: "Collect specimen",
@@ -160,6 +164,34 @@ export const labEn = {
         done: "Specimen rejected. Recollection {accessionNo} is waiting for collection.",
         pickReason: "Pick a reason first.",
       },
+    },
+    addOn: {
+      title: "Add-on requests",
+      subtitle: "One more test on a sample already taken",
+      empty: "No add-on requests today.",
+      requestedBy: "Requested by {name}",
+      onSpecimen: "Sample",
+      collectedAt: "collected",
+      stability: "Stability: {hours} h of {limit} h",
+      volume: "Volume: {left} ml left, {needed} ml needed",
+      container: "Different tube type",
+      newCollection: "New collection",
+      approve: "Approve and bill {price}",
+      cannotApprove:
+        "The checks do not pass: order a new collection instead.",
+      adviceStability:
+        "Collected {hours} hours ago, beyond this test's {limit}-hour stability. Order a new collection.",
+      adviceVolume: "Not enough sample left. Order a new collection.",
+      adviceContainer:
+        "This test needs a different tube. Order a new collection.",
+      approvedToast: "{test} added to sample {accessionNo} and billed",
+      newCollectionToast:
+        "{test} needs a new sample: {accessionNo} is waiting for collection",
+      approvedOn: "Approved on sample {accessionNo}",
+      newSample: "New sample {accessionNo}: {status}",
+      closed: "Closed: {status}",
+      awaitingPayment: "Billed {price}, awaiting payment",
+      readyToRun: "Paid: ready for the analyser",
     },
     rejectReasons: {
       haemolysed: "Haemolysed",
@@ -296,6 +328,19 @@ export const labEn = {
       logCall: "Log call",
       readBackYes: "Read back",
       readBackNo: "No read-back",
+      autoOff:
+        "Escalation {minutes} minutes after the call is done by hand. Automatic escalation is a Tier 2 setting (off).",
+      autoOn:
+        "Open calls go to the duty doctor automatically {minutes} minutes after the call.",
+      overdue: "Overdue: escalate to the duty doctor",
+      escalatedTo: "Escalated to {doctor} at {time}",
+      auto: "automatic",
+      calledWho: "{person} ({role}), {time}",
+      escalatesIn: "Escalation due in {minutes} min",
+      escalate: "Escalate",
+      ack: "Mark acknowledged",
+      ackedToast: "Call for {analyte} marked acknowledged",
+      escalatedToast: "Escalated to {doctor}, the duty doctor",
       dialog: {
         title: "Log critical result call",
         person: "Person called",
@@ -372,6 +417,12 @@ export const labEn = {
       imagingPdf: "Signed PDF",
       language: "বাংলা",
     },
+    inbox: {
+      addOnApproved: "Add-on approved: {test} on sample {accessionNo}",
+      addOnNewCollection:
+        "Add-on {test}: a new sample is needed ({accessionNo})",
+      criticalEscalated: "Critical result escalated to you: {value}",
+    },
     feedback: {
       title: "Blocked by a rule",
       audited: "This attempt was recorded in the audit log.",
@@ -407,6 +458,23 @@ export const labEn = {
       LAB_IMAGING_NOT_PAID: "Imaging order {orderNo} is not paid yet.",
       LAB_IMAGING_STATE:
         "Imaging order {orderNo} is {status}, so this step no longer applies.",
+      LAB_ADDON_TEST_KIND:
+        "{test} is not a laboratory test, so it can't be added to a sample.",
+      LAB_ADDON_CONTAINER:
+        "{test} can't be run from the tube of {accessionNo}: it needs a different kind of tube.",
+      LAB_ADDON_DUPLICATE:
+        "{test} is already on {accessionNo}, or already requested.",
+      LAB_ADDON_DECIDED:
+        "The add-on request for {test} has already been decided.",
+      LAB_ADDON_STABILITY:
+        "{accessionNo} was collected {hours} hours ago, and {test} is stable for {limit} hours. Order a new collection instead.",
+      LAB_ADDON_VOLUME:
+        "Only {remaining} ml is left in {accessionNo}, and {test} needs {needed} ml. Order a new collection instead.",
+      LAB_CALL_STATE:
+        "This call is {status} now, so this step no longer applies.",
+      LAB_CALL_NOT_OVERDUE:
+        "Escalation opens {minutes} minutes after the call ({left} min to go).",
+      LAB_NO_DUTY_DOCTOR: "No duty doctor is set for this branch.",
     },
     events: {
       SpecimenCollected: "Specimen {accessionNo} collected ({tests})",
@@ -422,6 +490,11 @@ export const labEn = {
       ReportHeldForPayment: "Report {reportNo} held for payment",
       ReportCorrected: "Report {reportNo} corrected to v{version}",
       CriticalCallLogged: "Critical result call logged: {analyte}",
+      CriticalAcknowledged: "Critical result acknowledged: {value}",
+      CriticalEscalated: "Critical result escalated to {doctor}: {value}",
+      AddOnRequested: "Add-on requested: {test} on {accessionNo}",
+      AddOnApproved: "Add-on approved: {test} on {accessionNo}",
+      AddOnNewCollection: "Add-on {test} needs a new sample ({accessionNo})",
     },
     consumers: {
       labWorklist: "Lab worklist",
@@ -435,6 +508,65 @@ export const labEn = {
       billing: "Billing",
       dutyDoctor: "Duty doctor",
       audit: "Audit",
+    },
+    scenarios: {
+      S5: {
+        title: "Sample rejection: haemolysed",
+        summary:
+          "A rejected sample gets a free recollection, an SMS and an app notice, with no clinical details.",
+        cue: {
+          1: "{name}'s CBC tube {accessionNo} is collected and on its way to the lab (highlighted).",
+          2: "Click Reject on the highlighted row and pick Haemolysed.",
+          3: "Confirm: a free recollection order (৳0) with a new tube waits in Collection.",
+          4: "The patient gets a simulated SMS and an app notice asking for a new sample, with no clinical details.",
+        },
+      },
+      S6: {
+        title: "Add-on test on the same sample",
+        summary:
+          "Stability and remaining volume are checked before a test joins a stored sample.",
+        cue: {
+          1: "Dr. Kamal asked to add S. Creatinine to {name}'s serum sample {accessionNo}, collected {hours} hours ago.",
+          2: "Check the request: stability {hours} h of {stability} h, and {remainingMl} ml left for the {neededMl} ml needed.",
+          3: "Click Approve and bill: the test joins the same sample and a bill line reaches the cashier.",
+          4: "Dr. Kamal's inbox shows the approved add-on. The analyser runs it from the same tube once it is paid.",
+        },
+      },
+      S6B: {
+        title: "Add-on test: stability exceeded",
+        summary:
+          "The sample is too old for the requested test, so the lab asks for a new collection.",
+        cue: {
+          1: "Dr. Kamal asked to add S. Creatinine to {name}'s serum sample {accessionNo}, collected {hours} hours ago.",
+          2: "S. Creatinine keeps {stability} hours in a stored sample: the stability check fails and Approve is blocked.",
+          3: "Click New collection: a new tube is created and billed, and waits for collection once paid.",
+          4: "Dr. Kamal's inbox says a new sample is needed.",
+        },
+      },
+      S7: {
+        title: "Critical result call log",
+        summary:
+          "A critical potassium is phoned with a read-back, then escalated to the duty doctor at 30 minutes.",
+        cue: {
+          1: "{name}, 67, kidney disease: potassium {value} mmol/L, validated and flagged critical (highlighted).",
+          2: "Click Log call: {doctor}, the time, and tick the read-back. Do not mark it acknowledged.",
+          3: "In the demo panel, move the clock +15m, then +15m again.",
+          4: "At {minutes} minutes the call turns Overdue: click Escalate to send it to the duty doctor, {duty}.",
+          5: "{duty}'s inbox now shows the critical result. Automatic escalation is the Tier 2 setting.",
+        },
+      },
+      S8: {
+        title: "Corrected report, version 2",
+        summary:
+          "A released report is corrected to v2: v1 is kept, the doctor and the patient are told, and the QR shows v2.",
+        cue: {
+          1: "{name}'s TSH report {reportNo} v1 was released at {from} {unit}, read as normal (highlighted).",
+          2: "Click Correct on it and enter {to} for TSH: the flag changes to High.",
+          3: 'Reason: "Unit conversion error at result entry". Keep the change summary, then sign version 2.',
+          4: "v1 stays as superseded and v2 prints with the Corrected banner. Dr. Kamal's inbox and the patient app say an updated report is available.",
+          5: "Open Verify on v1: the QR page points to the current v2.",
+        },
+      },
     },
   },
 }
