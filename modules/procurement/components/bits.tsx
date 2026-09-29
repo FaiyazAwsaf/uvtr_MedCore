@@ -106,7 +106,9 @@ export function useTierText() {
 /** A unit word in the window's language: "tablets" for more than one in English. */
 export function unitWord(label: Bilingual | undefined, count: number, locale: "en" | "bn"): string {
   if (!label) return ""
-  return locale === "en" && count !== 1 ? `${label.en}s` : label[locale]
+  if (locale !== "en" || count === 1) return label[locale]
+  // "suppository" to "suppositories"; "tablet" to "tablets"
+  return /[^aeiou]y$/.test(label.en) ? `${label.en.slice(0, -1)}ies` : `${label.en}s`
 }
 
 /**
