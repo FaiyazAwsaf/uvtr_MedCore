@@ -10,7 +10,7 @@ import type {
   Sex,
   WardRow,
 } from "@/core/db/schema"
-import { interimBill, type InterimBill } from "@/core/inpatient/interim"
+import { interimBill, type InterimBill, type WardSegment } from "@/core/inpatient/interim"
 import { ADMISSION_REASONS } from "@/core/seed/content/org"
 
 import { inpatientBn } from "./i18n/bn"
@@ -34,12 +34,14 @@ export function depositsTotal(deposits: readonly Pick<DepositRow, "amountP">[]):
 
 /**
  * The interim bill of a stay at a moment (core/inpatient/interim.ts, the one
- * formula): bed days at the current ward's rate, nursing by ward kind and one
- * consultant round a day, less every deposit received.
+ * formula): bed days at the rate of the ward each day began in, nursing by
+ * ward kind and one consultant round a day, less every deposit received.
  */
 export function stayBill(opts: {
-  admission: Pick<AdmissionRow, "admittedAt">
+  admission: Pick<AdmissionRow, "admittedAt" | "wardMoves">
   ward: Pick<WardRow, "kind" | "bedDayRateP">
+  /** Wards of earlier beds after transfers (a missing one counts as the current ward) */
+  wardById?: ReadonlyMap<string, Pick<WardRow, "kind" | "bedDayRateP">>
   consultant?: Pick<DoctorRow, "followUpFeeP">
   deposits: readonly Pick<DepositRow, "amountP">[]
   at: Ms
@@ -48,9 +50,25 @@ export function stayBill(opts: {
     admittedAt: opts.admission.admittedAt,
     at: opts.at,
     ward: opts.ward,
+    segments: staySegments(opts.admission, opts.ward, opts.wardById),
     consultantRoundP: opts.consultant?.followUpFeeP ?? 0,
     depositsP: depositsTotal(opts.deposits),
   })
+}
+
+/** The ward of each part of a stay, from its transfers (plan §5.8). */
+export function staySegments(
+  admission: Pick<AdmissionRow, "admittedAt" | "wardMoves">,
+  current: Pick<WardRow, "kind" | "bedDayRateP">,
+  wardById?: ReadonlyMap<string, Pick<WardRow, "kind" | "bedDayRateP">>
+): WardSegment[] | undefined {
+  const moves = admission.wardMoves ?? []
+  if (!moves.length) return undefined
+  const ward = (id: string) => wardById?.get(id) ?? current
+  return [
+    { from: admission.admittedAt, ward: ward(moves[0].fromWardId) },
+    ...moves.map((move) => ({ from: move.at, ward: ward(move.toWardId) })),
+  ]
 }
 
 /**

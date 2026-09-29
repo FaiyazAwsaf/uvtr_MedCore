@@ -1,7 +1,7 @@
 import { z } from "zod"
 
 import type { BranchCode } from "@/config/brand.config"
-import type { AdmissionRow, BedRow, DepositRow, Id, Poisha } from "@/core/db/schema"
+import type { AdmissionRow, BedRow, DepositRow, Id, Poisha, WardRow } from "@/core/db/schema"
 import { defineCommand } from "@/core/engine/defineCommand"
 import { nextAdmissionNo, nextReceiptNo } from "@/core/engine/docNumbers"
 import type { Tx } from "@/core/engine/types"
@@ -61,9 +61,19 @@ async function billInTx(tx: Tx, admission: AdmissionRow): Promise<{
 }> {
   const bed = await tx.get("beds", admission.bedId)
   const ward = await tx.get("wards", bed.wardId)
+  const wardById = new Map<Id, WardRow>([[ward.id, ward]])
+  for (const move of admission.wardMoves ?? []) {
+    for (const id of [move.fromWardId, move.toWardId]) {
+      const row = wardById.get(id) ?? (await tx.find("wards", id))
+      if (row) wardById.set(id, row)
+    }
+  }
   const consultant = await tx.find("doctors", admission.consultantId)
   const deposits = await tx.list("deposits", "admissionId", admission.id)
-  return { bill: stayBill({ admission, ward, consultant, deposits, at: tx.now() }), deposits }
+  return {
+    bill: stayBill({ admission, ward, wardById, consultant, deposits, at: tx.now() }),
+    deposits,
+  }
 }
 
 async function consultantParams(tx: Tx, doctorId: Id) {
@@ -184,7 +194,13 @@ export const transferBed = defineCommand({
     const from = await tx.get("beds", admission.bedId)
     await tx.update("beds", from.id, { status: "cleaning", admissionId: undefined })
     await tx.update("beds", to.id, { status: "occupied", admissionId: admission.id })
-    await tx.update("admissions", admission.id, { bedId: to.id })
+    await tx.update("admissions", admission.id, {
+      bedId: to.id,
+      wardMoves: [
+        ...(admission.wardMoves ?? []),
+        { at: tx.now(), fromBedId: from.id, toBedId: to.id, fromWardId: from.wardId, toWardId: to.wardId },
+      ],
+    })
 
     tx.emit("BedTransferred", {
       refs: { patientId: patient.id, admissionId: admission.id, bedId: to.id },

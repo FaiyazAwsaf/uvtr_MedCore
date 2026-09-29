@@ -3,16 +3,21 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import type { MedcoreDb } from "@/core/db/database"
 import { commit } from "@/core/engine/commit"
 import { ConflictError, PermissionDenied } from "@/core/engine/errors"
+import { now } from "@/core/clock/clock"
+import { NURSING_PER_DAY_P } from "@/core/inpatient/interim"
 import { setBedStatus, transferBed } from "@/modules/inpatient/commands"
+import { billOf, stayById } from "@/modules/inpatient/queries"
 
 import {
   admitTo,
+  advance,
   B2_DESK,
   bedAt,
   dropDb,
   eventsSince,
   FARHANA,
   lastSeq,
+  ONE_DAY,
   RAFIQ,
   seededDb,
   vacantBed,
@@ -29,6 +34,41 @@ afterAll(async () => {
 })
 
 describe("inpatient.transferBed", () => {
+  it("keeps the days already begun at the old ward's rate after a transfer", async () => {
+    const general = await bedAt(db, "B1", "vacant", { kind: "general" })
+    const stay = await admitTo(db, general)
+    advance(ONE_DAY + 60 * 60 * 1000)
+    const cabin = await bedAt(db, "B1", "vacant", { kind: "cabin" })
+    await commit(
+      transferBed,
+      { admissionId: stay.id, toBedId: cabin.id, toBedVersion: cabin.version },
+      { db, actor: FARHANA }
+    )
+    advance(ONE_DAY)
+    try {
+      const moved = (await db.admissions.get(stay.id))!
+      expect(moved.wardMoves).toHaveLength(1)
+      expect(moved.wardMoves![0]).toMatchObject({ fromBedId: general.id, toBedId: cabin.id })
+      const view = (await stayById(db, stay.id))!
+      const bill = billOf(view, now())!
+      const generalWard = (await db.wards.get(general.wardId))!
+      const cabinWard = (await db.wards.get(cabin.wardId))!
+      expect(bill.days).toBe(3)
+      const beds = bill.lines.filter((l) => l.kind === "bed").map((l) => [l.unitP, l.qty])
+      expect(beds).toEqual([
+        [generalWard.bedDayRateP, 2],
+        [cabinWard.bedDayRateP, 1],
+      ])
+      const nursing = bill.lines.filter((l) => l.kind === "nursing").map((l) => [l.unitP, l.qty])
+      expect(nursing).toEqual([
+        [NURSING_PER_DAY_P.general, 2],
+        [NURSING_PER_DAY_P.cabin, 1],
+      ])
+    } finally {
+      advance(-2 * ONE_DAY - 60 * 60 * 1000)
+    }
+  })
+
   it("moves the stay to a vacant bed; the old bed goes for cleaning", async () => {
     const from = await vacantBed(db)
     const stay = await admitTo(db, from)

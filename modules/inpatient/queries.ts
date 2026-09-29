@@ -38,6 +38,8 @@ export type StayView = {
   bed?: BedRow
   ward?: WardRow
   consultant?: Consultant
+  /** The current ward and the wards of earlier beds (transfers) */
+  wardById: ReadonlyMap<Id, WardRow>
   /** Oldest first */
   deposits: DepositRow[]
   corporate?: CorporateClientRow
@@ -80,7 +82,14 @@ async function viewsOf(db: MedcoreDb, admissions: AdmissionRow[]): Promise<StayV
       ...new Set(compact(admissions.map((a) => a.corporateClientId))),
     ]),
   ])
-  const wards = byId(await db.wards.bulkGet([...new Set(compact(beds).map((b) => b.wardId))]))
+  const wards = byId(
+    await db.wards.bulkGet([
+      ...new Set([
+        ...compact(beds).map((b) => b.wardId),
+        ...admissions.flatMap((a) => (a.wardMoves ?? []).flatMap((m) => [m.fromWardId, m.toWardId])),
+      ]),
+    ])
+  )
   const patientById = byId(patients)
   const bedById = byId(beds)
   const clientById = byId(clients)
@@ -92,6 +101,7 @@ async function viewsOf(db: MedcoreDb, admissions: AdmissionRow[]): Promise<StayV
       bed,
       ward: bed ? wards.get(bed.wardId) : undefined,
       consultant: consultants.get(admission.consultantId),
+      wardById: wards,
       deposits: deposits
         .filter((d) => d.admissionId === admission.id)
         .sort((a, b) => a.at - b.at || a.id.localeCompare(b.id)),
@@ -180,6 +190,7 @@ export function billOf(stay: StayView, at: Ms): InterimBill | null {
   return stayBill({
     admission: stay.admission,
     ward: stay.ward,
+    wardById: stay.wardById,
     consultant: stay.consultant?.doctor,
     deposits: stay.deposits,
     at,

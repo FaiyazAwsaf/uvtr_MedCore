@@ -1465,6 +1465,14 @@ export type AdmissionRow = BaseRow & {
    * was raised; cleared by a top-up that restores it, so each crossing alerts once.
    */
   depositAlertAt?: Ms
+  /** Bed transfers, oldest first: the interim bill charges each day at the ward it began in */
+  wardMoves?: {
+    at: Ms
+    fromBedId: Id
+    toBedId: Id
+    fromWardId: Id
+    toWardId: Id
+  }[]
 }
 
 export type DepositRow = BaseRow & {

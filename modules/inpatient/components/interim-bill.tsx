@@ -131,7 +131,7 @@ export function InterimBillSheet({ stay, bill, at }: { stay: StayView; bill: Int
           </thead>
           <tbody>
             {bill.lines.map((line) => (
-              <tr key={line.kind} className="border-b border-[#e0e0e0]" data-testid="interim-line" data-kind={line.kind}>
+              <tr key={`${line.kind}:${line.unitP}`} className="border-b border-[#e0e0e0]" data-testid="interim-line" data-kind={line.kind}>
                 <td className="py-1.5 pr-2">{lineLabel(line.kind)}</td>
                 <td className="py-1.5 text-right tabular-nums">
                   {t("inpatient.interim.qtyTimes", { qty: num(line.qty), rate: money(line.unitP) })}

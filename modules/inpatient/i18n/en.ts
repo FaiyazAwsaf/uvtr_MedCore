@@ -128,7 +128,8 @@ export const inpatientEn = {
       owed: "Amount owed",
       transfer: "Transfer bed",
       transferTitle: "Move to a vacant bed",
-      transferHint: "The current bed goes for cleaning. Charges follow the new ward's rate.",
+      transferHint:
+        "The current bed goes for cleaning. Days already begun stay at the old ward's rate; the new ward's rate starts with the next day.",
       noVacant: "No vacant beds at this branch.",
       moveTo: "Move to {bed}",
       moved: "Moved to bed {bed}",

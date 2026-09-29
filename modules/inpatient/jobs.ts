@@ -25,6 +25,12 @@ export async function staysDueForAlert(
     db.deposits.where("admissionId").anyOf(admitted.map((a) => a.id)).toArray(),
   ])
   const wards = await db.wards.bulkGet(beds.map((bed) => bed?.wardId ?? ""))
+  const moved = await db.wards.bulkGet([
+    ...new Set(admitted.flatMap((a) => (a.wardMoves ?? []).flatMap((m) => [m.fromWardId, m.toWardId]))),
+  ])
+  const wardById = new Map(
+    [...wards, ...moved].filter((w): w is NonNullable<typeof w> => !!w).map((w) => [w.id, w])
+  )
   const doctors = await db.doctors.bulkGet(admitted.map((a) => a.consultantId))
   const due: Id[] = []
   admitted.forEach((admission, index) => {
@@ -33,6 +39,7 @@ export async function staysDueForAlert(
     const bill = stayBill({
       admission,
       ward,
+      wardById,
       consultant: doctors[index],
       deposits: deposits.filter((d) => d.admissionId === admission.id),
       at: now,
