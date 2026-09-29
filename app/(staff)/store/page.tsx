@@ -1,5 +1,6 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { StoreScreen } from "@/modules/inventory/components/store-screen"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.store" phase={4} />
+/** "/store": stock, low-stock alerts, expiring and quarantine (plan §9). */
+export default function StorePage() {
+  return <StoreScreen />
 }

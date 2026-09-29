@@ -111,9 +111,32 @@ function useTransfers(branch: BranchCode | null): TransfersData | undefined {
   }, [db, branch])
 }
 
-export function TransfersScreen() {
-  const { t, num } = useLocale()
-  const { branch, branchLabel, isEdge } = usePharmacyContext()
+/**
+ * Transfers to and from a branch (plan §9 `/pharmacy/transfers`,
+ * `/store/transfers`). The pharmacy shows the pharmacist's own branch; the
+ * store passes its branch (a network-level persona picks one), raises
+ * requests "from the store", and sees each transfer's value at cost.
+ */
+export function TransfersScreen({
+  branch: branchOverride,
+  requestedFrom = "pharmacy",
+  showValue = false,
+  headerActions,
+}: {
+  /** The branch to show; defaults to the persona's (null: none picked yet) */
+  branch?: BranchCode | null
+  /** Where requests raised here come from */
+  requestedFrom?: "pharmacy" | "store"
+  /** Show dispatched value and shortfalls at cost (the store) */
+  showValue?: boolean
+  /** Extra header controls (the store's branch picker) */
+  headerActions?: React.ReactNode
+} = {}) {
+  const { t, num, locale } = useLocale()
+  const context = usePharmacyContext()
+  const isEdge = context.isEdge
+  const branch = branchOverride === undefined ? context.branch : branchOverride
+  const branchLabel = branch ? branchName(branch, locale) : ""
   const data = useTransfers(branch)
   const [tab, setTab] = React.useState<"incoming" | "outgoing">("incoming")
   const [dispatching, setDispatching] = React.useState<TransferItem | null>(null)
@@ -134,13 +157,24 @@ export function TransfersScreen() {
         actions={
           <>
             <LiveChip />
-            <Button data-testid="transfer-request-open" size="sm" onClick={() => setRequesting(true)}>
+            {headerActions}
+            <Button
+              data-testid="transfer-request-open"
+              size="sm"
+              onClick={() => setRequesting(true)}
+              disabled={!branch}
+            >
               <Plus />
               {t("inventory.transfers.request.open")}
             </Button>
           </>
         }
       />
+      {!branch ? (
+        <section className="surface-card">
+          <EmptyState icon={ArrowLeftRight} title={t("inventory.transfers.chooseBranch")} />
+        </section>
+      ) : null}
       <SegmentedPills
         size="sm"
         value={tab}
@@ -158,7 +192,7 @@ export function TransfersScreen() {
           },
         ]}
       />
-      {data && shown.length === 0 ? (
+      {!branch ? null : data && shown.length === 0 ? (
         <section className="surface-card">
           <EmptyState
             icon={ArrowLeftRight}
@@ -176,6 +210,7 @@ export function TransfersScreen() {
               branch={branch!}
               onDispatch={() => setDispatching(item)}
               onReceive={() => setReceiving(item)}
+              showValue={showValue}
             />
           ))}
         </div>
@@ -192,6 +227,7 @@ export function TransfersScreen() {
             open={requesting}
             branch={branch}
             offline={isEdge}
+            requestedFrom={requestedFrom}
             onClose={() => setRequesting(false)}
           />
         </>
@@ -206,14 +242,16 @@ function TransferCard({
   branch,
   onDispatch,
   onReceive,
+  showValue = false,
 }: {
   item: TransferItem
   data: TransfersData
   branch: BranchCode
   onDispatch: () => void
   onReceive: () => void
+  showValue?: boolean
 }) {
-  const { t, num, dmy, locale } = useLocale()
+  const { t, num, dmy, money, locale } = useLocale()
   const { transfer, lines } = item
   const atSource = transfer.fromBranchId === branch
   const canDispatch =
@@ -230,6 +268,14 @@ function TransferCard({
       notes: own.map((l) => l.discrepancy).filter((d) => d && !/^Short by \d+$/.test(d)),
     }
   })
+  // Value at cost: what left the source shelf, and what never arrived.
+  const costOf = (l: TransferLineRow) => (l.batchId ? (data.batches.get(l.batchId)?.costP ?? 0) : 0)
+  const sentValueP = lines.reduce((sum, l) => sum + l.qtyDispatched * costOf(l), 0)
+  const shortUnits = lines.reduce((sum, l) => sum + Math.max(0, l.qtyDispatched - l.qtyReceived), 0)
+  const shortValueP = lines.reduce(
+    (sum, l) => sum + Math.max(0, l.qtyDispatched - l.qtyReceived) * costOf(l),
+    0
+  )
   return (
     <article
       data-testid="transfer-row"
@@ -349,6 +395,23 @@ function TransferCard({
           </span>
         ) : null}
         {transfer.note ? <span className="italic">{transfer.note}</span> : null}
+        {showValue && sentValueP > 0 ? (
+          <span
+            data-testid="transfer-value"
+            data-value={sentValueP}
+            className="nums ml-auto font-medium text-foreground"
+          >
+            {t("inventory.transfers.value", { amount: money(sentValueP) })}
+          </span>
+        ) : null}
+        {showValue && transfer.status === "received" && shortUnits > 0 ? (
+          <span data-testid="transfer-short-value" className="nums basis-full text-destructive">
+            {t("inventory.transfers.shortValue", {
+              count: num(shortUnits),
+              amount: money(shortValueP),
+            })}
+          </span>
+        ) : null}
       </footer>
     </article>
   )
@@ -616,12 +679,14 @@ function RequestDialog({
   open,
   branch,
   offline,
+  requestedFrom,
   onClose,
 }: {
   open: boolean
   branch: BranchCode
   /** Other branches' stock is unknown while offline (HAZ-15) */
   offline: boolean
+  requestedFrom: "pharmacy" | "store"
   onClose: () => void
 }) {
   const { t, num, locale } = useLocale()
@@ -680,7 +745,7 @@ function RequestDialog({
       fromBranchId: source,
       toBranchId: branch,
       lines: [{ brandId, qty: units }],
-      requestedFrom: "pharmacy",
+      requestedFrom,
       note: note.trim() || undefined,
       idempotencyKey: key,
     })

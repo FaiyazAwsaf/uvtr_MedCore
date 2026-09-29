@@ -1,5 +1,13 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { Suspense } from "react"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.store" phase={4} />
+import { PoScreen } from "@/modules/procurement/components/po-screen"
+
+/** "/store/po": purchase orders, and one order's detail with `?po=` (plan §9). */
+export default function PurchaseOrdersPage() {
+  return (
+    // The screen reads `?po=` (useSearchParams), which needs a Suspense boundary.
+    <Suspense fallback={null}>
+      <PoScreen />
+    </Suspense>
+  )
 }
