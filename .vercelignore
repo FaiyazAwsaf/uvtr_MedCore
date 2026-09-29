@@ -1,0 +1,15 @@
+# Only used by Vercel CLI uploads; Git deployments already see committed files only.
+# Internal documents, never uploaded
+*.pdf
+docs/
+
+# Local tooling and agent worktrees
+.claude/
+.env*
+
+# Test output and build caches
+coverage/
+test-results/
+playwright-report/
+blob-report/
+*.tsbuildinfo

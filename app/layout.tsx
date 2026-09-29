@@ -31,6 +31,8 @@ export const metadata: Metadata = {
   authors: [{ name: "UVTR Infotech", url: "https://uvtrinfotech.com/" }],
   creator: "UVTR Infotech",
   publisher: "UVTR Infotech",
+  // A client demo on a public URL: keep it out of search results.
+  robots: { index: false, follow: false },
 }
 
 export const viewport: Viewport = {
