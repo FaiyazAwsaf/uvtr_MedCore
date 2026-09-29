@@ -6,6 +6,30 @@ import { launchByUrl, launchFromPanel } from "./helpers"
 
 const ABDUL = "pat_abdul_karim"
 
+test("J1 and J2 open the front desk and Abdul's booking with Dr. Kamal", async ({
+  page,
+}) => {
+  await launchByUrl(page, "J1", "/?persona=per_ceo_anwar")
+  await expect(page).toHaveURL(/\/reception$/)
+  await expect(page.getByTestId("reception-search")).toBeVisible()
+
+  await launchFromPanel(page, "J2")
+  await expect(page).toHaveURL(/\/reception\/book/)
+  await expect(
+    page.locator('[data-testid="book-slot"][data-state="free"]').first()
+  ).toBeVisible()
+})
+
+test("J5 has Abdul's paid CBC and CRP waiting for collection", async ({
+  page,
+}) => {
+  await launchByUrl(page, "J5", "/?persona=per_ceo_anwar")
+  await expect(page).toHaveURL(/\/lab$/)
+  await expect(
+    page.getByTestId("collect-row").filter({ hasText: "Abdul Karim" })
+  ).toHaveCount(2)
+})
+
 test("J3 puts Abdul in Dr. Kamal's queue, and again without booking twice", async ({
   page,
 }) => {

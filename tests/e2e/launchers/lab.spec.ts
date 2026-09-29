@@ -56,9 +56,7 @@ test("S5 rejects the highlighted haemolysed tube and orders a free recollection,
   for (let run = 0; run < 2; run++) {
     await launch(page, "S5")
     await expect(page).toHaveURL(/\/lab\/reception\?focus=/)
-    const row = page.locator(
-      '[data-testid="receive-row"][data-focused="true"]'
-    )
+    const row = page.locator('[data-testid="receive-row"][data-focused="true"]')
     await expect(row).toBeVisible({ timeout: SETUP_TIMEOUT })
     const specimenId = await row.getAttribute("data-specimen-id")
     await row.getByTestId("reject-open").click()

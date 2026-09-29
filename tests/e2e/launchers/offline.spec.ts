@@ -21,7 +21,7 @@ test("S14 from the demo panel cuts B1 and opens the front desk with its cue card
   }
 })
 
-test("S15 by URL queues an offline registration and lands on the review queue", async ({
+test("S15 by URL: after reconnecting B1 the offline registration and its online variant reach review and are resolved", async ({
   page,
 }) => {
   await page.goto("/reception?persona=per_reception_farhana&launch=S15")
@@ -30,4 +30,24 @@ test("S15 by URL queues an offline registration and lands on the review queue", 
   await expect(cue).toBeVisible()
   // The cue names the person and the provisional UHID the setup produced.
   await expect(cue).toContainText(/registered at Dhanmondi while offline/)
+
+  // Reconnect B1 from the demo panel: the queued work replays and the pair
+  // lands in the review queue, where the front desk decides.
+  await page.getByTestId("demo-panel-trigger").click()
+  await page.getByRole("tab", { name: "Clock and network" }).click()
+  await page.getByTestId("network-reconnect-B1").click()
+  await page.keyboard.press("Escape")
+  const item = page
+    .locator('[data-testid="review-item"][data-kind="sync-duplicate"]')
+    .first()
+  await expect(item).toBeVisible()
+  await item
+    .getByTestId("review-reason")
+    .fill("Checked both ID cards: different people")
+  await item.getByTestId("review-different").click()
+  await page.getByText(/^Resolved \(/).click()
+  await expect(page.getByTestId("review-resolved").first()).toHaveAttribute(
+    "data-resolution",
+    "different"
+  )
 })
