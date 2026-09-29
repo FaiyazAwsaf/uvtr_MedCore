@@ -1,5 +1,6 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { ApprovalsScreen } from "@/modules/procurement/components/approvals-screen"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.finance" phase={4} />
+/** "/finance/approvals": high-value approvals for the CFO, and counter approvals (plan §9). */
+export default function FinanceApprovalsPage() {
+  return <ApprovalsScreen mode="finance" />
 }

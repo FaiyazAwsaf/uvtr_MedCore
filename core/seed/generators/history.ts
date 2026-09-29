@@ -481,6 +481,29 @@ export function seedHistory(
       outs.push(lab.invoice!)
     })
 
+    // A walk-in's HBsAg and ESR (৳650) recorded as cash at 13:38. The bKash
+    // settlement shows the same ৳650 arriving at 13:42 (BK7QM2K9TD): the
+    // money came by bKash, so finance can match the line to this payment.
+    // Chosen without the history rng so the rest of the history is unchanged.
+    const used = new Set(labPatients.map((p) => p.id))
+    const walkIn = b1Adults.find((p) => !pools.reserved.has(p.id) && !used.has(p.id))!
+    const asCash = createLabOrder(ctx, {
+      patient: walkIn,
+      ageYears: pools.age(walkIn),
+      branch: "B1",
+      at: ctx.at(-1, "13:38"),
+      testIds: ["lt_hbsag", SEED_REFS.test.esr],
+      stage: "released",
+      source: "counter",
+      billing: {
+        cashierId: ACTOR.rafiq,
+        shiftId: shift.id,
+        tenders: [{ tender: "cash" }],
+      },
+      labtechId: ACTOR.rubel,
+    })
+    outs.push(asCash.invoice!)
+
     const payments = outs.flatMap((o) => o.payments)
     const cash = payments
       .filter((p) => p.tender === "cash")

@@ -1,5 +1,6 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { CorporateScreen } from "@/modules/finance/components/corporate-screen"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.finance" phase={4} />
+/** "/finance/corporate": contracts, rosters and the monthly company statement (plan §9). */
+export default function FinanceCorporatePage() {
+  return <CorporateScreen />
 }

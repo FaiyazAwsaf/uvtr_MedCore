@@ -1,5 +1,6 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { CashControlScreen } from "@/modules/finance/components/cash-control"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.finance" phase={4} />
+/** "/finance": cash control across the network (plan §9). */
+export default function FinanceCashPage() {
+  return <CashControlScreen />
 }

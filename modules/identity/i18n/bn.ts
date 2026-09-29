@@ -216,7 +216,6 @@ export const identityBn: typeof identityEn = {
       useDob: "জন্ম তারিখ দিন",
       ageIs: "বয়স {age} বছর",
       agePlaceholder: "বছর",
-      dmyPlaceholder: "দিন-মাস-বছর",
       sex: "লিঙ্গ",
       phone: "মোবাইল নম্বর",
       phoneHint: "পরিবারের নম্বর দিলে পরিবার যুক্ত হয়।",

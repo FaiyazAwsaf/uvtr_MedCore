@@ -31,7 +31,20 @@ export const counterKey = {
   grn: () => "grn",
   transfer: () => "trf",
   vendorInvoice: () => "vinv",
+  /** Network-wide documents raised at a branch while it is offline (PRD §16) */
+  offlineDoc: (kind: OfflineDocKind, branch: BranchCode) => `${kind}-off:${branch}`,
 } as const
+
+/** Network-wide document series that take a branch offline range. */
+export type OfflineDocKind = "pr" | "po" | "grn" | "trf" | "vinv"
+
+const OFFLINE_PREFIX: Record<OfflineDocKind, string> = {
+  pr: "PR",
+  po: "PO",
+  grn: "GRN",
+  trf: "TR",
+  vinv: "VI",
+}
 
 const pad = (n: number, width: number) => String(n).padStart(width, "0")
 
@@ -64,6 +77,9 @@ export const docNo = {
   vendorInvoice: (n: number) => `VI-${pad(n, 5)}`,
   provisionalUhid: (branch: BranchCode, n: number) =>
     `P-${branch}-${pad(n, 6)}`,
+  /** PO-B1-OFF-0001: raised while the branch was offline, never collides with central */
+  offlineDoc: (kind: OfflineDocKind, branch: BranchCode, n: number) =>
+    `${OFFLINE_PREFIX[kind]}-${branch}-OFF-${pad(n, 4)}`,
 }
 
 /* ---------------- UHID ---------------- */

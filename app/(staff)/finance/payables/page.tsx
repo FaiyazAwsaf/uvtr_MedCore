@@ -1,5 +1,6 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { PayablesScreen } from "@/modules/finance/components/payables-screen"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.finance" phase={4} />
+/** "/finance/payables": vendor payables, aging and payment (plan §9). */
+export default function FinancePayablesPage() {
+  return <PayablesScreen />
 }

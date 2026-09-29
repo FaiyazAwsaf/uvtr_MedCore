@@ -102,7 +102,25 @@ export function formatDate(
   )
 }
 
+/**
+ * Bangla clock time with the day period in words and first, as it is said:
+ * "সকাল ১১:৩০", "বিকাল ৫:৩০" (Intl's plain bn format prints a Latin "AM").
+ */
+function bnTime(date: Date, withDate: boolean): string {
+  const parts = new Intl.DateTimeFormat(INTL.bn, {
+    timeZone: TIME_ZONE,
+    ...(withDate ? { day: "numeric", month: "short" } : {}),
+    hour: "numeric",
+    minute: "2-digit",
+    dayPeriod: "short",
+  }).formatToParts(date)
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? ""
+  const time = `${get("dayPeriod")} ${get("hour")}:${get("minute")}`.trim()
+  return withDate ? `${get("day")} ${get("month")}, ${time}` : time
+}
+
 export function formatTime(date: Date | string | number, locale: Locale) {
+  if (locale === "bn") return bnTime(new Date(date), false)
   return new Intl.DateTimeFormat(INTL[locale], {
     timeZone: TIME_ZONE,
     hour: "numeric",
@@ -111,6 +129,7 @@ export function formatTime(date: Date | string | number, locale: Locale) {
 }
 
 export function formatDateTime(date: Date | string | number, locale: Locale) {
+  if (locale === "bn") return bnTime(new Date(date), true)
   return new Intl.DateTimeFormat(INTL[locale], {
     timeZone: TIME_ZONE,
     day: "numeric",

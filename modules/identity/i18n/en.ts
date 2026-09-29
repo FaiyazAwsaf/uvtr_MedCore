@@ -214,7 +214,6 @@ export const identityEn = {
       useDob: "Enter the date of birth",
       ageIs: "Age {age} years",
       agePlaceholder: "Years",
-      dmyPlaceholder: "DD-MM-YYYY",
       sex: "Sex",
       phone: "Mobile number",
       phoneHint: "A family number links the household.",

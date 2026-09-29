@@ -85,6 +85,15 @@ export type RefKey =
   | "dispenseId"
   | "approvalId"
   | "reviewId"
+  | "vendorInvoiceId"
+  | "matchId"
+  | "payableId"
+  | "bedId"
+  | "depositId"
+  | "settlementId"
+  | "creditNoteId"
+  | "corporateClientId"
+  | "exportId"
 export type Refs = Partial<Record<RefKey, Id>>
 
 export type ServiceType =
@@ -1154,6 +1163,10 @@ export type CreditNoteRow = BaseRow & {
   amountP: Poisha
   reason: string
   lines: { invoiceLineId: Id; amountP: Poisha }[]
+  /** Absent means a refund's credit note (billing); a corporate dispute reduces the company's share */
+  kind?: "refund" | "corporate-dispute"
+  corporateClientId?: Id
+  approvalId?: Id
 }
 
 export type ApprovalKind =
@@ -1165,6 +1178,8 @@ export type ApprovalKind =
   | "merge"
   | "payment-override"
   | "goodwill"
+  | "credit-note"
+  | "mismatch"
 
 export type ApprovalRow = BaseRow & {
   kind: ApprovalKind
@@ -1219,7 +1234,16 @@ export type FeeShareAccrualRow = BaseRow & {
 export type MfsSettlementRow = BaseRow & {
   provider: "bkash" | "nagad"
   date: ISODate
-  lines: { ref: string; amountP: Poisha; at: Ms; matchedPaymentId?: Id }[]
+  lines: {
+    ref: string
+    amountP: Poisha
+    at: Ms
+    matchedPaymentId?: Id
+    /** "auto" when matched on import by reference, otherwise the staff id who matched it */
+    matchedBy?: Id
+    /** Finance note on an unmatched line (e.g. "under investigation") */
+    note?: string
+  }[]
   status: "pending-import" | "imported" | "reconciled"
   importedAt?: Ms
 }
@@ -1270,18 +1294,29 @@ export type PurchaseRequestRow = BaseRow & {
   requestedBy: Id
   status: "draft" | "submitted" | "approved" | "rejected" | "ordered"
   totalP: Poisha
+  /** Who must approve: the lowest tier covering the value whose approver is not the requester */
   approvalTier: "store-manager" | "procurement-head" | "cfo"
   approvalId?: Id
   submittedAt?: Ms
   note?: string
+  /** Suggested supplier (the brand's manufacturer depot by default) */
+  vendorId?: Id
+  decidedBy?: Id
+  decidedAt?: Ms
+  /** Approver's reason (required on rejection) */
+  decisionNote?: string
 }
 
 export type PrLineRow = BaseRow & {
   prId: Id
   brandId: Id
+  /** Packs when `pack` is set, otherwise base units */
   qty: number
+  /** Per pack when `pack` is set, otherwise per base unit */
   estUnitCostP: Poisha
   lineTotalP: Poisha
+  /** Ordering pack (from the brand's pack sizes), e.g. a box of 10 x 10 strip = 100 tablets */
+  pack?: PackSize
 }
 
 export type PurchaseOrderRow = BaseRow & {
@@ -1298,10 +1333,16 @@ export type PurchaseOrderRow = BaseRow & {
 export type PoLineRow = BaseRow & {
   poId: Id
   brandId: Id
+  /**
+   * Quantities and cost count packs when `pack` is set (stock moves in base
+   * units: packs x pack.units), otherwise base units. Pending = ordered minus
+   * accepted (received minus rejected).
+   */
   qtyOrdered: number
   unitCostP: Poisha
   qtyReceived: number
   qtyRejected: number
+  pack?: PackSize
 }
 
 export type GrnRow = BaseRow & {
@@ -1329,13 +1370,19 @@ export type GrnLineRow = BaseRow & {
 }
 
 export type VendorInvoiceRow = BaseRow & {
+  /** Our reference (VI-03301) */
   vendorInvoiceNo: string
   vendorId: Id
   poId: Id
   amountP: Poisha
+  /** Quantities and unit costs in the PO line's unit (packs when the line has one) */
   lines: { poLineId: Id; qty: number; unitCostP: Poisha }[]
   receivedAt: Ms
-  status: "received" | "matched" | "mismatch" | "payable"
+  status: "received" | "matched" | "mismatch" | "payable" | "rejected"
+  /** The supplier's own invoice number */
+  vendorRef?: string
+  /** Date printed on the supplier's invoice */
+  invoiceDate?: ISODate
 }
 
 export type ThreeWayMatchRow = BaseRow & {
@@ -1352,6 +1399,10 @@ export type ThreeWayMatchRow = BaseRow & {
   }[]
   resolvedBy?: Id
   note?: string
+  /** How finance settled a mismatch */
+  resolution?: "pay-po-price" | "accept-invoice" | "reject-invoice"
+  resolvedAt?: Ms
+  approvalId?: Id
 }
 
 export type PayableRow = BaseRow & {
@@ -1361,6 +1412,11 @@ export type PayableRow = BaseRow & {
   amountP: Poisha
   dueDate: ISODate
   status: "open" | "scheduled" | "paid"
+  /** Payment run date when scheduled */
+  scheduledFor?: ISODate
+  paidAt?: Ms
+  /** Simulated bank transfer reference */
+  paymentRef?: string
 }
 
 export type AccountingExportRow = BaseRow & {
@@ -1404,15 +1460,36 @@ export type AdmissionRow = BaseRow & {
   status: "admitted" | "discharged"
   reason: string
   corporateClientId?: Id
+  /**
+   * Set when the deposit left fell below rules.depositThresholdP and the alert
+   * was raised; cleared by a top-up that restores it, so each crossing alerts once.
+   */
+  depositAlertAt?: Ms
+  /** Bed transfers, oldest first: the interim bill charges each day at the ward it began in */
+  wardMoves?: {
+    at: Ms
+    fromBedId: Id
+    toBedId: Id
+    fromWardId: Id
+    toWardId: Id
+  }[]
 }
 
 export type DepositRow = BaseRow & {
   admissionId: Id
   patientId: Id
+  branchId: BranchCode
   amountP: Poisha
   tender: Tender
   paymentId?: Id
   at: Ms
+  /** The cashier's open shift: cash deposits count in that drawer's expected cash */
+  shiftId?: Id
+  cashierId?: Id
+  /** Money receipt (RC-B1-000123) */
+  receiptNo?: string
+  /** Card approval code or bKash / Nagad transaction id (simulated) */
+  ref?: string
 }
 
 /* ================================================================== *
@@ -1474,6 +1551,14 @@ export type DailyStatRow = BaseRow & {
   labTatMin: number
   expensesP: Poisha
   stockValueP: Poisha
+  /**
+   * The same day split by service, for the dashboard drill-down (branch to
+   * department to service). Keys: OPD specialty code, lab section, imaging
+   * modality, pharmacy sale category (rx / otc / controlled), inpatient ward kind.
+   */
+  services?: { key: string; visits: number; billedP: Poisha }[]
+  /** Set on today's baseline row: the figures cover the day only up to this moment */
+  asAt?: Ms
 }
 
 export type ScenarioRunRow = BaseRow & {

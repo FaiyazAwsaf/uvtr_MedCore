@@ -1,4 +1,5 @@
 import type {
+  DepositRow,
   Id,
   Ms,
   PaymentRow,
@@ -47,14 +48,17 @@ export type ShiftCash = {
   cashInP: Poisha
   /** Cash the cashier paid out as refunds while the shift was open */
   cashRefundsP: Poisha
-  /** Float plus cash taken minus cash refunded */
+  /** Inpatient deposits taken in cash on this shift (they sit in the same drawer) */
+  cashDepositsP: Poisha
+  /** Float plus cash taken and cash deposits, minus cash refunded */
   expectedP: Poisha
 }
 
 /**
  * What the drawer should hold: the opening float, plus confirmed cash taken
- * on this shift, minus cash refunds this cashier paid out while it was open
- * (refunds are not tied to a shift row, so they count by who and when).
+ * on this shift and inpatient deposits taken in cash on it, minus cash refunds
+ * this cashier paid out while it was open (refunds are not tied to a shift
+ * row, so they count by who and when).
  */
 export function shiftCash(
   shift: Pick<
@@ -68,7 +72,8 @@ export function shiftCash(
   refunds: readonly Pick<
     RefundRow,
     "tender" | "status" | "createdBy" | "createdAt" | "amountP"
-  >[]
+  >[],
+  deposits: readonly Pick<DepositRow, "shiftId" | "tender" | "amountP">[] = []
 ): ShiftCash {
   const cashInP = payments
     .filter(
@@ -83,10 +88,14 @@ export function shiftCash(
   const cashRefundsP = refunds
     .filter((r) => isShiftCashRefund(r, shift.cashierId, shift.openedAt, until))
     .reduce((sum, r) => sum + r.amountP, 0)
+  const cashDepositsP = deposits
+    .filter((d) => d.shiftId === shift.id && d.tender === "cash")
+    .reduce((sum, d) => sum + d.amountP, 0)
   return {
     cashInP,
     cashRefundsP,
-    expectedP: shift.floatP + cashInP - cashRefundsP,
+    cashDepositsP,
+    expectedP: shift.floatP + cashInP + cashDepositsP - cashRefundsP,
   }
 }
 

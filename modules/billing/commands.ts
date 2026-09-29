@@ -641,7 +641,8 @@ const DENOMINATION_KEYS = DENOMINATIONS.map(String) as [string, ...string[]]
 
 /**
  * Close the cashier's shift with the drawer counted by denomination (PRD §9):
- * expected cash is the float plus cash taken minus cash refunded out; a
+ * expected cash is the float plus cash taken (payments and inpatient
+ * deposits) minus cash refunded out; a
  * variance either way above `rules.cashVarianceThresholdP` needs a
  * supervisor's approval ("variance"), within it the shift closes directly.
  * A closed shift is locked (INV-12): no more payments on it, and the
@@ -671,7 +672,8 @@ export const closeShift = defineCommand({
     if (shift.status !== "open") tx.reject("SHIFT_CLOSED", {})
     const payments = await tx.list("payments", "shiftId", shift.id)
     const refunds = await tx.list("refunds", "status", "completed")
-    const { expectedP } = shiftCash(shift, payments, refunds)
+    const deposits = (await tx.all("deposits")).filter((d) => d.shiftId === shift.id)
+    const { expectedP } = shiftCash(shift, payments, refunds, deposits)
     const denominations: Record<string, number> = {}
     for (const [value, count] of Object.entries(input.denominations)) {
       if (count && count > 0) denominations[value] = count

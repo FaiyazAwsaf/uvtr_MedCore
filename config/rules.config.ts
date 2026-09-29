@@ -30,6 +30,12 @@ export const rules = {
   /** PRD §8.7. Three-way match tolerances (invoice vs PO vs GRN). */
   threeWayMatch: { quantityTolerance: 0, priceTolerancePct: 2 },
 
+  /** PRD §9 Procurement (CONFIRM: HOSPITAL). A delivered lot expiring sooner than this is refused as short expiry and held in quarantine for the vendor. */
+  grnMinShelfLifeDays: 180,
+
+  /** Store view: stock expiring within this many days is listed as expiring soon. */
+  nearExpiryDays: 90,
+
   /** PRD §10.9. Consultant fee share. */
   feeShare: {
     consultationPct: 70,
@@ -40,8 +46,12 @@ export const rules = {
     discountBearer: "pro-rata",
   },
 
-  /** PRD §10.10. Corporate contracts. */
-  corporate: { coPayPct: 20, annualLimitPerEmployeeP: taka(50_000) },
+  /** PRD §10.10. Corporate contracts. A credit note on a disputed company share above `creditNoteCfoLimitP` needs the CFO (CONFIRM: HOSPITAL). */
+  corporate: {
+    coPayPct: 20,
+    annualLimitPerEmployeeP: taka(50_000),
+    creditNoteCfoLimitP: taka(5_000),
+  },
 
   /** PRD §19. A pending bKash or Nagad payment times out after this; it never unlocks work. */
   mfsPendingTimeoutMin: 15,

@@ -435,6 +435,12 @@ export function ZReportSheet({ report }: { report: ShiftReport }) {
             label={t("billing.shift.z.cashIn")}
             value={money(report.cashInP)}
           />
+          {report.cashDepositsP > 0 ? (
+            <Row
+              label={t("billing.shift.z.cashDeposits")}
+              value={money(report.cashDepositsP)}
+            />
+          ) : null}
           <Row
             label={t("billing.shift.z.cashRefunds")}
             value={money(-report.cashRefundsP)}
