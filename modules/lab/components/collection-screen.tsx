@@ -161,13 +161,17 @@ function CollectRow({
 }) {
   const { t } = useLocale()
   const flash = useFlashOnChange(view.specimen.version)
+  // A new sample asked for by an add-on decision exists before it is paid;
+  // the payment gate (INV-10) holds it until the cashier takes payment.
+  const unpaid = view.items.some((i) => !i.paymentCleared)
   return (
     <TableRow
       data-testid="collect-row"
       data-specimen-id={view.specimen.id}
       data-accession={view.specimen.accessionNo}
-      className={cn("cursor-pointer", flash)}
-      onClick={onCollect}
+      data-unpaid={unpaid || undefined}
+      className={cn(unpaid ? "opacity-75" : "cursor-pointer", flash)}
+      onClick={unpaid ? undefined : onCollect}
     >
       <TableCell className="max-w-[16rem]">
         <PatientCell patient={view.patient} />
@@ -177,6 +181,11 @@ function CollectRow({
         {view.items.some((i) => i.isFreeRecollection) ? (
           <span className="mt-1 block text-[0.6875rem] text-info">
             {t("lab.common.recollection")} · {t("lab.common.free")}
+          </span>
+        ) : null}
+        {unpaid ? (
+          <span className="mt-1 block text-[0.6875rem] text-warning">
+            {t("lab.collection.awaitingPayment")}
           </span>
         ) : null}
       </TableCell>
@@ -196,6 +205,8 @@ function CollectRow({
         <Button
           size="sm"
           data-testid="collect-open"
+          disabled={unpaid}
+          title={unpaid ? t("lab.collection.awaitingPayment") : undefined}
           onClick={(event) => {
             event.stopPropagation()
             onCollect()

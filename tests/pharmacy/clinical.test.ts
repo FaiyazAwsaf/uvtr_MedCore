@@ -109,7 +109,7 @@ describe("pharmacy on WS-B's signed prescriptions", () => {
     )
     expect(inbox).toMatchObject({
       kind: "substitution",
-      titleKey: "consultation.inbox.kind.substitution",
+      titleKey: "pharmacy.inbox.substitution",
     })
     await commit(
       decideSubstitution,

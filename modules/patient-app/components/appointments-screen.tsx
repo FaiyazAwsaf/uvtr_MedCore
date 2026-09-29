@@ -25,6 +25,7 @@ import {
   useFocusRing,
 } from "./bits"
 import { useDoctorInfo, useMember, useToday } from "./data"
+import { DelayNotice } from "./delay-notice"
 import {
   AppointmentStatus,
   CheckInButton,
@@ -163,7 +164,7 @@ function AppointmentPass({
             </div>
           </div>
           <div className="mt-2">
-            <WhenWhere appointment={appointment} session={session} />
+            <WhenWhere appointment={appointment} session={session} hideDelay />
           </div>
         </div>
       </div>
@@ -175,6 +176,11 @@ function AppointmentPass({
         </span>
       </div>
 
+      <DelayNotice
+        appointment={appointment}
+        session={session}
+        doctorName={info?.name ?? ""}
+      />
       {appointment.date === today ? (
         <QueuePanel appointment={appointment} session={session} />
       ) : null}

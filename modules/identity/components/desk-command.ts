@@ -6,7 +6,7 @@ import type { z } from "zod"
 import { ruleMessage } from "@/components/shared/rule-message"
 import { useDb } from "@/core/db/DbProvider"
 import { commit } from "@/core/engine/commit"
-import { RuleViolation } from "@/core/engine/errors"
+import { ConflictError, RuleViolation } from "@/core/engine/errors"
 import { feedbackFor, useEngineFeedback } from "@/core/engine/feedback"
 import type { CommandDef } from "@/core/engine/types"
 import { useActor } from "@/core/session/persona"
@@ -20,7 +20,7 @@ import { useLocale } from "@/lib/i18n/provider"
  */
 export type DeskOutcome<O> =
   | { ok: true; result: O }
-  | { ok: false; rule?: RuleViolation }
+  | { ok: false; rule?: RuleViolation; conflict?: ConflictError }
 
 export function useDeskCommand<S extends z.ZodType, O>(def: CommandDef<S, O>) {
   const db = useDb()
@@ -41,6 +41,8 @@ export function useDeskCommand<S extends z.ZodType, O>(def: CommandDef<S, O>) {
       } catch (error) {
         if (error instanceof RuleViolation) return { ok: false, rule: error }
         show(feedbackFor(error, def.name))
+        // The conflict dialog explains it; the screen may also reload its form.
+        if (error instanceof ConflictError) return { ok: false, conflict: error }
         return { ok: false }
       } finally {
         setPending(false)

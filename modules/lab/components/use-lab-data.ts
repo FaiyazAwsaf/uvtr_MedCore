@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useSearchParams } from "next/navigation"
 import { useLiveQuery } from "dexie-react-hooks"
 
 import type { BranchCode } from "@/config/brand.config"
@@ -21,6 +22,32 @@ import type {
 } from "@/core/db/schema"
 import { usePersona } from "@/core/session/persona"
 import type { Locale } from "@/lib/i18n/config"
+
+import { benchReady } from "../logic"
+
+/**
+ * The record a scenario launcher (or a link) points at: `?focus=<id>` on a
+ * lab or pathology screen. Its row is tinted and scrolled into view.
+ */
+export function useFocusParam(): string | undefined {
+  return useSearchParams().get("focus") ?? undefined
+}
+
+/** Scrolls the focused row into view once, when it first renders. */
+export function useScrollToFocus<T extends HTMLElement>(focused: boolean) {
+  const ref = React.useRef<T>(null)
+  const done = React.useRef(false)
+  React.useEffect(() => {
+    if (!focused || done.current || !ref.current) return
+    done.current = true
+    ref.current.scrollIntoView({ block: "center" })
+  }, [focused])
+  return ref
+}
+
+/** Row tint for the focused record. */
+export const FOCUS_ROW =
+  "bg-primary-soft shadow-[inset_3px_0_0_var(--primary)] hover:bg-primary-soft"
 
 /** This window's branch (lab personas always have one). */
 export function useBranch(): BranchCode {
@@ -288,10 +315,16 @@ export function useStageCounts(branch: BranchCode): StageCounts | undefined {
     const items = (status: LabOrderItemRow["status"]) =>
       db.labOrderItems.where("[branchId+status]").equals([branch, status])
     const validated = await items("validated").toArray()
+    // Paid add-ons joined to a tube already on the bench wait for results too.
+    const addOns = (await items("paid").toArray()).filter(
+      (i) => benchReady(i) && !!i.specimenId
+    )
+    const tubes = await db.specimens.bulkGet(addOns.map((i) => i.specimenId!))
+    const benchAddOns = tubes.filter((s) => s?.status === "received").length
     return {
       collect: await specimens("awaiting-collection"),
       transit: await specimens("collected"),
-      results: await items("received").count(),
+      results: (await items("received").count()) + benchAddOns,
       validate: await items("resulted").count(),
       sign: new Set(validated.map((i) => i.labOrderId)).size,
     }

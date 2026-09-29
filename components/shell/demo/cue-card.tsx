@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { SCENARIOS } from "@/core/scenarios/registry"
 import { updateSession, useSession } from "@/core/session/session"
+import { localizeDigits } from "@/lib/i18n/format"
 import { useLocale } from "@/lib/i18n/provider"
 import { cn } from "@/lib/utils"
 
@@ -22,7 +23,7 @@ import { cn } from "@/lib/utils"
  * steps with the current one highlighted. Renders nothing otherwise.
  */
 export function CueCard() {
-  const { t, tk, num } = useLocale()
+  const { t, tk, num, locale } = useLocale()
   const { cue } = useSession()
   const [minimised, setMinimised] = React.useState(false)
   const scenario = cue
@@ -33,8 +34,17 @@ export function CueCard() {
   const total = scenario.cueKeys.length
   const step = Math.min(Math.max(cue.step, 0), Math.max(total - 1, 0))
   const title = tk(scenario.titleKey)
+  const params = cue.params ?? {}
+  // Numbers read in the window's numerals; strings (names, UHIDs, Rx and
+  // accession numbers) are shown as the setup gave them.
+  const shown = Object.fromEntries(
+    Object.entries(params).map(([key, value]) => [
+      key,
+      typeof value === "number" ? localizeDigits(String(value), locale) : value,
+    ])
+  )
   const go = (next: number) =>
-    updateSession({ cue: { scenarioId: scenario.id, step: next } })
+    updateSession({ cue: { scenarioId: scenario.id, step: next, params } })
   const close = () => updateSession({ cue: null })
   const progress = t("demo.cue.step", { n: num(step + 1), total: num(total) })
 
@@ -59,6 +69,8 @@ export function CueCard() {
       aria-label={t("demo.cue.label")}
       className="fixed bottom-4 left-4 z-40 flex max-h-[min(24rem,calc(100svh-6rem))] w-[20rem] max-w-[calc(100vw-2rem)] flex-col rounded-lg bg-popover text-popover-foreground shadow-lg ring-1 ring-foreground/10"
       data-testid="cue-card"
+      data-scenario-id={scenario.id}
+      data-step={step}
     >
       <header className="flex items-start gap-2 border-b border-hairline px-3 py-2.5">
         <div className="min-w-0 flex-1">
@@ -90,7 +102,13 @@ export function CueCard() {
 
       <ol className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
         {scenario.cueKeys.map((key, i) => (
-          <li key={key}>
+          <li
+            key={key}
+            // On short screens (a 960x600 demo quadrant) only the current step
+            // shows, so the card does not cover the page; Previous and Next
+            // still walk through every step.
+            className={cn(i !== step && "[@media(max-height:720px)]:hidden")}
+          >
             <button
               type="button"
               onClick={() => go(i)}
@@ -116,7 +134,9 @@ export function CueCard() {
               >
                 {i < step ? <Check className="size-2.5" /> : num(i + 1)}
               </span>
-              <span className={cn(i === step && "font-medium")}>{tk(key)}</span>
+              <span className={cn(i === step && "font-medium")}>
+                {tk(key, shown)}
+              </span>
             </button>
           </li>
         ))}

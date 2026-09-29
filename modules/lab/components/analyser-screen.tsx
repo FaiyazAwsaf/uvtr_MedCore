@@ -42,7 +42,7 @@ import {
   importAnalyserResults,
   TEXT_ANALYTE,
 } from "../commands"
-import { formatRange, toLatinDigits } from "../logic"
+import { benchReady, formatRange, toLatinDigits } from "../logic"
 import { useLabCommand } from "./lab-feedback"
 import {
   ContainerChip,
@@ -71,9 +71,7 @@ export function AnalyserScreen() {
   const received = useSpecimens(branch, ["received"], {
     sortField: "receivedAt",
   })
-  const queue = received?.filter((v) =>
-    v.items.some((i) => i.status === "received")
-  )
+  const queue = received?.filter((v) => v.items.some(benchReady))
   const [manual, setManual] = React.useState<SpecimenView | null>(null)
 
   return (
@@ -165,7 +163,7 @@ function AnalyserRow({
   const { t, num } = useLocale()
   const run = useLabCommand(importAnalyserResults)
   const flash = useFlashOnChange(view.specimen.version)
-  const pending = view.items.filter((i) => i.status === "received")
+  const pending = view.items.filter(benchReady)
   const runnable = pending.some(
     (i) => (tests?.get(i.testId)?.analytes.length ?? 0) > 0
   )
@@ -335,7 +333,7 @@ function ManualBody({
 }) {
   const { t } = useLocale()
   const save = useLabCommand(enterManualResults)
-  const pending = view.items.filter((i) => i.status === "received")
+  const pending = view.items.filter(benchReady)
   const [itemId, setItemId] = React.useState<string | undefined>(pending[0]?.id)
   const item = pending.find((i) => i.id === itemId) ?? pending[0]
   const test = item ? tests?.get(item.testId) : undefined

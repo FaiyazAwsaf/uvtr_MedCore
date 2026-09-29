@@ -10,9 +10,11 @@ import {
   Check,
   Crown,
   Footprints,
+  GitMerge,
   Home,
   LogIn,
   ShieldCheck,
+  UserSearch,
   X,
 } from "lucide-react"
 
@@ -40,6 +42,7 @@ import {
 } from "@/modules/scheduling/components/use-session-info"
 
 import { idReasonFromNote } from "../registration"
+import { ContactEditButton, ContactForm } from "./contact-edit"
 import { useDeskCommand, useRuleText } from "./desk-command"
 
 export const APPOINTMENT_TONE: Record<AppointmentRow["status"], Tone> = {
@@ -63,18 +66,31 @@ export function PatientPanel({
   patientId,
   onSelect,
   onClose,
+  editContactKey,
 }: {
   patientId: string
   onSelect: (patientId: string) => void
   onClose: () => void
+  /** A new value opens the contact form (scenario launchers, `?edit=contact`) */
+  editContactKey?: string | null
 }) {
   const db = useDb()
   const router = useRouter()
-  const { t, tk, locale, dmy, digits } = useLocale()
+  const { t, tk, locale, dmy, digits, uhid } = useLocale()
   const persona = usePersona()
   const branch = persona?.branchId ?? null
   const nowMs = useNow(60_000)
   const today = dhakaDate(nowMs || now())
+  const [editing, setEditing] = React.useState<string | null>(() =>
+    editContactKey ? `${patientId}:${editContactKey}` : null
+  )
+  const [seenEditKey, setSeenEditKey] = React.useState(editContactKey ?? null)
+  if ((editContactKey ?? null) !== seenEditKey) {
+    setSeenEditKey(editContactKey ?? null)
+    if (editContactKey) setEditing(`${patientId}:${editContactKey}`)
+  }
+  // The form belongs to the patient it was opened for.
+  const contactOpen = !!editing && editing.startsWith(`${patientId}:`)
 
   const data = useLiveQuery(async () => {
     const patient = await db.patients.get(patientId)
@@ -84,12 +100,13 @@ export function PatientPanel({
       patient.guardianPatientId ? db.patients.get(patient.guardianPatientId) : undefined,
       db.appointments.where("patientId").equals(patientId).toArray(),
     ])
+    const survivor = patient.mergedInto ? await db.patients.get(patient.mergedInto) : undefined
     const members = household
       ? (await db.patients.bulkGet(household.memberIds)).filter(
           (p): p is PatientRow => !!p && p.identityStatus !== "merged"
         )
       : []
-    return { patient, household, guardian, appointments, members }
+    return { patient, household, guardian, appointments, members, survivor }
   }, [db, patientId])
 
   const visits = React.useMemo(() => {
@@ -126,7 +143,7 @@ export function PatientPanel({
   }
   if (data === null) return null
 
-  const { patient, household, guardian, members } = data
+  const { patient, household, guardian, members, survivor } = data
   const isHead = household?.headPatientId === patient.id
   const relationText = patient.relationToHead
     ? isHead
@@ -236,6 +253,47 @@ export function PatientPanel({
         }
       />
 
+      {patient.identityStatus === "merged" ? (
+        <div
+          data-testid="patient-merged"
+          className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-md bg-[color-mix(in_oklch,var(--info)_12%,transparent)] px-3.5 py-2.5 text-[0.8125rem]"
+        >
+          <GitMerge className="size-4 shrink-0 text-info" />
+          <span className="min-w-0 flex-1">
+            {t("identity.patient.merged", { uhid: survivor ? uhid(survivor.uhid) : "" })}
+          </span>
+          {survivor ? (
+            <Button variant="link" size="sm" onClick={() => onSelect(survivor.id)}>
+              {t("identity.patient.openSurvivor")}
+            </Button>
+          ) : null}
+        </div>
+      ) : patient.identityStatus === "under-review" ? (
+        <div
+          data-testid="patient-under-review"
+          className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-md bg-[color-mix(in_oklch,var(--warning)_14%,transparent)] px-3.5 py-2.5 text-[0.8125rem]"
+        >
+          <UserSearch className="size-4 shrink-0 text-warning" />
+          <span className="min-w-0 flex-1">{t("identity.patient.underReview")}</span>
+          <Button
+            variant="link"
+            size="sm"
+            nativeButton={false}
+            render={<Link href="/reception/review" />}
+          >
+            {t("identity.patient.openReview")}
+          </Button>
+        </div>
+      ) : null}
+
+      {contactOpen ? (
+        <ContactForm
+          key={editing}
+          patient={patient}
+          onClose={() => setEditing(null)}
+        />
+      ) : null}
+
       <section className="surface-card @container flex flex-col gap-3 p-4">
         <h3 className="text-[0.9375rem] font-semibold">{t("identity.patient.todayTitle")}</h3>
         {visits.todays.length ? (
@@ -274,6 +332,12 @@ export function PatientPanel({
       </section>
 
       <section className="surface-card flex flex-col gap-4 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-[0.9375rem] font-semibold">{t("identity.patient.details")}</h3>
+          {patient.identityStatus !== "merged" && !contactOpen ? (
+            <ContactEditButton onClick={() => setEditing(`${patient.id}:${patient.version}`)} />
+          ) : null}
+        </div>
         <KeyValueGrid items={details} columns={3} />
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="mr-1 text-xs text-muted-foreground">

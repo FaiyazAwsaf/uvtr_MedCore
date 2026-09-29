@@ -78,6 +78,7 @@ export const pharmacyEn = {
       empty: "No prescriptions here",
       emptyHint: "New prescriptions appear the moment a doctor signs them.",
       newRx: "New prescription {rxNo}: {name}",
+      revisedRx: "Prescription {rxNo} is now version {version}: {name}",
     },
     dispense: {
       title: "Dispense {rxNo}",
@@ -87,6 +88,10 @@ export const pharmacyEn = {
       signedBy: "Signed by {doctor}",
       version: "v{version}",
       superseded: "This version was replaced. Open the current prescription from the queue.",
+      revisedTo: "The doctor changed this prescription: version {version} is the one to dispense now.",
+      replacedBy: "The doctor replaced this prescription with {rxNo}.",
+      openVersion: "Open version {version}",
+      openRx: "Open {rxNo}",
       otherBranch: "Written at {branch}. Stock is taken from your branch.",
       verify: {
         title: "Check identity before handing over",
@@ -109,6 +114,8 @@ export const pharmacyEn = {
         qty: "Quantity to give",
         paid: "Paid",
         unpaid: "Awaiting payment",
+        balanceUnpaid: "Balance unpaid",
+        notBilled: "Not billed",
         unpaidHint: "Only paid lines can be dispensed. The patient pays at the cash counter first.",
         nonDictionary: "Not in the medicine dictionary: dispense by hand after checking.",
         select: "Give this line",
@@ -144,6 +151,11 @@ export const pharmacyEn = {
         controlledNote: "Controlled drug: a register entry is written with this dispense.",
         unbilled:
           "Nothing was billed for this line when it was prescribed (it was out of stock). Send it to the cashier now that stock is here.",
+        unbilledOut:
+          "Nothing was billed for this line: it was out of stock when prescribed. Ask the doctor for a substitute, or request a transfer.",
+        balanceUnbilled:
+          "The rest of this line is not paid yet. Stock is here: send it to the cashier.",
+        balanceUnbilledOut: "The rest of this line is not paid yet. It is billed when stock arrives.",
         sendToCashier: "Send to cashier",
         sentToCashier: "{qty} × {brand} added to the patient's bill",
       },
@@ -179,8 +191,10 @@ export const pharmacyEn = {
         body: "Nothing changes on the prescription until {doctor} approves. The pharmacy never substitutes on its own.",
         prescribed: "Prescribed",
         choose: "Proposed brand",
-        sameGeneric: "Brands of {generic}, A to Z",
-        none: "No other brand of this generic is in the dictionary.",
+        sameGeneric: "Other brands of {generic} {strength}, A to Z",
+        none: "No other brand of this medicine and strength is in the dictionary.",
+        strengthNote:
+          "Only the same medicine and strength can be proposed. A brand with no stock here can't be picked.",
         reason: "Reason for the doctor",
         reasonPlaceholder: "For example: out of stock at this branch",
         send: "Send to doctor",
@@ -333,6 +347,10 @@ export const pharmacyEn = {
       NOTHING_IN_QUARANTINE: "Nothing from this dispense is waiting in quarantine.",
       LINE_ALREADY_PAID: "This line is already paid, so nothing new was billed.",
       LINE_ALREADY_BILLED: "This line is already on the patient's bill. Take payment at the cashier.",
+      SUBSTITUTE_NOT_EQUIVALENT:
+        "{to} is not the same medicine and strength as {from}. Only the doctor can change that, with a new prescription.",
+      QTY_ABOVE_PAID: "Only {paid} of these are paid for, not {qty}. Send the rest to the cashier first.",
+      SUBSTITUTE_OUT_OF_STOCK: "{item} has no usable stock here, so it can't be proposed.",
     },
     events: {
       dispenseCompleted: "Medicines dispensed for {rxNo} ({units} units)",
@@ -346,6 +364,35 @@ export const pharmacyEn = {
       returnDiscarded: "{qty} × {item} discarded",
       balanceReady: "Patient told the rest of {rxNo} is ready",
       balanceExpired: "Open balance on {rxNo} expired",
+    },
+    inbox: {
+      substitution: "Substitution request on {rxNo}: {from} to {to}",
+    },
+    scenarios: {
+      S3: {
+        title: "Partial dispense",
+        summary:
+          "Only 14 of 28 capsules on the shelf: the rest stays owed for 7 days, on the label and in the patient app.",
+        cue: {
+          1: "{name}'s prescription {rxNo} is paid: Seclo 20 mg 1+0+1 for 14 days is 28 capsules, but only 14 are on the shelf at Dhanmondi.",
+          2: "Check identity: type the date of birth {dob} or the phone ending {phoneTail}.",
+          3: "Keep the quantity at 14 and press Dispense and print labels.",
+          4: "The line is part dispensed: 14 stay outstanding and the balance is open for 7 days. The label shows 14 given and 14 still to collect.",
+          5: "In the patient app (Tanvir's own account), Prescriptions shows the 14 still to collect.",
+        },
+      },
+      S4: {
+        title: "Doctor substitution request",
+        summary:
+          "No silent substitution: the pharmacist asks, the doctor approves, and version 2 comes back to the queue.",
+        cue: {
+          1: "{name}'s prescription {rxNo} is paid for Fexo 120 mg. Monas 10 mg is out of stock at Dhanmondi, so nothing was billed for it.",
+          2: "Before dispensing anything, press Request substitute on the Monas 10 mg line. Other 10 mg brands of montelukast are listed A to Z with their stock: pick one and give a reason.",
+          3: "The line now waits for the prescriber. Nothing on the prescription changes until the doctor decides.",
+          4: "In the doctor window (launcher S4D), Dr. Kamal opens the request in his inbox and approves it.",
+          5: "Version 2 of {rxNo} arrives here and in the queue live. The new brand is billed: once the cashier takes payment, check identity ({dob}) and dispense.",
+        },
+      },
     },
     consumers: {
       stock: "Stock",

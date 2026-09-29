@@ -7,6 +7,10 @@ const PORT = Number(process.env.E2E_PORT ?? 3100)
 export default defineConfig({
   testDir: "tests/e2e",
   timeout: 60_000,
+  // Launcher setups run many engine commits; on a 7.8 GB machine six
+  // parallel browsers made some slower than the default 5 s waits.
+  expect: { timeout: 10_000 },
+  workers: 3,
   fullyParallel: false,
   reporter: [["list"]],
   use: {

@@ -9,11 +9,15 @@ import { canonicalJson, sha256Hex } from "@/core/audit/chain"
 import type {
   Analyte,
   Container,
+  CriticalCallRow,
+  LabOrderItemRow,
   LabReportRow,
+  LabTestRow,
   RefRange,
   ResultFlag,
   ResultRow,
   Sex,
+  SpecimenRow,
 } from "@/core/db/schema"
 import { flagFor, rangeFor } from "@/core/seed/content/analyser-scripts"
 
@@ -295,6 +299,156 @@ export function reportContent(report: HashReport, results: HashResult[]) {
 /** SHA-256 over the canonical JSON of the signed content (QR verification). */
 export function reportHash(report: HashReport, results: HashResult[]): string {
   return sha256Hex(canonicalJson(reportContent(report, results)))
+}
+
+/* ---------------- Add-on tests on a stored specimen ---------------- */
+
+/** Sample one analyser run takes from the tube (ml). */
+export const RUN_VOLUME_ML = 0.5
+
+/**
+ * Sample an add-on test needs from the stored tube, where it differs from
+ * one analyser run (demo values, by test code).
+ */
+export const ADD_ON_VOLUME_ML: Record<string, number> = {
+  LIPID: 1,
+  ELEC: 1,
+  LFT: 1,
+  RFT: 1,
+  TFT: 1,
+}
+
+export function addOnVolumeMl(test: Pick<LabTestRow, "code">): number {
+  return ADD_ON_VOLUME_ML[test.code] ?? RUN_VOLUME_ML
+}
+
+const HOUR_MS = 3_600_000
+
+export type AddOnCheck = {
+  /** Hours since the specimen was collected (one decimal) */
+  hours: number
+  /** How long the requested test stays valid in a stored specimen */
+  stabilityHours: number
+  stable: boolean
+  /** Left in the tube, less what approved add-ons still waiting will use */
+  remainingMl: number
+  neededMl: number
+  enoughVolume: boolean
+  /** The requested test uses the same kind of tube */
+  sameContainer: boolean
+  /** Every check passes: the test can be run on this specimen */
+  ok: boolean
+}
+
+/**
+ * Can a requested test be added to a stored specimen (plan §9, S6)? The time
+ * since collection must be within the test's stability, enough sample must be
+ * left, and the test must use the same kind of tube.
+ */
+export function addOnCheck(opts: {
+  specimen: Pick<SpecimenRow, "collectedAt" | "volumeRemainingMl" | "container">
+  test: Pick<LabTestRow, "code" | "stabilityHours" | "container">
+  now: number
+  /** Sample already promised to other add-ons on the tube (ml) */
+  reservedMl?: number
+}): AddOnCheck {
+  const { specimen, test, now } = opts
+  const elapsed = Math.max(0, now - (specimen.collectedAt ?? now))
+  const hours = Math.floor((elapsed / HOUR_MS) * 10) / 10
+  const stable = elapsed <= test.stabilityHours * HOUR_MS
+  const remainingMl =
+    Math.round(
+      Math.max(0, specimen.volumeRemainingMl - (opts.reservedMl ?? 0)) * 10
+    ) / 10
+  const neededMl = addOnVolumeMl(test)
+  const enoughVolume = remainingMl >= neededMl
+  const sameContainer = test.container === specimen.container
+  return {
+    hours,
+    stabilityHours: test.stabilityHours,
+    stable,
+    remainingMl,
+    neededMl,
+    enoughVolume,
+    sameContainer,
+    ok: stable && enoughVolume && sameContainer,
+  }
+}
+
+export type AddOnState =
+  /** Requested by the doctor, waiting for the lab's decision */
+  | "pending"
+  /** Approved on the same specimen */
+  | "approved"
+  /** Too old or too little sample: a new specimen is to be collected */
+  | "new-collection"
+  /** Rejected or cancelled with its specimen */
+  | "closed"
+
+/**
+ * Where an add-on item stands. A request is an item with `addOnOfItemId`
+ * and no bill line yet; the lab's decision adds the bill line and either
+ * joins it to the parent's specimen (approved) or gives it a new one.
+ */
+export function addOnState(
+  item: Pick<
+    LabOrderItemRow,
+    "addOnOfItemId" | "basketLineId" | "specimenId" | "status"
+  >,
+  parentSpecimenId: string | undefined
+): AddOnState | undefined {
+  if (!item.addOnOfItemId) return undefined
+  if (item.status === "cancelled" || item.status === "rejected") return "closed"
+  if (!item.basketLineId && !item.specimenId) return "pending"
+  return item.specimenId && item.specimenId === parentSpecimenId
+    ? "approved"
+    : "new-collection"
+}
+
+/**
+ * An item ready for the analyser on a received specimen: received with it,
+ * or a paid add-on joined to it afterwards (the payment gate keeps unpaid
+ * add-ons off the bench).
+ */
+export function benchReady(
+  item: Pick<LabOrderItemRow, "status" | "addOnOfItemId" | "paymentCleared">
+): boolean {
+  return (
+    item.status === "received" ||
+    (!!item.addOnOfItemId && item.status === "paid" && item.paymentCleared)
+  )
+}
+
+/** An add-on joined to a specimen but not run yet (awaiting payment, or paid). */
+export function isWaitingAddOn(
+  item: Pick<LabOrderItemRow, "status" | "addOnOfItemId">
+): boolean {
+  return (
+    !!item.addOnOfItemId && (item.status === "ordered" || item.status === "paid")
+  )
+}
+
+/* ---------------- Critical call escalation (HAZ-05) ---------------- */
+
+/** When an open call falls due for escalation (demo-clock ms). */
+export function escalationDueAt(
+  call: Pick<CriticalCallRow, "calledAt">,
+  minutes: number
+): number {
+  return call.calledAt + minutes * 60_000
+}
+
+/**
+ * An open (unacknowledged) call is overdue once `minutes` have passed since
+ * the call: it must then go to the duty doctor. Derived on read, so every
+ * window follows the demo clock.
+ */
+export function isCallOverdue(
+  call: Pick<CriticalCallRow, "calledAt" | "status">,
+  now: number,
+  minutes: number
+): boolean {
+  return call.status === "open" && now >= escalationDueAt(call, minutes)
 }
 
 /** "A. K." from "Abdul Karim": initials only for the public verify page. */

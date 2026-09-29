@@ -1,8 +1,9 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import { useParams } from "next/navigation"
-import { CircleAlert, FileWarning, PackageCheck, Tags } from "lucide-react"
+import { ArrowRight, CircleAlert, FileWarning, PackageCheck, Tags } from "lucide-react"
 import { toast } from "sonner"
 
 import { SegmentedPills } from "@/components/motion/segmented"
@@ -13,7 +14,7 @@ import { MoneyText } from "@/components/shared/money-text"
 import { nameIn } from "@/components/shared/person"
 import { ReportSafetyConcernButton } from "@/components/shared/report-safety-concern"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import type { BranchCode } from "@/config/brand.config"
 import { now } from "@/core/clock/clock"
 import { dhakaDate } from "@/core/clock/dates"
@@ -176,6 +177,8 @@ function DispenseView({
   const settled = data.lines.length > 0 && rows.every((r) => r.facts.block === "final")
   const canDispense = signed && !!verified && chosen.length > 0 && !dispenseCommand.pending
   const labels = labelGroups(data)
+  // A superseded or replaced Rx is read-only: nothing to hand over, labels only if some were printed.
+  const showLabels = signed || labels.length > 0
 
   const confirm = async () => {
     if (!verified) return
@@ -275,7 +278,13 @@ function DispenseView({
   )
 
   return (
-    <PageBody data-testid="dispense-screen">
+    <PageBody
+      data-testid="dispense-screen"
+      data-rx-id={rx.id}
+      data-rx-no={rx.rxNo}
+      data-rx-version={rx.rxVersion}
+      data-rx-status={rx.status}
+    >
       <PageHeader
         back={{ href: "/pharmacy", label: t("pharmacy.dispense.back") }}
         title={
@@ -307,12 +316,7 @@ function DispenseView({
 
       {patient ? <IdentityBanner patient={patient} /> : null}
 
-      {!signed ? (
-        <p className="flex items-center gap-2 rounded-md bg-surface-raised px-3 py-2 text-[0.8125rem] text-warning">
-          <CircleAlert className="size-4" />
-          {t("pharmacy.dispense.superseded")}
-        </p>
-      ) : null}
+      {!signed ? <SupersededNotice data={data} /> : null}
       {rx.branchId !== branch ? (
         <p className="text-[0.8125rem] text-muted-foreground">
           {t("pharmacy.dispense.otherBranch", { branch: branchName(rx.branchId, locale) })}
@@ -345,13 +349,13 @@ function DispenseView({
               offline={isEdge}
             />
           ))}
-          {!wide ? summary : null}
-          {!wide ? labelPanel : null}
+          {!wide && signed ? summary : null}
+          {!wide && showLabels ? labelPanel : null}
         </div>
         {wide ? (
           <aside className="flex flex-col gap-4 self-stretch">
-            <div className="sticky top-2 z-30">{summary}</div>
-            {labelPanel}
+            {signed ? <div className="sticky top-2 z-30">{summary}</div> : null}
+            {showLabels ? labelPanel : null}
           </aside>
         ) : null}
       </div>
@@ -364,6 +368,48 @@ function DispenseView({
         onClose={() => setSubFor(null)}
       />
     </PageBody>
+  )
+}
+
+/**
+ * A superseded or replaced Rx is read-only here. When the doctor changed it
+ * (a substitution approved in the inbox, a revision), the version now in
+ * force is one click away: it arrives live while this screen is open.
+ */
+function SupersededNotice({ data }: { data: DispenseData }) {
+  const { t, num } = useLocale()
+  const { rx, current } = data
+  const revised = current && current.rxNo === rx.rxNo
+  return (
+    <div
+      data-testid="dispense-superseded"
+      data-status={rx.status}
+      className="flash-sync flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md bg-surface-raised px-3 py-2 text-[0.8125rem]"
+    >
+      <span className="flex min-w-0 flex-1 items-start gap-2 text-warning">
+        <CircleAlert className="mt-0.5 size-4 shrink-0" />
+        <span>
+          {!current
+            ? t("pharmacy.dispense.superseded")
+            : revised
+              ? t("pharmacy.dispense.revisedTo", { version: num(current.rxVersion) })
+              : t("pharmacy.dispense.replacedBy", { rxNo: current.rxNo })}
+        </span>
+      </span>
+      {current ? (
+        <Link
+          href={`/pharmacy/dispense/${current.id}`}
+          data-testid="dispense-open-current"
+          data-rx-id={current.id}
+          className={buttonVariants({ size: "sm" })}
+        >
+          {revised
+            ? t("pharmacy.dispense.openVersion", { version: num(current.rxVersion) })
+            : t("pharmacy.dispense.openRx", { rxNo: current.rxNo })}
+          <ArrowRight />
+        </Link>
+      ) : null}
+    </div>
   )
 }
 

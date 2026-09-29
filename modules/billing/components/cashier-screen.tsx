@@ -9,7 +9,9 @@ import {
   ChevronRight,
   Hourglass,
   Landmark,
+  LoaderCircle,
   Store,
+  Wallet,
   X,
 } from "lucide-react"
 
@@ -25,12 +27,13 @@ import { now } from "@/core/clock/clock"
 import { dhakaDate } from "@/core/clock/dates"
 import { useNow } from "@/core/clock/useNow"
 import { useDb } from "@/core/db/DbProvider"
+import { newId } from "@/core/db/ids"
 import type { Id, Poisha, ShiftRow } from "@/core/db/schema"
 import { usePersona } from "@/core/session/persona"
 import { cn } from "@/lib/utils"
 import { useLocale } from "@/lib/i18n/provider"
 
-import type { CheckoutResult } from "../commands"
+import { openShift, type CheckoutResult } from "../commands"
 import {
   basketOf,
   dueInvoicesOf,
@@ -44,6 +47,7 @@ import { InvoicePanel } from "./invoice-panel"
 import { CashierKpis } from "./kpi-row"
 import { TENDER_ICON, TENDER_TAG } from "./labels"
 import { PatientFinder } from "./patient-finder"
+import { useBillingCommand, useProblemText } from "./use-billing-command"
 
 type Panel =
   | { kind: "bill" }
@@ -127,16 +131,19 @@ function CashierWorkspace({
             <ChevronRight className="size-3.5 text-muted-foreground" />
           </Link>
         ) : (
-          <Link
-            href="/cashier/shift"
-            data-testid="cashier-shift"
-            data-status="none"
-            className="flex items-center gap-2 rounded-full bg-[color-mix(in_oklch,var(--warning)_18%,transparent)] px-3 py-1.5 text-xs font-medium transition-colors hover:bg-primary-soft"
-          >
-            <span className="size-2 rounded-full bg-warning" />
-            {t("billing.cashier.noShift")}
-            <ChevronRight className="size-3.5" />
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/cashier/shift"
+              data-testid="cashier-shift"
+              data-status="none"
+              className="flex items-center gap-2 rounded-full bg-[color-mix(in_oklch,var(--warning)_18%,transparent)] px-3 py-1.5 text-xs font-medium transition-colors hover:bg-primary-soft"
+            >
+              <span className="size-2 rounded-full bg-warning" />
+              {t("billing.cashier.noShift")}
+              <ChevronRight className="size-3.5" />
+            </Link>
+            <OpenShiftNow />
+          </div>
         )}
       </header>
 
@@ -491,6 +498,38 @@ function TodayByTender({
         })}
       </ul>
     </SectionCard>
+  )
+}
+
+/** The usual float, for opening a shift in one click from the bill screen. */
+const QUICK_FLOAT_P: Poisha = 5_000_00
+
+/**
+ * "Open shift" in one click (plan §9): after a close (S13) the cashier is
+ * back to taking payments without leaving the bill screen. A different
+ * float is set on the shift page.
+ */
+function OpenShiftNow() {
+  const { t, money } = useLocale()
+  const open = useBillingCommand(openShift)
+  const problemText = useProblemText()
+  const [idempotencyKey] = React.useState(() => newId("shift"))
+  return (
+    <>
+      <Button
+        type="button"
+        size="sm"
+        data-testid="shift-open"
+        disabled={open.pending}
+        onClick={() => void open.run({ floatP: QUICK_FLOAT_P, idempotencyKey })}
+      >
+        {open.pending ? <LoaderCircle className="animate-spin" /> : <Wallet />}
+        {t("billing.cashier.openShiftNow", { amount: money(QUICK_FLOAT_P) })}
+      </Button>
+      {open.problem ? (
+        <span className="text-xs text-destructive">{problemText(open.problem)}</span>
+      ) : null}
+    </>
   )
 }
 

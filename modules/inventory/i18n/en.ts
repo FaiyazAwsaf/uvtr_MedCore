@@ -84,6 +84,7 @@ export const inventoryEn = {
       transferDispatched: "Transfer {transferNo} dispatched: {units} units, {from} to {to}",
       transferReceived: "Transfer {transferNo} received at {to}: {units} units",
       stockBelowReorder: "{item} below reorder level at {branch} ({onHand} left)",
+      stockAdjusted: "{item} at {branch} set to {after} usable units (was {before})",
     },
     consumers: {
       bothBranches: "Both branches' stock",
@@ -99,6 +100,7 @@ export const inventoryEn = {
       TRANSFER_NOT_DESTINATION: "Only {branch}, the receiving branch, can receive this transfer.",
       NOTHING_TO_DISPATCH: "No usable stock to send for transfer {transferNo}.",
       RECEIVED_ABOVE_DISPATCHED: "You can't receive more than the {qty} that were sent.",
+      NO_USABLE_BATCH: "There is no usable batch of this medicine to put stock on.",
     },
   },
 }

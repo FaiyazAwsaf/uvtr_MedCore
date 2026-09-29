@@ -51,7 +51,7 @@ describe("cash shift", () => {
 
   it("expected cash is the float plus cash taken on the shift, and the KPI row counts today's money", async () => {
     const shift = (await openShiftFor(db, RAFIQ.staffId, "B1"))!
-    const before = await shiftSummary(db, shift, now())
+    const before = await shiftSummary(db, shift)
     expect(before.expectedCashP).toBe(shift.floatP + before.cashInP - before.cashRefundsP)
     const kpisBefore = await todayKpisAt(db, "B1", dhakaDate(now()))
 
@@ -70,7 +70,7 @@ describe("cash shift", () => {
       },
       { db, actor: RAFIQ }
     )
-    const after = await shiftSummary(db, shift, now())
+    const after = await shiftSummary(db, shift)
     expect(after.cashInP - before.cashInP).toBe(basket.totalP - cardP)
     expect(after.expectedCashP - before.expectedCashP).toBe(basket.totalP - cardP)
     expect(after.byTender.card - before.byTender.card).toBe(cardP)

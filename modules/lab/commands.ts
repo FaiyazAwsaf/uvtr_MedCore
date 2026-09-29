@@ -1,8 +1,11 @@
 import { z } from "zod"
 
-import { ageOn } from "@/core/clock/dates"
+import { rules } from "@/config/rules.config"
+import { ageOn, MINUTE } from "@/core/clock/dates"
 import { notifyPatient, queueSms } from "@/core/comms/sms"
+import { newId } from "@/core/db/ids"
 import type {
+  DoctorRow,
   Id,
   LabOrderItemRow,
   LabOrderRow,
@@ -10,6 +13,7 @@ import type {
   LabTestRow,
   PatientRow,
   ResultRow,
+  SpecimenRow,
 } from "@/core/db/schema"
 import { defineCommand } from "@/core/engine/defineCommand"
 import { nextLabOrderNo, nextReportNo } from "@/core/engine/docNumbers"
@@ -19,15 +23,23 @@ import {
   defaultAnalyserValue,
   findAnalyserScript,
 } from "@/core/seed/content/analyser-scripts"
+import { activeEmployee, payerFor } from "@/modules/consultation/server"
 
 import {
+  addOnCheck,
+  addOnState,
+  addOnVolumeMl,
+  benchReady,
   deltaCheck,
   flagValue,
   inboxKindFor,
+  isCallOverdue,
   isCriticalFlag,
+  isWaitingAddOn,
   previousFor,
   reportHash,
   resultText,
+  RUN_VOLUME_ML,
   secondIdentifierMatch,
 } from "./logic"
 
@@ -190,7 +202,11 @@ export const printSpecimenLabel = defineCommand({
   input: z.object({ specimenId: z.string() }),
   async run(tx, input) {
     const specimen = await tx.get("specimens", input.specimenId)
-    if (specimen.status === "rejected" || specimen.status === "consumed") {
+    if (
+      specimen.status === "rejected" ||
+      specimen.status === "consumed" ||
+      specimen.status === "cancelled"
+    ) {
       tx.reject("LAB_SPECIMEN_STATE", {
         accessionNo: specimen.accessionNo,
         status: specimen.status,
@@ -222,7 +238,8 @@ export const receiveSpecimen = defineCommand({
     const items = (await itemsOf(tx, specimen.itemIds)).filter(isLive)
     const tests = await testsOf(tx, items)
     for (const item of items) {
-      if (item.status === "collected") {
+      // A paid add-on joined while the tube was on its way arrives with it.
+      if (item.status === "collected" || benchReady(item)) {
         await tx.update("labOrderItems", item.id, { status: "received" })
       }
     }
@@ -273,10 +290,13 @@ export const rejectSpecimen = defineCommand({
         status: specimen.status,
       })
     }
-    const items = (await itemsOf(tx, specimen.itemIds)).filter(isLive)
-    const tests = await testsOf(tx, items)
-    const used = items.find(
-      (i) => i.status !== "collected" && i.status !== "received"
+    const all = (await itemsOf(tx, specimen.itemIds)).filter(isLive)
+    const tests = await testsOf(tx, all)
+    const used = all.find(
+      (i) =>
+        i.status !== "collected" &&
+        i.status !== "received" &&
+        !isWaitingAddOn(i)
     )
     if (used) {
       tx.reject("LAB_SPECIMEN_IN_USE", {
@@ -284,15 +304,25 @@ export const rejectSpecimen = defineCommand({
         test: tests.get(used.testId)?.code ?? used.testId,
       })
     }
-    if (!items.length)
+    if (!all.length)
       tx.reject("LAB_NOTHING_TO_COLLECT", { accessionNo: specimen.accessionNo })
 
     await tx.update("specimens", specimen.id, {
       status: "rejected",
       rejectReason: input.reason,
     })
-    for (const item of items) {
+    for (const item of all) {
       await tx.update("labOrderItems", item.id, { status: "rejected" })
+    }
+    // An add-on nobody has paid for yet goes with the tube: its bill line is
+    // withdrawn and the doctor can ask again on the new sample.
+    const items = all.filter((i) => i.paymentCleared || !i.addOnOfItemId)
+    for (const item of all) {
+      if (items.includes(item) || !item.basketLineId) continue
+      const line = await tx.find("basketLines", item.basketLineId)
+      if (line?.status === "open") {
+        await tx.update("basketLines", line.id, { status: "removed" })
+      }
     }
     if (input.note) tx.auditContext({ reason: input.note })
 
@@ -492,9 +522,8 @@ export const importAnalyserResults = defineCommand({
     }
     const patient = await tx.get("patients", specimen.patientId)
     const age = ageOf(tx, patient)
-    const all = (await itemsOf(tx, specimen.itemIds)).filter(
-      (i) => i.status === "received"
-    )
+    // Received items, and paid add-ons joined to this tube afterwards.
+    const all = (await itemsOf(tx, specimen.itemIds)).filter(benchReady)
     const tests = await testsOf(tx, all)
     const runnable = all.filter(
       (i) => (tests.get(i.testId)?.analytes.length ?? 0) > 0
@@ -525,11 +554,18 @@ export const importAnalyserResults = defineCommand({
         ))
       )
     }
+    const usedMl = runnable.reduce(
+      (sum, item) =>
+        sum +
+        (item.addOnOfItemId
+          ? addOnVolumeMl(tests.get(item.testId)!)
+          : RUN_VOLUME_ML),
+      0
+    )
     await tx.update("specimens", specimen.id, {
       volumeRemainingMl: Math.max(
         0,
-        Math.round((specimen.volumeRemainingMl - 0.5 * runnable.length) * 10) /
-          10
+        Math.round((specimen.volumeRemainingMl - usedMl) * 10) / 10
       ),
     })
 
@@ -582,7 +618,12 @@ export const enterManualResults = defineCommand({
       expectedVersion: input.expectedVersion,
     })
     const test = await tx.get("labTests", item.testId)
-    if (item.status !== "received") {
+    // A paid add-on is entered from its tube once the tube is on the bench.
+    const tube =
+      item.status !== "received" && benchReady(item) && item.specimenId
+        ? await tx.find("specimens", item.specimenId)
+        : undefined
+    if (item.status !== "received" && tube?.status !== "received") {
       tx.reject("LAB_ITEM_STATE", { test: test.code, status: item.status })
     }
     const patient = await tx.get("patients", item.patientId)
@@ -1145,5 +1186,380 @@ export const logCriticalCall = defineCommand({
       },
     })
     return { callId: call.id, valueText }
+  },
+})
+
+/**
+ * Mark an open or escalated critical call acknowledged: the doctor confirmed
+ * they have the value and are acting on it. Ends the escalation clock.
+ */
+export const acknowledgeCritical = defineCommand({
+  name: "lab.acknowledgeCritical",
+  roles: ["pathologist", "labtech", "doctor"],
+  input: z.object({
+    callId: z.string(),
+    expectedVersion: z.number().int().optional(),
+  }),
+  async run(tx, input) {
+    const call = await tx.get("criticalCalls", input.callId, {
+      expectedVersion: input.expectedVersion,
+    })
+    if (call.status === "acknowledged") {
+      tx.reject("LAB_CALL_STATE", { status: call.status })
+    }
+    await tx.update("criticalCalls", call.id, {
+      status: "acknowledged",
+      ackAt: tx.now(),
+    })
+    tx.emit("CriticalAcknowledged", {
+      branchId: call.branchId,
+      refs: {
+        patientId: call.patientId,
+        resultId: call.resultId,
+        labItemId: call.labOrderItemId,
+      },
+      params: { value: call.valueText, person: call.calledPerson },
+    })
+    return { callId: call.id, ackAt: tx.now() }
+  },
+})
+
+/** The branch's duty doctor (plan §5.1 `isDutyDoctor`), else any duty doctor. */
+async function dutyDoctorFor(
+  tx: Tx,
+  branch: SpecimenRow["branchId"]
+): Promise<DoctorRow | undefined> {
+  const duty = (await tx.all("doctors"))
+    .filter((d) => d.isDutyDoctor)
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+  return duty.find((d) => d.branchIds.includes(branch)) ?? duty[0]
+}
+
+/**
+ * Escalate an unacknowledged critical call to the branch's duty doctor once
+ * `rules.criticalEscalationMin` minutes have passed since the call (S7,
+ * HAZ-05): the call is marked escalated and the duty doctor gets a critical
+ * inbox item with the value. The pathologist does this by hand in Release 1;
+ * the sweeper does it automatically when `rules.criticalAutoEscalation` is
+ * on (the Tier 2 toggle), recorded as automatic.
+ */
+export const escalateCritical = defineCommand({
+  name: "lab.escalateCritical",
+  roles: ["pathologist", "labtech"],
+  input: z.object({
+    callId: z.string(),
+    expectedVersion: z.number().int().optional(),
+  }),
+  async run(tx, input) {
+    const call = await tx.get("criticalCalls", input.callId, {
+      expectedVersion: input.expectedVersion,
+    })
+    const minutes = rules.criticalEscalationMin
+    if (call.status !== "open") {
+      tx.reject("LAB_CALL_STATE", { status: call.status })
+    }
+    if (!isCallOverdue(call, tx.now(), minutes)) {
+      tx.reject("LAB_CALL_NOT_OVERDUE", {
+        minutes,
+        left: Math.ceil((call.calledAt + minutes * MINUTE - tx.now()) / MINUTE),
+      })
+    }
+    const duty = await dutyDoctorFor(tx, call.branchId)
+    if (!duty) tx.reject("LAB_NO_DUTY_DOCTOR", {})
+    const staff = await tx.find("staff", duty!.staffId)
+    const auto = tx.actor.role === "system"
+    await tx.update("criticalCalls", call.id, {
+      status: "escalated",
+      escalatedTo: duty!.id,
+      escalatedAt: tx.now(),
+      auto: auto || undefined,
+    })
+    const item = await tx.get("labOrderItems", call.labOrderItemId)
+    const refs = {
+      patientId: call.patientId,
+      resultId: call.resultId,
+      labItemId: item.id,
+      labOrderId: item.labOrderId,
+    }
+    tx.insert("inboxItems", {
+      doctorId: duty!.id,
+      patientId: call.patientId,
+      kind: "critical",
+      refs,
+      titleKey: "lab.inbox.criticalEscalated",
+      params: { value: call.valueText, minutes },
+      status: "unread",
+    })
+    tx.emit("CriticalEscalated", {
+      branchId: call.branchId,
+      refs,
+      params: {
+        value: call.valueText,
+        doctor: staff?.nameEn ?? "",
+        minutes,
+      },
+    })
+    return {
+      callId: call.id,
+      escalatedTo: duty!.id,
+      doctorStaffId: duty!.staffId,
+      auto,
+    }
+  },
+})
+
+/* ================================================================== *
+ * Add-on tests on a stored specimen (plan §9, S6)
+ * ================================================================== */
+
+/** Add-on requests made against a specimen's items (any state). */
+async function addOnsOf(tx: Tx, specimen: SpecimenRow) {
+  return (
+    await tx.list("labOrderItems", "labOrderId", specimen.labOrderId)
+  ).filter(
+    (i) => !!i.addOnOfItemId && specimen.itemIds.includes(i.addOnOfItemId)
+  )
+}
+
+/** The doctor who asked for an add-on, else the order's doctor. */
+async function requestingDoctor(
+  tx: Tx,
+  item: LabOrderItemRow
+): Promise<DoctorRow | undefined> {
+  const [doctor] = await tx.list("doctors", "staffId", item.createdBy)
+  if (doctor) return doctor
+  const order = await tx.get("labOrders", item.labOrderId)
+  return order.doctorId ? tx.find("doctors", order.doctorId) : undefined
+}
+
+/**
+ * A doctor asks the lab to run one more test on a specimen already taken
+ * (plan §9, S6): the request waits in the lab's add-on queue, with nothing
+ * billed until the lab decides. The test must use the same kind of tube and
+ * not be on the specimen already.
+ */
+export const requestAddOn = defineCommand({
+  name: "lab.requestAddOn",
+  roles: ["doctor"],
+  input: z.object({
+    specimenId: z.string(),
+    testId: z.string(),
+    note: z.string().trim().max(300).optional(),
+    idempotencyKey: z.string().optional(),
+  }),
+  async run(tx, input) {
+    const specimen = await tx.get("specimens", input.specimenId)
+    if (specimen.status !== "collected" && specimen.status !== "received") {
+      tx.reject("LAB_SPECIMEN_STATE", {
+        accessionNo: specimen.accessionNo,
+        status: specimen.status,
+      })
+    }
+    const test = await tx.get("labTests", input.testId)
+    if (test.kind !== "lab") {
+      tx.reject("LAB_ADDON_TEST_KIND", { test: test.code })
+    }
+    if (test.container !== specimen.container) {
+      tx.reject("LAB_ADDON_CONTAINER", {
+        test: test.code,
+        accessionNo: specimen.accessionNo,
+      })
+    }
+    const onTube = (await itemsOf(tx, specimen.itemIds)).filter(isLive)
+    const asked = (await addOnsOf(tx, specimen)).filter(isLive)
+    if ([...onTube, ...asked].some((i) => i.testId === test.id)) {
+      tx.reject("LAB_ADDON_DUPLICATE", {
+        test: test.code,
+        accessionNo: specimen.accessionNo,
+      })
+    }
+    const parent = onTube.find((i) => !i.addOnOfItemId) ?? onTube[0]
+    if (!parent) {
+      tx.reject("LAB_SPECIMEN_STATE", {
+        accessionNo: specimen.accessionNo,
+        status: specimen.status,
+      })
+    }
+    const item = tx.insert("labOrderItems", {
+      labOrderId: specimen.labOrderId,
+      patientId: specimen.patientId,
+      branchId: specimen.branchId,
+      testId: test.id,
+      status: "ordered",
+      paymentCleared: false,
+      addOnOfItemId: parent.id,
+    })
+    if (input.note) tx.auditContext({ reason: input.note })
+    tx.emit("AddOnRequested", {
+      branchId: specimen.branchId,
+      refs: {
+        patientId: specimen.patientId,
+        specimenId: specimen.id,
+        labOrderId: specimen.labOrderId,
+        labItemId: item.id,
+      },
+      params: { test: test.code, accessionNo: specimen.accessionNo },
+    })
+    return { itemId: item.id, accessionNo: specimen.accessionNo }
+  },
+})
+
+export type AddOnDecision = "approve" | "new-collection"
+
+/**
+ * The lab decides an add-on request (plan §9, S6). Approve: the stability
+ * (hours since collection against the test's stability), the remaining
+ * volume and the tube type must all pass; the test joins the same specimen
+ * with a bill line, and the usual payment gate keeps it off the analyser
+ * until it is paid. New collection: the test gets its own new specimen
+ * awaiting collection, billed the same way. Either way the requesting
+ * doctor gets an "add-on" inbox item.
+ */
+export const decideAddOn = defineCommand({
+  name: "lab.decideAddOn",
+  roles: ["labtech", "pathologist"],
+  input: z.object({
+    itemId: z.string(),
+    decision: z.enum(["approve", "new-collection"]),
+    expectedVersion: z.number().int().optional(),
+  }),
+  async run(tx, input) {
+    const item = await tx.get("labOrderItems", input.itemId, {
+      expectedVersion: input.expectedVersion,
+    })
+    const test = await tx.get("labTests", item.testId)
+    const parent = item.addOnOfItemId
+      ? await tx.get("labOrderItems", item.addOnOfItemId)
+      : undefined
+    if (
+      !parent?.specimenId ||
+      addOnState(item, parent.specimenId) !== "pending"
+    ) {
+      tx.reject("LAB_ADDON_DECIDED", { test: test.code })
+    }
+    const specimen = await tx.get("specimens", parent!.specimenId!)
+    // Sample already promised to approved add-ons that have not run yet.
+    const waiting = (await itemsOf(tx, specimen.itemIds)).filter(isWaitingAddOn)
+    const waitingTests = await testsOf(tx, waiting)
+    const reservedMl = waiting.reduce(
+      (sum, i) => sum + addOnVolumeMl(waitingTests.get(i.testId)!),
+      0
+    )
+    const check = addOnCheck({ specimen, test, now: tx.now(), reservedMl })
+    const approve = input.decision === "approve"
+    if (approve) {
+      if (specimen.status !== "collected" && specimen.status !== "received") {
+        tx.reject("LAB_SPECIMEN_STATE", {
+          accessionNo: specimen.accessionNo,
+          status: specimen.status,
+        })
+      }
+      if (!check.sameContainer) {
+        tx.reject("LAB_ADDON_CONTAINER", {
+          test: test.code,
+          accessionNo: specimen.accessionNo,
+        })
+      }
+      if (!check.stable) {
+        tx.reject("LAB_ADDON_STABILITY", {
+          test: test.code,
+          accessionNo: specimen.accessionNo,
+          hours: check.hours,
+          limit: check.stabilityHours,
+        })
+      }
+      if (!check.enoughVolume) {
+        tx.reject("LAB_ADDON_VOLUME", {
+          test: test.code,
+          accessionNo: specimen.accessionNo,
+          remaining: check.remainingMl,
+          needed: check.neededMl,
+        })
+      }
+    }
+
+    // Billed like any ordered test: a basket line, or the company for a
+    // corporate employee (the payment-gate bypass).
+    const patient = await tx.get("patients", item.patientId)
+    const employee = await activeEmployee(tx, patient)
+    const doctor = await requestingDoctor(tx, item)
+    const basketLineId = newId("bsk")
+    tx.insert("basketLines", {
+      id: basketLineId,
+      patientId: patient.id,
+      branchId: item.branchId,
+      sourceType: "test",
+      sourceId: item.id,
+      serviceType: "lab",
+      description: test.name,
+      descriptionBn: test.glossBn,
+      doctorId: doctor?.id,
+      qty: 1,
+      unitPriceP: test.priceP,
+      status: "open",
+      ...payerFor(employee),
+    })
+    const cleared = !!employee
+    const patch = {
+      basketLineId,
+      paymentCleared: cleared,
+      status: (cleared ? "paid" : "ordered") as LabOrderItemRow["status"],
+    }
+
+    let target: SpecimenRow = specimen
+    if (approve) {
+      await tx.update("labOrderItems", item.id, {
+        ...patch,
+        specimenId: specimen.id,
+      })
+      await tx.update("specimens", specimen.id, {
+        itemIds: [...specimen.itemIds, item.id],
+      })
+    } else {
+      const updated = await tx.update("labOrderItems", item.id, patch)
+      const [fresh] = await createSpecimensForItems(tx, [updated])
+      target = fresh
+    }
+    await refreshOrderStatus(tx, item.labOrderId)
+
+    const refs = {
+      patientId: patient.id,
+      labOrderId: item.labOrderId,
+      labItemId: item.id,
+      specimenId: target.id,
+    }
+    const params = {
+      test: test.code,
+      accessionNo: target.accessionNo,
+      from: specimen.accessionNo,
+      hours: check.hours,
+      limit: check.stabilityHours,
+    }
+    if (doctor) {
+      tx.insert("inboxItems", {
+        doctorId: doctor.id,
+        patientId: patient.id,
+        kind: "add-on",
+        refs,
+        titleKey: approve
+          ? "lab.inbox.addOnApproved"
+          : "lab.inbox.addOnNewCollection",
+        params,
+        status: "unread",
+      })
+    }
+    tx.emit(approve ? "AddOnApproved" : "AddOnNewCollection", {
+      branchId: item.branchId,
+      refs,
+      params,
+    })
+    return {
+      decision: input.decision as AddOnDecision,
+      itemId: item.id,
+      specimenId: target.id,
+      accessionNo: target.accessionNo,
+      basketLineId,
+      check,
+    }
   },
 })

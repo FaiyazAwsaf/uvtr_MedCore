@@ -25,9 +25,11 @@ import { useDb } from "@/core/db/DbProvider"
 import type { BrandRow } from "@/core/db/schema"
 import { brandsOfGeneric } from "@/core/search/medicines"
 import { useLocale } from "@/lib/i18n/provider"
+import { cn } from "@/lib/utils"
 import { usableUnits } from "@/modules/inventory/stock"
 
 import { recordBoughtElsewhere, requestSubstitution } from "../../commands"
+import { isEquivalentBrand } from "../../rules"
 import { brandText, CategoryBadges, useActionKey, useModuleCommand } from "../shared"
 import type { LineData } from "./use-dispense-data"
 
@@ -99,8 +101,10 @@ export function BoughtElsewhereDialog({
 
 /**
  * The pharmacist proposes another brand and the prescriber decides (PRD §9:
- * never a silent substitution). Brands of the same generic are listed A to Z
- * with this branch's stock, never ranked by stock or margin (HAZ-04).
+ * never a silent substitution). Other brands of the same generic and strength
+ * are listed A to Z with this branch's stock, never ranked by stock or margin
+ * (HAZ-04); one with nothing usable here can't be proposed. Another strength
+ * would change the dose, so it is not offered.
  */
 export function SubstitutionDialog({
   data,
@@ -121,9 +125,12 @@ export function SubstitutionDialog({
   const command = useModuleCommand(requestSubstitution)
   const genericId = data?.brand?.genericId
 
+  const prescribed = data?.brand
   const options = useLiveQuery(async () => {
-    if (!genericId) return []
-    const brands = await db.brands.where("genericId").equals(genericId).toArray()
+    if (!genericId || !prescribed) return []
+    const brands = (await db.brands.where("genericId").equals(genericId).toArray()).filter((b) =>
+      isEquivalentBrand(prescribed, b)
+    )
     const ids = brands.map((b) => b.id)
     const levels = (await db.stockLevels.where("brandId").anyOf(ids).toArray()).filter(
       (l) => l.branchId === branch
@@ -133,7 +140,6 @@ export function SubstitutionDialog({
     )
     const today = dhakaDate(now())
     return brandsOfGeneric(genericId, brands)
-      .filter((b) => b.id !== data?.brand?.id)
       .map((brand) => ({
         brand,
         usable: usableUnits(
@@ -142,7 +148,7 @@ export function SubstitutionDialog({
           today
         ),
       }))
-  }, [db, genericId, branch, data?.brand?.id])
+  }, [db, genericId, branch, prescribed])
 
   const close = () => {
     setProposed("")
@@ -189,6 +195,7 @@ export function SubstitutionDialog({
           <span className="text-xs font-medium text-muted-foreground">
             {t("pharmacy.dispense.sub.sameGeneric", {
               generic: data?.generic?.name ?? "",
+              strength: prescribed?.strength ?? "",
             })}
           </span>
           {options && options.length === 0 ? (
@@ -205,9 +212,13 @@ export function SubstitutionDialog({
                   key={brand.id}
                   data-testid="substitution-option"
                   data-brand-id={brand.id}
-                  className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 hover:bg-surface-raised has-data-checked:bg-primary-soft"
+                  data-usable={usable}
+                  className={cn(
+                    "flex items-center gap-3 rounded-md px-2 py-2 has-data-checked:bg-primary-soft",
+                    usable > 0 ? "cursor-pointer hover:bg-surface-raised" : "cursor-not-allowed opacity-60"
+                  )}
                 >
-                  <RadioGroupItem value={brand.id} />
+                  <RadioGroupItem value={brand.id} disabled={usable <= 0} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[0.8125rem] font-medium" lang="en">
                       {brandText(brand)}
@@ -219,6 +230,7 @@ export function SubstitutionDialog({
               ))}
             </RadioGroup>
           )}
+          <p className="text-xs text-muted-foreground">{t("pharmacy.dispense.sub.strengthNote")}</p>
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="sub-reason">{t("pharmacy.dispense.sub.reason")}</Label>

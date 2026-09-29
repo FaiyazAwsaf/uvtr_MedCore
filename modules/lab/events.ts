@@ -94,4 +94,34 @@ export const labEvents: EventCatalog = {
     consumers: [C.dutyDoctor, C.audit],
     severity: "critical",
   },
+  CriticalAcknowledged: {
+    module: "lab",
+    labelKey: "lab.events.CriticalAcknowledged",
+    consumers: [C.pathologist, C.audit],
+    severity: "success",
+  },
+  CriticalEscalated: {
+    module: "lab",
+    labelKey: "lab.events.CriticalEscalated",
+    consumers: [C.dutyDoctor, C.doctorInbox, C.audit],
+    severity: "critical",
+  },
+  AddOnRequested: {
+    module: "lab",
+    labelKey: "lab.events.AddOnRequested",
+    consumers: [C.labWorklist, C.audit],
+    severity: "info",
+  },
+  AddOnApproved: {
+    module: "lab",
+    labelKey: "lab.events.AddOnApproved",
+    consumers: [C.billing, C.doctorInbox, C.analyserBench, C.audit],
+    severity: "success",
+  },
+  AddOnNewCollection: {
+    module: "lab",
+    labelKey: "lab.events.AddOnNewCollection",
+    consumers: [C.labWorklist, C.billing, C.doctorInbox, C.audit],
+    severity: "warning",
+  },
 }

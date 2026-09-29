@@ -14,6 +14,7 @@ export const demoEn = {
       edgeEventsReplayed: "{count} offline events replayed from {branch}",
       identityConflictQueued: "Possible duplicate sent for review",
       patientContactUpdated: "Contact details updated",
+      scenarioLaunched: "Scenario {scenario} set up",
     },
     consumers: {
       audit: "Audit",
@@ -24,6 +25,7 @@ export const demoEn = {
       central: "Central",
       dataSteward: "Data steward",
       registry: "Patient registry",
+      presenter: "Presenter",
     },
     common: {
       system: "System",
@@ -171,9 +173,15 @@ export const demoEn = {
       failed: "The network change failed",
     },
     scenarios: {
-      title: "Scenario launchers",
-      empty: "Scenario launchers arrive in Phase 3",
+      title: "Exception scenarios",
+      empty: "No scenario launchers are registered",
       launch: "Launch",
+      running: "Setting up…",
+      lastRun: "Last run {time}",
+      failed: "Setup failed. The reason is shown in the dialog.",
+      jumpTitle: "Jump into the main journey",
+      jumpHint:
+        "Skip ahead if a step goes wrong: the story is set up to that point.",
     },
     engine: {
       title: "Engine check",
@@ -264,6 +272,83 @@ export const demoEn = {
         command: "Command",
         code: "Rule",
         approver: "Approver",
+      },
+    },
+    journey: {
+      J1: {
+        title: "Registration",
+        cue: {
+          1: "Search the family phone 01711-523418: the Karim household appears.",
+          2: "Pick Abdul Karim: his record opens with the penicillin allergy.",
+          3: "Book him with Dr. Kamal (J2).",
+        },
+      },
+      J2: {
+        title: "Booking and check-in",
+        cue: {
+          1: "Dr. Kamal is picked for Abdul: choose a free slot and confirm.",
+          2: "Check him in: his token joins the queue and the display board.",
+          3: "The doctor's worklist shows him live (J3).",
+        },
+      },
+      J3: {
+        title: "Consultation",
+        cue: {
+          1: "Abdul is checked in and waiting: start his consultation.",
+          2: "Record with the scribe and accept the draft; sign the note.",
+          3: "Prescribe: Moxacil meets the allergy alert; Zimax is out, pick an alternative.",
+          4: "Order CBC, CRP and a chest X-ray, then sign the Rx.",
+        },
+      },
+      J4: {
+        title: "Payment",
+        cue: {
+          1: "Abdul's consult, tests, X-ray and medicines are on his open bill.",
+          2: "Take part by bKash and the rest in cash.",
+          3: "Approve the bKash push: the lab and the pharmacy unlock.",
+        },
+      },
+      J5: {
+        title: "Lab",
+        cue: {
+          1: "Abdul's CBC and CRP are paid and waiting for collection.",
+          2: "Collect with the second identifier, then receive.",
+          3: "Run the analyser and validate the results.",
+          4: "The pathologist signs: the report reaches the doctor's inbox and the patient app.",
+        },
+      },
+      J6: {
+        title: "Pharmacy",
+        cue: {
+          1: "Abdul's paid prescription is open for dispensing.",
+          2: "Confirm his identity, then dispense: the earliest-expiry batch is used.",
+          3: "The Bangla labels print (simulated) and the app shows what was collected.",
+        },
+      },
+    },
+    launchers: {
+      S14: {
+        title: "Branch offline",
+        summary:
+          "Dhanmondi loses its internet and keeps working on its own store.",
+        cue: {
+          1: "Dhanmondi (B1) is now offline: every B1 window shows the offline banner.",
+          2: "Register a walk-in here: the UHID is provisional until the branch reconnects.",
+          3: "In a B1 cashier window, take cash for the visit: the invoice gets an offline number.",
+          4: "Open the demo panel: the queued counter for B1 rises with each action.",
+          5: "In the CEO window, B1 shows as offline and its new work is not visible yet. S15 reconnects it.",
+        },
+      },
+      S15: {
+        title: "Reconnect and resync with a duplicate",
+        summary:
+          "Queued work replays in order; a possible duplicate goes to review, never merged automatically.",
+        cue: {
+          1: "{name} was registered at Dhanmondi while offline (UHID {offlineUhid}, queued) and at Mirpur online as {variant}.",
+          2: "Open the demo panel and reconnect B1: the queued work replays in order with a progress bar.",
+          3: "The two records land here in the review queue: nothing is merged automatically.",
+          4: "Compare them and resolve: the same person (merged, the old UHID kept as an alias) or different people.",
+        },
       },
     },
     cue: {
