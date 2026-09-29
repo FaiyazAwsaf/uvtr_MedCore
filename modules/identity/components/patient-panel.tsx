@@ -286,6 +286,14 @@ export function PatientPanel({
         </div>
       ) : null}
 
+      {contactOpen ? (
+        <ContactForm
+          key={editing}
+          patient={patient}
+          onClose={() => setEditing(null)}
+        />
+      ) : null}
+
       <section className="surface-card @container flex flex-col gap-3 p-4">
         <h3 className="text-[0.9375rem] font-semibold">{t("identity.patient.todayTitle")}</h3>
         {visits.todays.length ? (
@@ -322,14 +330,6 @@ export function PatientPanel({
           </div>
         ) : null}
       </section>
-
-      {contactOpen ? (
-        <ContactForm
-          key={editing}
-          patient={patient}
-          onClose={() => setEditing(null)}
-        />
-      ) : null}
 
       <section className="surface-card flex flex-col gap-4 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">

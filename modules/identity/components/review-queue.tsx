@@ -355,7 +355,7 @@ function RecordBlock({
       <PersonLine patient={patient} size={40} showUhid={false} />
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem]">
         <UhidText uhid={patient.uhid} withLabel />
-        {provisional && provisional !== patient.uhid ? (
+        {tone === "incoming" && provisional && provisional !== patient.uhid ? (
           <span
             data-testid="review-provisional"
             className="inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_oklch,var(--warning)_18%,transparent)] px-2 py-0.5 text-[0.6875rem]"
@@ -367,6 +367,21 @@ function RecordBlock({
           </span>
         ) : null}
       </div>
+      {tone === "central" && patient.aliases.length ? (
+        <p
+          data-testid="review-aliases"
+          className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground"
+        >
+          {t("identity.review.aliases")}
+          {patient.aliases.map((alias) => (
+            <UhidText
+              key={alias}
+              uhid={alias}
+              className="rounded-full bg-surface-raised px-2 py-0.5 text-foreground/85"
+            />
+          ))}
+        </p>
+      ) : null}
       <dl className="grid grid-cols-[minmax(6.5rem,auto)_1fr] gap-x-3 gap-y-1.5 text-[0.8125rem]">
         {rows.map((row) => (
           <React.Fragment key={row.key}>
@@ -707,14 +722,16 @@ function ResolvedNote({
   const approval = data.approvals.get(item.id)
   let text = ""
   if (item.resolution === "same") {
-    const { incoming, candidates } = splitDuplicate(item, data.patients)
-    const survivor =
-      candidates.find((c) => c.id === incoming?.mergedInto) ??
-      (incoming ? data.patients.get(incoming.mergedInto ?? "") : undefined) ??
-      candidates[0]
+    // Either side may have been kept: the merged one points at the survivor.
+    const merged = item.patientIds
+      .map((id) => data.patients.get(id))
+      .find((p) => p?.identityStatus === "merged" && p.mergedInto)
+    const survivor = merged?.mergedInto
+      ? data.patients.get(merged.mergedInto)
+      : undefined
     text = t("identity.review.resolvedSame", {
       survivor: survivor ? uhid(survivor.uhid) : "",
-      alias: incoming ? uhid(incoming.uhid) : "",
+      alias: merged ? uhid(merged.uhid) : "",
       approver: staffName(approval?.approverId),
     })
   } else if (item.resolution === "different") {

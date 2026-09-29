@@ -52,7 +52,7 @@ export const schedulingEn = {
         en: "English",
         bn: "Bangla",
       },
-      laneCount: "{count} × {parts} parts · {chars} characters",
+      laneCount: "Recipients: {count} · parts each: {parts} · {chars} characters",
       gsm: "GSM: 160 characters in one part, 153 per part when longer",
       ucs2: "Bangla (UCS-2): 70 characters in one part, 67 per part when longer",
       totalParts: "{parts} SMS parts for {messages} messages",

@@ -53,7 +53,9 @@ export const identityScenarios: ScenarioDef[] = [
         params: {
           run: await runNumber(kit),
           name: SEED_REFS.s1.variantNameEn,
+          nameBn: SEED_REFS.s1.variantNameBn,
           existing: existing.nameEn,
+          existingBn: existing.nameBn,
           uhid: groupUhid(existing.uhid),
           dob,
           dobBn: bnDigits(dob),

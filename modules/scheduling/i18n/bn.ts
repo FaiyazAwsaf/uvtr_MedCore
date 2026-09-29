@@ -54,7 +54,7 @@ export const schedulingBn: typeof schedulingEn = {
         en: "ইংরেজি",
         bn: "বাংলা",
       },
-      laneCount: "{count} × {parts} অংশ · {chars} অক্ষর",
+      laneCount: "প্রাপক: {count} · প্রতিটিতে অংশ: {parts} · {chars} অক্ষর",
       gsm: "GSM: এক অংশে ১৬০ অক্ষর, বড় হলে প্রতি অংশে ১৫৩",
       ucs2: "বাংলা (UCS-2): এক অংশে ৭০ অক্ষর, বড় হলে প্রতি অংশে ৬৭",
       totalParts: "{messages}টি বার্তায় মোট {parts}টি এসএমএস অংশ",

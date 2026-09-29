@@ -108,6 +108,7 @@ export const identityEn = {
       underReview: "Held for review",
       mergedTag: "Merged",
       provisional: "Provisional",
+      aliases: "Also found by",
       fields: {
         nameEn: "Name (English)",
         nameBn: "Name (Bangla)",
