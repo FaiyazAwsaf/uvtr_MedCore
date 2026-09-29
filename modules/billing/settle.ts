@@ -581,22 +581,29 @@ async function settleInvoice(
     })
   }
 
-  /* Fee share on collection (PRD §10.9) */
+  /* Fee share on collection (PRD §10.9): the ordering consultant's rule, and
+     the reporting radiologist's share of an imaging line */
   let accruals = 0
   const day = tx.today()
+  const pairs: { line: InvoiceLineRow; doctorId: Id }[] = []
   for (const line of lines) {
-    if (!line.doctorId) continue
+    const reporting = await reportingRadiologist(tx, line, branch)
+    for (const doctorId of new Set([line.doctorId, reporting])) {
+      if (doctorId) pairs.push({ line, doctorId })
+    }
+  }
+  for (const { line, doctorId } of pairs) {
     const existing = await tx.list("feeShareAccruals", "invoiceLineId", line.id)
-    if (existing.some((a) => !a.reversalOfId)) continue
+    if (existing.some((a) => !a.reversalOfId && a.doctorId === doctorId)) continue
     const contract = contractInForce(
-      await tx.list("feeShareContracts", "doctorId", line.doctorId),
+      await tx.list("feeShareContracts", "doctorId", doctorId),
       day
     )
     const rule = contract ? feeShareRuleFor(contract, line.serviceType) : undefined
     if (!contract || !rule) continue
     const { shareP, whtP } = feeShareAmounts(rule, contract, line)
     tx.insert("feeShareAccruals", {
-      doctorId: line.doctorId,
+      doctorId,
       invoiceId: invoice.id,
       invoiceLineId: line.id,
       contractId: contract.id,
@@ -613,14 +620,14 @@ async function settleInvoice(
       at: tx.now(),
     })
     accruals += 1
-    const doctor = await tx.find("doctors", line.doctorId)
+    const doctor = await tx.find("doctors", doctorId)
     const staff = doctor ? await tx.find("staff", doctor.staffId) : undefined
     tx.emit("FeeShareAccrued", {
       branchId: branch,
       refs: refsBase,
       params: {
-        doctor: staff?.nameEn ?? line.doctorId,
-        doctorBn: staff?.nameBn ?? staff?.nameEn ?? line.doctorId,
+        doctor: staff?.nameEn ?? doctorId,
+        doctorBn: staff?.nameBn ?? staff?.nameEn ?? doctorId,
         ...moneyParams(shareP),
       },
     })
@@ -668,4 +675,31 @@ async function settleInvoice(
     rxLines: [...rxCleared.values()].reduce((sum, n) => sum + n, 0),
     accruals,
   }
+}
+
+/**
+ * The radiologist whose reporting share (PRD §10.9, 30% of the net on
+ * collection) an imaging line accrues: the author of the study's report
+ * when one exists, otherwise the radiologist who reports for the branch
+ * (first by id, so it is deterministic). ECG and echo are reported by
+ * cardiologists under their own contracts and accrue nothing here.
+ */
+async function reportingRadiologist(
+  tx: Tx,
+  line: InvoiceLineRow,
+  branch: BranchCode
+): Promise<Id | undefined> {
+  if (line.sourceType !== "imaging") return undefined
+  const order = await tx.find("imagingOrders", line.sourceId)
+  if (!order) return undefined
+  const test = await tx.find("labTests", order.testId)
+  if (test?.signatoryGroup !== "radiology") return undefined
+  if (order.reportId) {
+    const report = await tx.find("imagingReports", order.reportId)
+    if (report) return report.radiologistId
+  }
+  const radiologists = (await tx.all("doctors"))
+    .filter((d) => d.kind === "radiologist" && d.branchIds.includes(branch))
+    .sort((a, b) => a.id.localeCompare(b.id))
+  return radiologists[0]?.id
 }

@@ -35,8 +35,9 @@ import { useLocale } from "@/lib/i18n/provider"
 
 import { openShift } from "../commands"
 import { parseTaka } from "../pricing"
-import { openShiftFor, shiftSummary } from "../queries"
+import { lastClosedShiftFor, openShiftFor, shiftSummary } from "../queries"
 import { TENDER_ICON, TENDER_TAG } from "./labels"
+import { ClosedShiftCard, CloseShiftCard } from "./shift-close"
 import { useBillingCommand, useProblemText } from "./use-billing-command"
 
 const DEFAULT_FLOAT = "5000"
@@ -52,9 +53,9 @@ const PAYMENT_TONE: Record<PaymentRow["status"], Tone> = {
 /**
  * `/cashier/shift` (plan §9): the cashier's open shift with its float and the
  * running expected cash (float plus cash taken minus cash refunded, derived
- * live from the payments), what came in by tender, and this shift's
- * payments. Without an open shift, open one with a float. Closing with the
- * denomination count is the variance scenario (S13).
+ * live from the payments), what came in by tender, this shift's payments,
+ * and closing it with the denomination count (S13). Without an open shift:
+ * the last closed shift, locked, with its Z-report, and opening a new one.
  */
 export function ShiftScreen() {
   const persona = usePersona()
@@ -74,6 +75,10 @@ function ShiftWorkspace({ branch, cashierId }: { branch: BranchCode; cashierId: 
     async () => (await openShiftFor(db, cashierId, branch)) ?? null,
     [db, cashierId, branch]
   )
+  const lastClosed = useLiveQuery(
+    async () => (await lastClosedShiftFor(db, cashierId, branch)) ?? null,
+    [db, cashierId, branch]
+  )
   const branchRow = getBranch(branch)
   return (
     <div className="@container/shift flex flex-col gap-4 pb-2" data-testid="shift-screen">
@@ -88,7 +93,10 @@ function ShiftWorkspace({ branch, cashierId }: { branch: BranchCode; cashierId: 
       ) : shift ? (
         <OpenShift shift={shift} />
       ) : (
-        <OpenShiftForm />
+        <div className="grid items-start gap-4 @min-[52rem]/shift:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          {lastClosed ? <ClosedShiftCard shift={lastClosed} /> : null}
+          <OpenShiftForm />
+        </div>
       )}
     </div>
   )
@@ -224,6 +232,8 @@ function OpenShift({ shift }: { shift: ShiftRow }) {
             <Skeleton className="h-24 w-full" />
           )}
         </section>
+
+        {summary ? <CloseShiftCard shift={shift} summary={summary} /> : null}
 
         <SectionCard title={t("billing.shift.payments")} icon={ReceiptText} size="sm">
           {!summary ? (

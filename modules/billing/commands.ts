@@ -1,10 +1,28 @@
 import { z } from "zod"
 
+import { rules } from "@/config/rules.config"
 import { defineCommand } from "@/core/engine/defineCommand"
 import type { Tx } from "@/core/engine/types"
-import type { Id, PaymentRow } from "@/core/db/schema"
+import type { Id, InvoiceLineRow, InvoiceRow, PaymentRow, Poisha } from "@/core/db/schema"
 
 import { discountLimit, isMfs } from "./pricing"
+import {
+  cancelWork,
+  recordApproval,
+  refundableLine,
+  refundInvoiceLines,
+  type RefundOutcome,
+} from "./refund-tx"
+import {
+  APPROVAL_AUTHORITY,
+  authoritiesFor,
+  cancelApproval,
+  CASHIER_REFUND_LIMIT_P,
+  lineStage,
+  refundApproval,
+  type LineStage,
+} from "./refunds"
+import { countedFrom, DENOMINATIONS, shiftCash } from "./shift"
 import {
   actorBranch,
   addPayments,
@@ -399,8 +417,7 @@ export const payOnline = defineCommand({
 
 /**
  * Open a cash shift with a float (plan §9 `/cashier/shift`). One open shift
- * per cashier; closing with the denomination count comes with the variance
- * scenario (S13).
+ * per cashier; `billing.closeShift` closes it with the denomination count.
  */
 export const openShift = defineCommand({
   name: "billing.openShift",
@@ -430,5 +447,268 @@ export const openShift = defineCommand({
       },
     })
     return { shiftId: shift.id }
+  },
+})
+
+/* ------------------------------------------------------------------ *
+ * Cancellation and refund after payment (plan §9)
+ * ------------------------------------------------------------------ */
+
+const approvalInput = z.object({
+  approverStaffId: z.string(),
+  reason: z.string().trim().min(1).max(300),
+  pinVerified: z.literal(true),
+})
+
+export type CancelResult = RefundOutcome & {
+  stage: LineStage
+  approvalId?: Id
+}
+
+/**
+ * Cancel a paid lab test or imaging study and refund it to the tenders that
+ * paid for it (PRD §9 cancellation by stage, `rules.cancellationByStage`):
+ * - before collection (scan not done): cancelled and refunded at once; a
+ *   refund above the cashier's own limit needs a supervisor ("refund");
+ * - after collection (scan done): only with a supervisor's approval
+ *   ("cancel-after-collection");
+ * - after validation (report exists): refused and audited; the result stays
+ *   and only a goodwill refund (`billing.refund`, kind "goodwill") is possible.
+ * The item (and its tube or order once nothing live is left), the refund,
+ * credit note and fee-share reversal land in this one commit.
+ */
+export const cancelLine = defineCommand({
+  name: "billing.cancelLine",
+  roles: ["cashier"],
+  input: z.object({
+    invoiceLineId: z.string(),
+    reason: z.string().trim().min(3).max(300),
+    approval: approvalInput.optional(),
+    smsLang,
+    idempotencyKey,
+  }),
+  async run(tx, input): Promise<CancelResult> {
+    const branch = actorBranch(tx)
+    const { line, invoice } = await refundableLine(tx, input.invoiceLineId, branch)
+    const info = await lineStage(tx, line)
+    if (info.action !== "cancel") {
+      tx.reject(
+        info.action === "refund"
+          ? "USE_REFUND"
+          : info.action === "goodwill"
+            ? "NOT_CANCELLABLE_GOODWILL"
+            : info.stage === "medicine"
+              ? "MEDICINE_RETURN_AT_PHARMACY"
+              : "CONSULT_CANCEL_AT_RECEPTION",
+        { item: line.description }
+      )
+    }
+    if (info.rule === "blocked") {
+      tx.reject(
+        "CANCEL_AFTER_VALIDATION",
+        { item: line.description, invoiceNo: invoice.invoiceNo },
+        { audit: true }
+      )
+    }
+    const amountP = line.netP
+    const kind = cancelApproval(info.rule, amountP)
+    const approvalId = kind
+      ? await recordApproval(tx, {
+          kind,
+          authorities: authoritiesFor(kind, amountP),
+          approval: input.approval,
+          refs: { patientId: invoice.patientId, invoiceId: invoice.id },
+          amountP,
+          missingCode:
+            kind === "cancel-after-collection"
+              ? "CANCEL_APPROVAL_REQUIRED"
+              : "REFUND_APPROVAL_REQUIRED",
+          missingParams: { item: line.description, limitP: CASHIER_REFUND_LIMIT_P },
+        })
+      : undefined
+    await cancelWork(tx, line, info.stage, input.reason)
+    const outcome = await refundInvoiceLines(tx, {
+      invoice,
+      lines: [line],
+      lineStatus: "cancelled",
+      reason: input.reason,
+      approvalId,
+      smsLang: input.smsLang,
+    })
+    return { ...outcome, stage: info.stage, approvalId }
+  },
+})
+
+/** Lines of one paid invoice at the cashier's branch, each still active. */
+async function refundableLines(
+  tx: Tx,
+  lineIds: Id[]
+): Promise<{ invoice: InvoiceRow; lines: InvoiceLineRow[] }> {
+  const branch = actorBranch(tx)
+  const lines: InvoiceLineRow[] = []
+  let invoice: InvoiceRow | undefined
+  for (const id of new Set(lineIds)) {
+    const found = await refundableLine(tx, id, branch)
+    if (invoice && found.invoice.id !== invoice.id) tx.reject("LINES_MIXED_INVOICE", {})
+    invoice = found.invoice
+    lines.push(found.line)
+  }
+  if (!invoice) tx.reject("NOTHING_SELECTED", {})
+  return { invoice, lines }
+}
+
+/**
+ * Refund paid lines to their original tenders without cancelling any work
+ * (plan §9):
+ * - kind "refund": the service is already off, such as an appointment the
+ *   patient cancelled after a doctor delay with "refund" as their choice, or
+ *   an order cancelled elsewhere. Lines whose work is still going ahead are
+ *   refused (cancel them instead). Above the cashier's own limit a
+ *   supervisor approves ("refund").
+ * - kind "goodwill": the service and any result stand; always with a
+ *   supervisor's approval ("goodwill").
+ * Same effects as a cancellation's refund: tenders pro rata, credit note,
+ * refund rows, fee-share reversal, SMS and app notice, in one commit.
+ */
+export const refund = defineCommand({
+  name: "billing.refund",
+  roles: ["cashier"],
+  input: z.object({
+    invoiceLineIds: z.array(z.string()).min(1).max(30),
+    kind: z.enum(["refund", "goodwill"]).default("refund"),
+    reason: z.string().trim().min(3).max(300),
+    approval: approvalInput.optional(),
+    smsLang,
+    idempotencyKey,
+  }),
+  async run(tx, input): Promise<RefundOutcome & { approvalId?: Id }> {
+    const { invoice, lines } = await refundableLines(tx, input.invoiceLineIds)
+    if (input.kind === "refund") {
+      for (const line of lines) {
+        const info = await lineStage(tx, line)
+        if (info.action === "refund") continue
+        tx.reject(
+          info.action === "cancel" && info.rule !== "blocked"
+            ? "LINE_STILL_ACTIVE"
+            : info.stage === "consult-open"
+              ? "CONSULT_CANCEL_AT_RECEPTION"
+              : info.stage === "medicine"
+                ? "MEDICINE_RETURN_AT_PHARMACY"
+                : "GOODWILL_ONLY",
+          { item: line.description }
+        )
+      }
+    }
+    const amountP: Poisha = lines.reduce((sum, line) => sum + line.netP, 0)
+    const kind = refundApproval(input.kind, amountP)
+    const approvalId = kind
+      ? await recordApproval(tx, {
+          kind,
+          authorities: [APPROVAL_AUTHORITY[kind]],
+          approval: input.approval,
+          refs: { patientId: invoice.patientId, invoiceId: invoice.id },
+          amountP,
+          missingCode:
+            kind === "goodwill" ? "GOODWILL_APPROVAL_REQUIRED" : "REFUND_APPROVAL_REQUIRED",
+          missingParams: { limitP: CASHIER_REFUND_LIMIT_P },
+        })
+      : undefined
+    const outcome = await refundInvoiceLines(tx, {
+      invoice,
+      lines,
+      lineStatus: "refunded",
+      reason: input.reason,
+      approvalId,
+      smsLang: input.smsLang,
+    })
+    return { ...outcome, approvalId }
+  },
+})
+
+/* ------------------------------------------------------------------ *
+ * Shift close (plan §9, S13)
+ * ------------------------------------------------------------------ */
+
+export type CloseShiftResult = {
+  shiftId: Id
+  countedP: Poisha
+  expectedP: Poisha
+  varianceP: Poisha
+  approvalId?: Id
+}
+
+const DENOMINATION_KEYS = DENOMINATIONS.map(String) as [string, ...string[]]
+
+/**
+ * Close the cashier's shift with the drawer counted by denomination (PRD §9):
+ * expected cash is the float plus cash taken minus cash refunded out; a
+ * variance either way above `rules.cashVarianceThresholdP` needs a
+ * supervisor's approval ("variance"), within it the shift closes directly.
+ * A closed shift is locked (INV-12): no more payments on it, and the
+ * cashier opens a new shift to take money again.
+ */
+export const closeShift = defineCommand({
+  name: "billing.closeShift",
+  roles: ["cashier"],
+  input: z.object({
+    shiftId: z.string(),
+    denominations: z.partialRecord(
+      z.enum(DENOMINATION_KEYS),
+      z.number().int().min(0).max(100_000)
+    ),
+    approval: approvalInput.optional(),
+    expectedVersion: z.number().int().optional(),
+    idempotencyKey: idempotencyKey.optional(),
+  }),
+  async run(tx, input): Promise<CloseShiftResult> {
+    const branch = actorBranch(tx)
+    const shift = await tx.get("shifts", input.shiftId, {
+      expectedVersion: input.expectedVersion,
+    })
+    if (shift.cashierId !== tx.actor.staffId || shift.branchId !== branch) {
+      tx.reject("SHIFT_NOT_YOURS", {})
+    }
+    if (shift.status !== "open") tx.reject("SHIFT_CLOSED", {})
+    const payments = await tx.list("payments", "shiftId", shift.id)
+    const refunds = await tx.list("refunds", "status", "completed")
+    const { expectedP } = shiftCash(shift, payments, refunds, tx.now())
+    const denominations: Record<string, number> = {}
+    for (const [value, count] of Object.entries(input.denominations)) {
+      if (count && count > 0) denominations[value] = count
+    }
+    const countedP = countedFrom(denominations)
+    const varianceP = countedP - expectedP
+    const approvalId =
+      Math.abs(varianceP) > rules.cashVarianceThresholdP
+        ? await recordApproval(tx, {
+            kind: "variance",
+            authorities: [APPROVAL_AUTHORITY.variance],
+            approval: input.approval,
+            refs: { shiftId: shift.id },
+            amountP: varianceP,
+            missingCode: "VARIANCE_APPROVAL_REQUIRED",
+            missingParams: { varianceP, limitP: rules.cashVarianceThresholdP },
+          })
+        : undefined
+    await tx.update("shifts", shift.id, {
+      status: "closed",
+      closedAt: tx.now(),
+      countedP,
+      denominations,
+      expectedP,
+      varianceP,
+      varianceApprovalId: approvalId,
+    })
+    const staff = await tx.find("staff", tx.actor.staffId)
+    tx.emit("ShiftClosed", {
+      refs: { shiftId: shift.id, approvalId },
+      params: {
+        cashier: staff?.nameEn ?? tx.actor.name,
+        cashierBn: staff?.nameBn ?? tx.actor.name,
+        ...moneyParams(countedP, "counted"),
+        ...moneyParams(varianceP, "variance"),
+      },
+    })
+    return { shiftId: shift.id, countedP, expectedP, varianceP, approvalId }
   },
 })

@@ -2,8 +2,11 @@ import type { BranchCode } from "@/config/brand.config"
 import { atDhaka } from "@/core/clock/dates"
 import type { MedcoreDb } from "@/core/db/database"
 import type {
+  AppointmentRow,
   ApprovalRow,
   BasketLineRow,
+  CreditNoteRow,
+  FeeShareAccrualRow,
   Id,
   InvoiceLineRow,
   InvoiceRow,
@@ -13,13 +16,16 @@ import type {
   PaymentRow,
   Poisha,
   ReceiptRow,
+  RefundRow,
   ShiftRow,
   Tender,
 } from "@/core/db/schema"
 import type { Row, TableName } from "@/core/db/tables"
 
 import { isMfs } from "./pricing"
+import { lineStage, type RefundablePayment, type StageInfo } from "./refunds"
 import { coverFor, type Cover, type RowReader } from "./settle"
+import { shiftCash } from "./shift"
 
 /**
  * Read models for the cashier screens, run inside `useLiveQuery` so every
@@ -423,18 +429,8 @@ export async function shiftSummary(
     byTender[payment.tender] += payment.amountP
     counts[payment.tender] = (counts[payment.tender] ?? 0) + 1
   }
-  const until = shift.closedAt ?? nowMs
-  const refunds = await db.refunds
-    .filter(
-      (refund) =>
-        refund.tender === "cash" &&
-        refund.status === "completed" &&
-        refund.createdBy === shift.cashierId &&
-        refund.createdAt >= shift.openedAt &&
-        refund.createdAt <= until
-    )
-    .toArray()
-  const cashRefundsP = refunds.reduce((sum, refund) => sum + refund.amountP, 0)
+  const refunds = await db.refunds.where("status").equals("completed").toArray()
+  const cash = shiftCash(shift, payments, refunds, nowMs)
 
   const invoiceIds = [...new Set(payments.map((p) => p.invoiceId))]
   const invoices = await db.invoices.bulkGet(invoiceIds)
@@ -455,10 +451,303 @@ export async function shiftSummary(
     shift,
     byTender,
     counts,
-    cashInP: byTender.cash,
-    cashRefundsP,
-    expectedCashP: shift.floatP + byTender.cash - cashRefundsP,
+    cashInP: cash.cashInP,
+    cashRefundsP: cash.cashRefundsP,
+    expectedCashP: cash.expectedP,
     pendingMfsP,
     payments: rows,
   }
+}
+
+/** The cashier's most recently closed shift at a branch (shown locked after close). */
+export async function lastClosedShiftFor(
+  db: MedcoreDb,
+  cashierId: Id,
+  branch: BranchCode
+): Promise<ShiftRow | undefined> {
+  const closed = await db.shifts
+    .where("[branchId+status]")
+    .equals([branch, "closed"])
+    .filter((shift) => shift.cashierId === cashierId)
+    .toArray()
+  return closed.sort((a, b) => (b.closedAt ?? 0) - (a.closedAt ?? 0))[0]
+}
+
+export type Names = { en: string; bn: string }
+
+async function staffNames(db: MedcoreDb, staffId?: Id): Promise<Names | undefined> {
+  if (!staffId) return undefined
+  const staff = await db.staff.get(staffId)
+  return staff ? { en: staff.nameEn, bn: staff.nameBn } : undefined
+}
+
+/** Staff names of doctors, by doctor id. */
+async function doctorNames(db: MedcoreDb, doctorIds: Id[]): Promise<Map<Id, Names>> {
+  const ids = [...new Set(doctorIds)]
+  const doctors = await db.doctors.bulkGet(ids)
+  const staff = await db.staff.bulkGet(doctors.map((d) => d?.staffId ?? ""))
+  const out = new Map<Id, Names>()
+  ids.forEach((id, index) => {
+    const person = staff[index]
+    if (person) out.set(id, { en: person.nameEn, bn: person.nameBn })
+  })
+  return out
+}
+
+export type ShiftReport = ShiftSummary & {
+  cashier?: Names
+  approval?: ApprovalRow
+  approver?: Names
+  /** Every refund this cashier paid out while the shift was open, by tender */
+  refundsByTender: TenderTotals
+  refundCount: number
+}
+
+/** Everything the Z-report prints for a shift (plan §9 shift close). */
+export async function shiftReport(
+  db: MedcoreDb,
+  shift: ShiftRow,
+  nowMs: Ms
+): Promise<ShiftReport> {
+  const summary = await shiftSummary(db, shift, nowMs)
+  const until = shift.closedAt ?? nowMs
+  const refunds = (await db.refunds.where("status").equals("completed").toArray()).filter(
+    (r) =>
+      r.createdBy === shift.cashierId && r.createdAt >= shift.openedAt && r.createdAt <= until
+  )
+  const refundsByTender = emptyTotals()
+  for (const r of refunds) refundsByTender[r.tender] += r.amountP
+  const approval = shift.varianceApprovalId
+    ? await db.approvals.get(shift.varianceApprovalId)
+    : undefined
+  return {
+    ...summary,
+    cashier: await staffNames(db, shift.cashierId),
+    approval,
+    approver: await staffNames(db, approval?.approverId),
+    refundsByTender,
+    refundCount: refunds.length,
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Refunds and cancellations (plan §9 `/cashier/refunds`)
+ * ------------------------------------------------------------------ */
+
+export type RefundLineView = {
+  line: InvoiceLineRow
+  descriptionBn?: string
+  info: StageInfo
+  /** Fee shares on the line that are not reversed yet */
+  accruals: (FeeShareAccrualRow & { doctor?: Names })[]
+}
+
+export type RefundInvoiceView = {
+  invoice: InvoiceRow
+  patient?: PatientRow
+  /** Payments that brought money in (confirmed, or since refunded) */
+  payments: PaymentRow[]
+  /** What each payment brought in and has given back (for the refund split) */
+  pool: RefundablePayment[]
+  lines: RefundLineView[]
+  creditNotes: CreditNoteRow[]
+  refunds: (RefundRow & { approver?: Names })[]
+  reversals: (FeeShareAccrualRow & { doctor?: Names })[]
+  /** When the invoice was settled */
+  paidAt: Ms
+}
+
+/** One paid invoice with each line's stage, its payments and its refunds so far. */
+export async function refundView(
+  db: MedcoreDb,
+  invoiceId: Id
+): Promise<RefundInvoiceView | null> {
+  const invoice = await db.invoices.get(invoiceId)
+  if (!invoice) return null
+  const [lines, allPayments, refunds, creditNotes, accruals, patient] = await Promise.all([
+    db.invoiceLines.where("invoiceId").equals(invoiceId).toArray(),
+    db.payments.where("invoiceId").equals(invoiceId).toArray(),
+    db.refunds.where("invoiceId").equals(invoiceId).toArray(),
+    db.creditNotes.where("invoiceId").equals(invoiceId).toArray(),
+    db.feeShareAccruals.where("invoiceId").equals(invoiceId).toArray(),
+    db.patients.get(invoice.patientId),
+  ])
+  const payments = allPayments
+    .filter((p) => p.status === "confirmed" || p.status === "refunded")
+    .sort((a, b) => a.requestedAt - b.requestedAt || a.id.localeCompare(b.id))
+  const done = refunds.filter((r) => r.status === "completed")
+  const refundedBy = new Map<Id, Poisha>()
+  for (const r of done) refundedBy.set(r.paymentId, (refundedBy.get(r.paymentId) ?? 0) + r.amountP)
+
+  const names = await doctorNames(db, accruals.map((a) => a.doctorId))
+  const reversedIds = new Set(accruals.map((a) => a.reversalOfId).filter(Boolean))
+  const withDoctor = (a: FeeShareAccrualRow) => ({ ...a, doctor: names.get(a.doctorId) })
+  const reader = dbReader(db)
+  const baskets = await db.basketLines.bulkGet(lines.map((l) => l.basketLineId ?? ""))
+  const order = new Map<Id, number>()
+  lines.forEach((line, index) => order.set(line.id, baskets[index]?.createdAt ?? line.createdAt))
+  const views: RefundLineView[] = []
+  for (const [index, line] of lines.entries()) {
+    views.push({
+      line,
+      descriptionBn: baskets[index]?.descriptionBn,
+      info: await lineStage(reader, line),
+      accruals: accruals
+        .filter((a) => a.invoiceLineId === line.id && !a.reversalOfId && !reversedIds.has(a.id))
+        .map(withDoctor),
+    })
+  }
+  views.sort(
+    (a, b) =>
+      (order.get(a.line.id) ?? 0) - (order.get(b.line.id) ?? 0) ||
+      a.line.description.localeCompare(b.line.description)
+  )
+
+  const approvals = new Map<Id, Names | undefined>()
+  for (const r of done) {
+    if (!r.approvalId || approvals.has(r.approvalId)) continue
+    const approval = await db.approvals.get(r.approvalId)
+    approvals.set(r.approvalId, await staffNames(db, approval?.approverId))
+  }
+  return {
+    invoice,
+    patient,
+    payments,
+    pool: payments.map((p) => ({
+      id: p.id,
+      tender: p.tender,
+      amountP: p.amountP,
+      refundedP: refundedBy.get(p.id) ?? 0,
+    })),
+    lines: views,
+    creditNotes: creditNotes.sort((a, b) => a.createdAt - b.createdAt),
+    refunds: done
+      .sort((a, b) => a.createdAt - b.createdAt || a.refundNo.localeCompare(b.refundNo))
+      .map((r) => ({ ...r, approver: r.approvalId ? approvals.get(r.approvalId) : undefined })),
+    reversals: accruals.filter((a) => a.reversalOfId).map(withDoctor),
+    paidAt: Math.max(invoice.createdAt, ...payments.map((p) => p.confirmedAt ?? p.requestedAt)),
+  }
+}
+
+/** A patient's paid (or refunded) invoices at a branch, newest first. */
+export async function paidInvoicesOf(
+  db: MedcoreDb,
+  patientId: Id,
+  branch: BranchCode,
+  limit = 6
+): Promise<RefundInvoiceView[]> {
+  const invoices = (
+    await db.invoices
+      .where("patientId")
+      .equals(patientId)
+      .filter(
+        (invoice) =>
+          invoice.branchId === branch &&
+          (invoice.status === "paid" || invoice.status === "refunded")
+      )
+      .toArray()
+  )
+    .sort((a, b) => b.createdAt - a.createdAt || b.invoiceNo.localeCompare(a.invoiceNo))
+    .slice(0, limit)
+  const views: RefundInvoiceView[] = []
+  for (const invoice of invoices) {
+    const view = await refundView(db, invoice.id)
+    if (view) views.push(view)
+  }
+  return views
+}
+
+/** An invoice at this branch by its number (as printed on the receipt). */
+export async function invoiceByNo(
+  db: MedcoreDb,
+  invoiceNo: string,
+  branch: BranchCode
+): Promise<InvoiceRow | undefined> {
+  const invoice = await db.invoices.where("invoiceNo").equals(invoiceNo.trim().toUpperCase()).first()
+  return invoice && invoice.branchId === branch ? invoice : undefined
+}
+
+export type RefundRequest = {
+  appointment: AppointmentRow
+  patient?: PatientRow
+  doctor?: Names
+  line: InvoiceLineRow
+  invoice: InvoiceRow
+}
+
+/**
+ * "Refund requested" (plan §9): appointments cancelled after a doctor delay
+ * with "refund" as the patient's choice, whose consultation fee was paid and
+ * is not refunded yet. The front desk records the choice; the cashier pays
+ * it back here in one step.
+ */
+export async function refundRequestsAt(
+  db: MedcoreDb,
+  branch: BranchCode
+): Promise<RefundRequest[]> {
+  const cancelled = await db.appointments
+    .where("status")
+    .equals("cancelled")
+    .filter((a) => a.branchId === branch && a.delayChoice === "refund" && !!a.feeBasketLineId)
+    .toArray()
+  const out: RefundRequest[] = []
+  for (const appointment of cancelled) {
+    const line = await db.invoiceLines
+      .where("basketLineId")
+      .equals(appointment.feeBasketLineId!)
+      .filter((l) => l.status === "active")
+      .first()
+    if (!line) continue
+    const invoice = await db.invoices.get(line.invoiceId)
+    if (!invoice || invoice.status !== "paid") continue
+    const [patient, names] = await Promise.all([
+      db.patients.get(appointment.patientId),
+      doctorNames(db, [appointment.doctorId]),
+    ])
+    out.push({ appointment, patient, doctor: names.get(appointment.doctorId), line, invoice })
+  }
+  return out.sort((a, b) => b.appointment.updatedAt - a.appointment.updatedAt)
+}
+
+export type RecentRefund = {
+  creditNoteId: Id
+  creditNoteNo?: string
+  invoice?: InvoiceRow
+  patient?: PatientRow
+  refunds: RefundRow[]
+  amountP: Poisha
+  at: Ms
+}
+
+/** Refunds paid at a branch today, one row per credit note, newest first. */
+export async function refundsTodayAt(
+  db: MedcoreDb,
+  branch: BranchCode,
+  today: string
+): Promise<RecentRefund[]> {
+  const start = atDhaka(today, "00:00")
+  const refunds = (await db.refunds.where("status").equals("completed").toArray()).filter(
+    (r) => r.createdAt >= start
+  )
+  const groups = new Map<Id, RefundRow[]>()
+  for (const r of refunds) {
+    const key = r.creditNoteId ?? r.id
+    groups.set(key, [...(groups.get(key) ?? []), r])
+  }
+  const out: RecentRefund[] = []
+  for (const [creditNoteId, rows] of groups) {
+    const invoice = await db.invoices.get(rows[0].invoiceId)
+    if (!invoice || invoice.branchId !== branch) continue
+    const creditNote = await db.creditNotes.get(creditNoteId)
+    out.push({
+      creditNoteId,
+      creditNoteNo: creditNote?.creditNoteNo,
+      invoice,
+      patient: await db.patients.get(invoice.patientId),
+      refunds: rows,
+      amountP: rows.reduce((sum, r) => sum + r.amountP, 0),
+      at: Math.max(...rows.map((r) => r.createdAt)),
+    })
+  }
+  return out.sort((a, b) => b.at - a.at)
 }

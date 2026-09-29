@@ -143,11 +143,18 @@ describe("hero pays bKash plus cash (plan §7.2 accept)", () => {
     const rxLines = await db.rxLines.bulkGet(hero.rxLineIds)
     expect(rxLines.every((line) => line!.paymentCleared)).toBe(true)
 
-    // Fee share on collection: Dr. Kamal's contract v2, 70% of the net, 10% withholding tax.
+    // Fee share on collection: Dr. Kamal's contract v2, 70% of the net, 10% withholding tax,
+    // and the reporting radiologist's 30% of the chest X-ray.
     const accruals = await db.feeShareAccruals.where("invoiceId").equals(invoiceId).toArray()
-    expect(accruals).toHaveLength(1)
+    expect(accruals).toHaveLength(2)
     const consultLine = (await db.invoiceLines.where("basketLineId").equals(hero.consultLineId).first())!
-    expect(accruals[0]).toMatchObject({
+    const xrayLine = (await db.invoiceLines.where("sourceId").equals(hero.imagingOrderId).first())!
+    expect(accruals.find((a) => a.invoiceLineId === xrayLine.id)).toMatchObject({
+      doctorId: "doc_enamul_kabir",
+      serviceType: "imaging",
+      shareP: Math.round(xrayLine.netP * 0.3),
+    })
+    expect(accruals.find((a) => a.invoiceLineId === consultLine.id)).toMatchObject({
       doctorId: HERO.doctor.kamal,
       invoiceLineId: consultLine.id,
       contractVersion: 2,

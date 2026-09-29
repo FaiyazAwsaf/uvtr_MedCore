@@ -77,4 +77,46 @@ export const billingEvents: EventCatalog = {
     consumers: [c.cashShift, c.finance, c.audit],
     severity: "info",
   },
+  ShiftClosed: {
+    module: "billing",
+    labelKey: "billing.events.shiftClosed",
+    consumers: [c.cashShift, c.finance, c.audit],
+    severity: "info",
+  },
+  VarianceApproved: {
+    module: "billing",
+    labelKey: "billing.events.varianceApproved",
+    consumers: [c.cashShift, c.finance, c.audit],
+    severity: "warning",
+  },
+  RefundApproved: {
+    module: "billing",
+    labelKey: "billing.events.refundApproved",
+    consumers: [c.finance, c.audit],
+    severity: "info",
+  },
+  ServiceCancelled: {
+    module: "billing",
+    labelKey: "billing.events.serviceCancelled",
+    consumers: [c.lab, c.imaging, c.patientApp, c.audit],
+    severity: "warning",
+  },
+  RefundIssued: {
+    module: "billing",
+    labelKey: "billing.events.refundIssued",
+    consumers: [c.cashShift, c.finance, c.patientApp, c.audit],
+    severity: "info",
+  },
+  CreditNoteIssued: {
+    module: "billing",
+    labelKey: "billing.events.creditNoteIssued",
+    consumers: [c.finance, c.audit],
+    severity: "info",
+  },
+  FeeShareReversed: {
+    module: "billing",
+    labelKey: "billing.events.feeShareReversed",
+    consumers: [c.feeShare, c.finance, c.audit],
+    severity: "info",
+  },
 }

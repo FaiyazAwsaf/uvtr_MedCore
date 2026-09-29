@@ -68,12 +68,16 @@ describe("discount authority (INV-16)", () => {
     expect(invoice.discountP).toBe(Math.round((invoice.subtotalP * 5) / 100))
     await expectBalanced(db, result.invoiceId)
 
-    // The consultant's share is taken from the discounted net (pro rata).
-    const accrual = (await db.feeShareAccruals.where("invoiceId").equals(result.invoiceId).first())!
+    // The consultant's share (and the radiologist's) is taken from the discounted net (pro rata).
+    const accruals = await db.feeShareAccruals.where("invoiceId").equals(result.invoiceId).toArray()
+    const accrual = accruals.find((a) => a.serviceType === "consultation")!
     const line = (await db.invoiceLines.get(accrual.invoiceLineId))!
     expect(line.discountP).toBeGreaterThan(0)
     expect(accrual.shareP).toBe(Math.round(line.netP * 0.7))
     expect(accrual.whtP).toBe(Math.round(accrual.shareP * 0.1))
+    const imaging = accruals.find((a) => a.serviceType === "imaging")!
+    const imagingLine = (await db.invoiceLines.get(imaging.invoiceLineId))!
+    expect(imaging.shareP).toBe(Math.round(imagingLine.netP * 0.3))
   })
 
   it("above 5% the commit is refused without a supervisor's approval", async () => {
