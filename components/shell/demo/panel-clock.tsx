@@ -75,7 +75,9 @@ export function ClockSection() {
           }
         >
           {offset
-            ? t("demo.clock.ahead", { duration: parts.join(" ") })
+            ? t(offset < 0 ? "demo.clock.behind" : "demo.clock.ahead", {
+                duration: parts.join(" "),
+              })
             : t("demo.clock.atRealTime")}
         </p>
         <div className="mt-3 flex flex-wrap gap-1.5">

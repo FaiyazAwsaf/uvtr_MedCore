@@ -13,7 +13,7 @@ async function openClock(page: Page) {
   await expect(page.getByTestId("demo-clock")).toBeVisible()
 }
 
-test("fast-forward in one window moves the clock in another, and reset restores real time everywhere", async ({
+test("the demo opens at clinic time, fast-forward moves every window, and reset returns to clinic time", async ({
   context,
 }) => {
   const a = await context.newPage()
@@ -22,13 +22,20 @@ test("fast-forward in one window moves the clock in another, and reset restores 
   await b.goto("/?persona=per_reception_farhana")
   await openClock(a)
   await openClock(b)
-  await expect(b.getByTestId("demo-clock")).toContainText("Running at real time")
+  const timeA = a.getByTestId("demo-clock-time")
+  const timeB = b.getByTestId("demo-clock-time")
+  // Seeding anchors the demo clock to clinic time (rules.simulated.clinicTime, 11:30).
+  await expect(timeA).toContainText("11:3")
+  await expect(timeB).toContainText("11:3")
 
   await a.getByTestId("demo-clock").getByRole("button", { name: "+1h" }).click()
-  await expect(a.getByTestId("demo-clock")).toContainText("1h ahead of real time")
-  await expect(b.getByTestId("demo-clock")).toContainText("1h ahead of real time")
+  await expect(timeA).toContainText("12:3")
+  await expect(timeB).toContainText("12:3")
 
-  // Reset from A: every window reloads onto freshly seeded data at real time.
+  await a.getByTestId("demo-clock").getByRole("button", { name: "Real time" }).click()
+  await expect(b.getByTestId("demo-clock")).toContainText("Running at real time")
+
+  // Reset from A: every window reloads onto freshly seeded data at clinic time.
   await a.getByRole("tab", { name: "Data" }).click()
   const panel = a.getByTestId("demo-panel")
   await panel.getByTestId("demo-reset").click()
@@ -36,5 +43,5 @@ test("fast-forward in one window moves the clock in another, and reset restores 
   await panel.getByTestId("demo-reset-confirm").click()
   await reloaded
   await openClock(b)
-  await expect(b.getByTestId("demo-clock")).toContainText("Running at real time")
+  await expect(b.getByTestId("demo-clock-time")).toContainText("11:3")
 })

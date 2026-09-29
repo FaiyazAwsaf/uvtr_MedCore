@@ -1,5 +1,6 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { PharmacyQueueScreen } from "@/modules/pharmacy/components/queue-screen"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.pharmacy" phase={2} />
+/** "/pharmacy": this branch's prescription queue, live (plan §9). */
+export default function PharmacyQueuePage() {
+  return <PharmacyQueueScreen />
 }

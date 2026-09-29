@@ -1,5 +1,6 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { CounterScreen } from "@/modules/pharmacy/components/counter-screen"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.pharmacy" phase={2} />
+/** "/pharmacy/counter": OTC counter sale; prescription-only medicines are blocked (plan §9). */
+export default function CounterPage() {
+  return <CounterScreen />
 }

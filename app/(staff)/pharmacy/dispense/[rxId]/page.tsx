@@ -1,5 +1,6 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { DispenseScreen } from "@/modules/pharmacy/components/dispense/dispense-screen"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.pharmacy" phase={2} />
+/** "/pharmacy/dispense/[rxId]": FEFO dispensing with the Bangla label (plan §9). */
+export default function DispensePage() {
+  return <DispenseScreen />
 }

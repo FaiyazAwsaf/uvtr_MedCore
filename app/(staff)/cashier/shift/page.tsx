@@ -1,5 +1,6 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { ShiftScreen } from "@/modules/billing/components/shift-screen"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.cashier" phase={2} />
+/** "/cashier/shift": the open cash shift, or opening one with a float (plan §9). */
+export default function CashierShiftPage() {
+  return <ShiftScreen />
 }

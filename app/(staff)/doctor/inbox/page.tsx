@@ -1,5 +1,6 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { DoctorInbox } from "@/modules/consultation/components/inbox/doctor-inbox"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.doctor" phase={2} />
+/** "/doctor/inbox": results, substitution requests and transfer updates (plan §9). */
+export default function DoctorInboxPage() {
+  return <DoctorInbox />
 }

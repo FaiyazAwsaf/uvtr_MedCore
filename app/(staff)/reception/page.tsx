@@ -1,5 +1,12 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { Suspense } from "react"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.reception" phase={2} />
+import { FrontDesk } from "@/modules/identity/components/front-desk"
+
+/** "/reception": the front desk (search, household picker, registration). */
+export default function ReceptionPage() {
+  return (
+    <Suspense fallback={null}>
+      <FrontDesk />
+    </Suspense>
+  )
 }

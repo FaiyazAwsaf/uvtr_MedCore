@@ -1,5 +1,6 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { ReceptionScreen } from "@/modules/lab/components/reception-screen"
 
+/** "/lab/reception": specimen intake, receive or reject (plan §9). */
 export default function Page() {
-  return <StubPage sectionKey="shell.section.lab" phase={2} />
+  return <ReceptionScreen />
 }

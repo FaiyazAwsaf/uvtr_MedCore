@@ -1,5 +1,6 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { ControlledScreen } from "@/modules/pharmacy/components/controlled-screen"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.pharmacy" phase={2} />
+/** "/pharmacy/controlled": the controlled drug register (plan §9). */
+export default function ControlledPage() {
+  return <ControlledScreen />
 }
