@@ -93,7 +93,13 @@ export function CueCard() {
 
       <ol className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
         {scenario.cueKeys.map((key, i) => (
-          <li key={key}>
+          <li
+            key={key}
+            // On short screens (a 960x600 demo quadrant) only the current step
+            // shows, so the card does not cover the page; Previous and Next
+            // still walk through every step.
+            className={cn(i !== step && "[@media(max-height:720px)]:hidden")}
+          >
             <button
               type="button"
               onClick={() => go(i)}
