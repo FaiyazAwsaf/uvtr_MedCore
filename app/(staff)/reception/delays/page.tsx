@@ -1,5 +1,12 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { Suspense } from "react"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.reception" phase={3} />
+import { DelaysScreen } from "@/modules/scheduling/components/delays-screen"
+
+/** "/reception/delays": record a doctor's delay, tell booked patients, apply their choices. */
+export default function DelaysPage() {
+  return (
+    <Suspense fallback={null}>
+      <DelaysScreen />
+    </Suspense>
+  )
 }

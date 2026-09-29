@@ -27,9 +27,10 @@ export const SMS_TEMPLATES = {
     en: "{hospital}: Please visit the lab again for a new sample, free of charge. Sorry for the trouble. Help: {helpline}",
     bn: "{hospital}: বিনামূল্যে নতুন নমুনা দিতে অনুগ্রহ করে আবার ল্যাবে আসুন। অসুবিধার জন্য দুঃখিত। সহায়তা: {helpline}",
   },
+  // Doctor delay (S11): the doctor and the minutes only, never the reason.
   "doctor-delay": {
-    en: "{hospital}: {doctor} is running about {minutes} minutes late today. Reply or open the app to wait, rebook or get a refund.",
-    bn: "{hospital}: আজ {doctor} প্রায় {minutes} মিনিট দেরিতে আছেন। অপেক্ষা, নতুন সময় বা ফেরতের জন্য অ্যাপ খুলুন।",
+    en: "{hospital}: {doctor} is running about {minutes} minutes late today. Open the app or call {helpline} to wait, rebook or get a refund.",
+    bn: "{hospital}: আজ {doctor} প্রায় {minutes} মিনিট দেরিতে আছেন। অপেক্ষা, নতুন সময় বা টাকা ফেরতের জন্য অ্যাপ খুলুন অথবা {helpline} নম্বরে ফোন করুন।",
   },
   "follow-up-reminder": {
     en: "{hospital}: Reminder of your follow-up visit on {date}. Book in the app or call {helpline}.",

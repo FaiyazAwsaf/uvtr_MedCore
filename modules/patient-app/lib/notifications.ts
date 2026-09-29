@@ -22,10 +22,19 @@ export type NotificationKind = (typeof NOTIFICATION_KINDS)[number]
 
 const PREFIX = "patientApp.notifications."
 
+/**
+ * Titles other modules keep under their own namespace (the doctor-delay
+ * notice from scheduling: `{ doctor, doctorBn, minutes }`).
+ */
+export const FOREIGN_TITLE_KEYS = ["scheduling.notify.doctorDelayed"] as const
+
 /** The i18n key for a notification's title, or null when it is not one of ours. */
 export function notificationTitleKey(
   notification: Pick<NotificationRow, "titleKey" | "kind">
 ): string | null {
+  if ((FOREIGN_TITLE_KEYS as readonly string[]).includes(notification.titleKey)) {
+    return notification.titleKey
+  }
   const kind = notification.titleKey.startsWith(PREFIX)
     ? notification.titleKey.slice(PREFIX.length)
     : notification.kind

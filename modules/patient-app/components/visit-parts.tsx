@@ -96,11 +96,14 @@ export function DateTile({
 export function WhenWhere({
   appointment,
   session,
+  hideDelay = false,
 }: {
   appointment: AppointmentRow
   session: SessionRow | undefined
+  /** The card shows the delay with the patient's choices instead */
+  hideDelay?: boolean
 }) {
-  const { t, time, dmy, locale } = useLocale()
+  const { t, time, dmy, locale, num } = useLocale()
   const roomName = useRoomName()
   const today = useToday()
   const at = atDhaka(appointment.date, appointment.slotStart)
@@ -121,10 +124,10 @@ export function WhenWhere({
           {room ? `, ${room}` : ""}
         </span>
       </span>
-      {session?.status === "delayed" && session.delayMin > 0 ? (
+      {!hideDelay && session?.status === "delayed" && session.delayMin > 0 ? (
         <span className="flex items-center gap-2 font-medium text-[color-mix(in_oklch,var(--warning),var(--foreground)_32%)] dark:text-warning">
           <Hourglass className="size-4 shrink-0" />
-          {t("patientApp.appointments.delayed", { minutes: session.delayMin })}
+          {t("patientApp.appointments.delayed", { minutes: num(session.delayMin) })}
         </span>
       ) : null}
       {session?.status === "blocked" ? (
