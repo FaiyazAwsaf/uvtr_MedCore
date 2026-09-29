@@ -1,6 +1,7 @@
 import { z } from "zod"
 
 import type { BranchCode } from "@/config/brand.config"
+import type { Refs } from "@/core/db/schema"
 import { nextTransferNo } from "@/core/engine/docNumbers"
 import { defineCommand } from "@/core/engine/defineCommand"
 import type { Tx } from "@/core/engine/types"
@@ -8,6 +9,7 @@ import type { Tx } from "@/core/engine/types"
 import {
   adjustInTransit,
   allocateFefo,
+  brandLabel,
   brandStockAt,
   levelFor,
   moveStock,
@@ -235,5 +237,71 @@ export const receiveTransfer = defineCommand({
       params: { transferNo: transfer.transferNo, from, to, units, short },
     })
     return { transferId: transfer.id, units, short }
+  },
+})
+
+/**
+ * Send quarantined units of a lot back to its vendor (the store's quarantine
+ * view): a short-dated, damaged or wrong delivery held since the goods
+ * receipt leaves the building. Recorded as a write-off movement that changes
+ * no shelf quantity (the units were never dispensable) and takes them out of
+ * quarantine, with the reason and the goods receipt it came from.
+ */
+export const returnToVendor = defineCommand({
+  name: "inventory.returnToVendor",
+  roles: ["store"],
+  input: z.object({
+    /** For network-level staff; branch staff always act at their own branch */
+    branchId: branch.optional(),
+    batchId: z.string(),
+    /** Units to send back (defaults to everything in quarantine) */
+    qty: z.number().int().positive().optional(),
+    reason: z.string().trim().min(2).max(200),
+    idempotencyKey: z.string().optional(),
+  }),
+  async run(tx: Tx, input) {
+    const own = tx.actor.branchId
+    if (own && input.branchId && input.branchId !== own) {
+      tx.reject("NOT_YOUR_BRANCH", { branch: input.branchId })
+    }
+    const at = own ?? (input.branchId as BranchCode | undefined)
+    if (!at) tx.reject("BRANCH_REQUIRED", {})
+    const batch = await tx.get("batches", input.batchId)
+    if (batch.status !== "quarantine") tx.reject("RETURN_NOT_VENDOR_LOT", { batchNo: batch.batchNo })
+    const [level] = await tx.list("stockLevels", "[branchId+batchId]", [at, batch.id])
+    if (!level || level.quarantinedQty <= 0) {
+      tx.reject("NOTHING_IN_QUARANTINE_LOT", { batchNo: batch.batchNo })
+    }
+    const qty = input.qty ?? level.quarantinedQty
+    if (qty > level.quarantinedQty) {
+      tx.reject("RETURN_ABOVE_QUARANTINED", { qty: level.quarantinedQty })
+    }
+    // The goods receipt that put the lot into quarantine.
+    const held = (await tx.list("stockMovements", "batchId", batch.id)).find(
+      (m) => m.branchId === at && m.type === "quarantine"
+    )
+    const refs: Refs = {}
+    if (held?.refs.poId) refs.poId = held.refs.poId
+    if (held?.refs.grnId) refs.grnId = held.refs.grnId
+    await moveStock(tx, level, {
+      type: "write-off",
+      qty: 0,
+      quarantined: -qty,
+      refs,
+      reason: `Returned to vendor: ${input.reason}`,
+    })
+    const brand = await tx.get("brands", batch.brandId)
+    const vendor = batch.vendorId ? await tx.find("vendors", batch.vendorId) : undefined
+    tx.emit("BatchReturnedToVendor", {
+      branchId: at,
+      refs,
+      params: {
+        item: brandLabel(brand),
+        batchNo: batch.batchNo,
+        units: qty,
+        vendor: vendor?.name ?? "",
+      },
+    })
+    return { batchId: batch.id, qty, left: level.quarantinedQty - qty }
   },
 })

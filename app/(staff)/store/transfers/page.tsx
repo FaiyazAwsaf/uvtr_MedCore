@@ -1,5 +1,6 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { StoreTransfersScreen } from "@/modules/inventory/components/store-transfers"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.store" phase={4} />
+/** "/store/transfers": transfers in transit and to receive, at cost (plan §9). */
+export default function StoreTransfersPage() {
+  return <StoreTransfersScreen />
 }

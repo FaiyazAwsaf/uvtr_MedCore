@@ -34,4 +34,10 @@ export const inventoryEvents: EventCatalog = {
     consumers: [c("store"), c("dashboard")],
     severity: "warning",
   },
+  BatchReturnedToVendor: {
+    module: "inventory",
+    labelKey: "inventory.events.batchReturnedToVendor",
+    consumers: [c("store"), c("finance"), c("vendor")],
+    severity: "info",
+  },
 }

@@ -1,5 +1,13 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { Suspense } from "react"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.store" phase={4} />
+import { GrnScreen } from "@/modules/procurement/components/grn-screen"
+
+/** "/store/grn": deliveries due, and the goods receipt form with `?po=` (plan §9, S12). */
+export default function GoodsReceiptPage() {
+  return (
+    // The screen reads `?po=` (useSearchParams), which needs a Suspense boundary.
+    <Suspense fallback={null}>
+      <GrnScreen />
+    </Suspense>
+  )
 }
