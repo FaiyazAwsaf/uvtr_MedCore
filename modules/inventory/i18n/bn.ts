@@ -86,6 +86,7 @@ export const inventoryBn: typeof inventoryEn = {
       transferDispatched: "স্থানান্তর {transferNo} পাঠানো হয়েছে: {units} ইউনিট, {from} থেকে {to}",
       transferReceived: "স্থানান্তর {transferNo} {to}-এ গ্রহণ: {units} ইউনিট",
       stockBelowReorder: "{branch}-এ {item} পুনঃঅর্ডার স্তরের নিচে ({onHand}টি বাকি)",
+      stockAdjusted: "{branch}-এ {item}-এর ব্যবহারযোগ্য মজুদ এখন {after}টি (আগে ছিল {before}টি)",
     },
     consumers: {
       bothBranches: "দুই শাখার মজুদ",
@@ -101,6 +102,7 @@ export const inventoryBn: typeof inventoryEn = {
       TRANSFER_NOT_DESTINATION: "শুধু গ্রহণকারী শাখা {branch} এই স্থানান্তর গ্রহণ করতে পারে।",
       NOTHING_TO_DISPATCH: "স্থানান্তর {transferNo}-এর জন্য পাঠানোর মতো ব্যবহারযোগ্য মজুদ নেই।",
       RECEIVED_ABOVE_DISPATCHED: "পাঠানো {qty}টির বেশি গ্রহণ করা যায় না।",
+      NO_USABLE_BATCH: "এই ওষুধের এমন কোনো ব্যবহারযোগ্য ব্যাচ নেই যাতে মজুদ রাখা যায়।",
     },
   },
 }

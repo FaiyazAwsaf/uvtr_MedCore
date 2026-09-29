@@ -7,6 +7,10 @@
 import { rules } from "@/config/rules.config"
 import { addDaysISO, DAY, dhakaDate, startOfDhakaDay } from "@/core/clock/dates"
 import type {
+  BasketLineRow,
+  BrandRow,
+  InvoiceLineRow,
+  InvoiceRow,
   ISODate,
   Ms,
   PackSize,
@@ -61,14 +65,17 @@ export type DispenseBlock =
 
 /**
  * Why a line cannot be dispensed right now, or null when it can. Payment is
- * the gate (INV-10): only paid lines are ever dispensed.
+ * the gate (INV-10): only paid lines are ever dispensed. With `paidUnits`
+ * (see `paidUnitsOf`), a line whose paid units are all handed over is
+ * unpaid again: its balance is paid before it is given.
  */
 export function dispenseBlock(
   line: Pick<
     RxLineRow,
     "status" | "paymentCleared" | "brandId" | "balanceUntil" | "qtyPrescribed" | "dispensedQty"
   >,
-  now: Ms
+  now: Ms,
+  paidUnits?: number
 ): DispenseBlock | null {
   if (isFinalLine(line)) return "final"
   if (line.status === "awaiting-prescriber") return "awaiting-prescriber"
@@ -76,7 +83,71 @@ export function dispenseBlock(
   if (balanceExpired(line, now)) return "balance-expired"
   if (outstandingOf(line) <= 0) return "nothing-outstanding"
   if (!line.paymentCleared) return "unpaid"
+  if (paidUnits !== undefined && paidUnits <= line.dispensedQty) return "unpaid"
   return null
+}
+
+/* ---------------- Paid quantity ---------------- */
+
+type BilledLine = Pick<
+  BasketLineRow,
+  "id" | "sourceType" | "sourceId" | "status" | "qty" | "payerType"
+>
+
+/**
+ * Billed lines whose invoice is not fully paid yet (a pending MFS payment
+ * never unlocks work, INV-09), or whose invoice line was refunded or
+ * cancelled. A billed line with no invoice line at all is taken as its
+ * status says.
+ */
+export function unpaidBilledLines(
+  billed: Pick<BasketLineRow, "id" | "status">[],
+  invoiceLines: Pick<InvoiceLineRow, "basketLineId" | "invoiceId" | "status">[],
+  invoiceStatus: (invoiceId: string) => InvoiceRow["status"] | undefined
+): Set<string> {
+  const unpaid = new Set<string>()
+  for (const line of billed) {
+    if (line.status !== "invoiced") continue
+    const own = invoiceLines.filter((l) => l.basketLineId === line.id)
+    if (!own.length) continue
+    const active = own.filter((l) => l.status === "active")
+    if (!active.length || active.some((l) => invoiceStatus(l.invoiceId) !== "paid")) {
+      unpaid.add(line.id)
+    }
+  }
+  return unpaid
+}
+
+/**
+ * Units of an Rx line the patient has paid for (INV-10). `rx.sign` bills
+ * only what is on the shelf, so after a partial dispense the balance may not
+ * be paid yet: the pharmacist sends it to the cashier once stock is here, and
+ * it is paid before it is handed over. A line cleared without a bill of its
+ * own (corporate cover at signing, older records) counts as paid in full.
+ */
+export function paidUnitsOf(
+  line: Pick<RxLineRow, "id" | "paymentCleared" | "qtyPrescribed">,
+  basketLines: BilledLine[],
+  unpaid: Set<string> = new Set()
+): number {
+  if (!line.paymentCleared) return 0
+  const billed = basketLines.filter(
+    (b) => b.sourceType === "rx-line" && b.sourceId === line.id && b.status !== "removed"
+  )
+  if (!billed.length || billed.some((b) => b.payerType === "corporate")) {
+    return line.qtyPrescribed
+  }
+  return billed
+    .filter((b) => b.status === "invoiced" && !unpaid.has(b.id))
+    .reduce((sum, b) => sum + b.qty, 0)
+}
+
+/** Units that may be handed over now as far as payment goes (stock aside). */
+export function paidAndOwed(
+  line: Pick<RxLineRow, "qtyPrescribed" | "dispensedQty">,
+  paidUnits: number
+): number {
+  return Math.max(0, Math.min(outstandingOf(line), paidUnits - line.dispensedQty))
 }
 
 /**
@@ -112,6 +183,26 @@ export function shownQueueStatus(
 ): PharmacyQueueRow["status"] {
   if (stored === "done" || stored === "cancelled" || !lines.length) return stored
   return queueStatusFor(lines)
+}
+
+/* ---------------- Substitution ---------------- */
+
+const strengthKey = (strength: string) => strength.toLowerCase().replace(/\s+/g, "")
+
+/**
+ * A brand the pharmacist may propose instead of the prescribed one: another
+ * brand of the same generic and strength (PRD §9: the doctor still decides).
+ * Another strength would change the dose, which only a new Rx can do.
+ */
+export function isEquivalentBrand(
+  prescribed: Pick<BrandRow, "id" | "genericId" | "strength">,
+  other: Pick<BrandRow, "id" | "genericId" | "strength">
+): boolean {
+  return (
+    other.id !== prescribed.id &&
+    other.genericId === prescribed.genericId &&
+    strengthKey(other.strength) === strengthKey(prescribed.strength)
+  )
 }
 
 /* ---------------- Pack rounding ---------------- */
