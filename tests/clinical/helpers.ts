@@ -52,12 +52,29 @@ export const shirin: Actor = {
 
 export const KAMAL_SESSION = "ses_kamal_today"
 
-/** A fresh seeded database with the demo clock at 09:30 Dhaka (before the 10:00 clinic). */
+/**
+ * A fresh seeded database with the demo clock at 09:30 Dhaka (before the 10:00
+ * clinic). Which seeded patients already sit in Dr. Kamal's session changes
+ * with the weekday, so his session gets room for every walk-in the suites add.
+ */
 export async function seededDb(name: string): Promise<MedcoreDb> {
   applyClockOffset(atDhaka(dhakaDate(Date.now()), "09:30") - Date.now())
   const db = new MedcoreDb(name)
   await seedDatabase(db, { now: now(), today: dhakaDate(now()) })
+  await db.sessions.update(KAMAL_SESSION, { walkInQuota: 40 })
   return db
+}
+
+/** Today's active corporate employee with a patient record (the seed picks them per day). */
+export async function corporatePatient(
+  db: MedcoreDb
+): Promise<{ patientId: string; clientId: string }> {
+  const employee = (await db.corporateEmployees.toArray()).find(
+    (e) => e.status === "active" && e.relation === "employee" && e.patientId
+  )
+  if (!employee?.patientId)
+    throw new Error("the seed has no active corporate employee")
+  return { patientId: employee.patientId, clientId: employee.clientId }
 }
 
 export async function dropDb(db: MedcoreDb): Promise<void> {

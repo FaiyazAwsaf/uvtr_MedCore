@@ -37,6 +37,7 @@ import { DAY } from "@/core/clock/dates"
 
 import {
   arif,
+  corporatePatient,
   dropDb,
   kamal,
   reception,
@@ -427,10 +428,11 @@ describe("scribe", () => {
 
 describe("orders", () => {
   it("clears payment at order time for a corporate employee and creates the specimen", async () => {
+    const employee = await corporatePatient(db)
     const { result } = await commit(
       placeTests,
       {
-        patientId: "pat_0223",
+        patientId: employee.patientId,
         testIds: [SEED_REFS.test.cbc, SEED_REFS.test.lipid],
       },
       { db, actor: kamal }
@@ -445,7 +447,7 @@ describe("orders", () => {
       const basket = (await db.basketLines.get(item.basketLineId!))!
       expect(basket).toMatchObject({
         payerType: "corporate",
-        corporateClientId: "corp_brightloom",
+        corporateClientId: employee.clientId,
       })
     }
     const specimens = await db.specimens

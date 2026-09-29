@@ -40,6 +40,7 @@ bun run dev          # http://localhost:3000 (launcher)
 bun run typecheck    # tsc --noEmit
 bun run lint         # ESLint 9: 0 errors expected (1 accepted TanStack Table warning)
 bun run test         # vitest: unit, i18n and engine tests
+TEST_DAY_SHIFT=3 bun run test  # same, as if it were 3 days later (seed data varies by weekday)
 bun run e2e          # Playwright smoke tests; builds and serves on port 3100
 bun run build        # production build; must pass before every merge
 bun run format       # prettier
