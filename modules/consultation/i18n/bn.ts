@@ -312,6 +312,8 @@ export const consultationBn: typeof consultationEn = {
       correctionReason: "কারণ: {reason}",
       changeSummary: "কী বদলেছে: {summary}",
       noReport: "রিপোর্টের বিস্তারিত এখনো পাওয়া যায়নি।",
+      addOnPending:
+        "ল্যাব আপনার অতিরিক্ত পরীক্ষার অনুরোধ পেয়েছে: পরীক্ষা হয়ে গেলে ফলাফল রিপোর্টের সাথে আসবে।",
       imagingReport: "ইমেজিং রিপোর্ট: {name}",
       analyte: "পরীক্ষা",
       value: "ফলাফল",

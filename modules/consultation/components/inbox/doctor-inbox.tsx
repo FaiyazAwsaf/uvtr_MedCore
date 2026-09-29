@@ -395,7 +395,11 @@ function ResultDetails({
   if (!report && !results.length && !imaging) {
     return (
       <p className="text-[0.8125rem] text-muted-foreground">
-        {t("consultation.inbox.noReport")}
+        {t(
+          item.kind === "add-on"
+            ? "consultation.inbox.addOnPending"
+            : "consultation.inbox.noReport"
+        )}
       </p>
     )
   }

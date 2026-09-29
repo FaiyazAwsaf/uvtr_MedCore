@@ -315,6 +315,8 @@ export const consultationEn = {
       correctionReason: "Reason: {reason}",
       changeSummary: "What changed: {summary}",
       noReport: "Report details are not available yet.",
+      addOnPending:
+        "The lab has your add-on request: results come with the report once the test has run.",
       imagingReport: "Imaging report: {name}",
       analyte: "Test",
       value: "Result",
