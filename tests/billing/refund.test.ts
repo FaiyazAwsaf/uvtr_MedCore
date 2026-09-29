@@ -4,13 +4,14 @@ import { now } from "@/core/clock/clock"
 import type { MedcoreDb } from "@/core/db/database"
 import type { Id, InvoiceLineRow } from "@/core/db/schema"
 import { commit } from "@/core/engine/commit"
-import { HERO } from "@/core/seed/content"
+import { HERO, SEED_REFS } from "@/core/seed/content"
 import {
   cancelLine,
   checkout,
   confirmMfs,
   refund,
 } from "@/modules/billing/commands"
+import { applyDelayChoice, recordDelay } from "@/modules/scheduling/commands"
 import {
   openShiftFor,
   refundRequestsAt,
@@ -33,6 +34,7 @@ import {
   heroBasket,
   NASRIN,
   RAFIQ,
+  RECEPTION,
   resetClock,
   seededDb,
   type HeroBasket,
@@ -598,6 +600,69 @@ describe("after validation: blocked, goodwill refund only", () => {
         { db, actor: RAFIQ }
       )
     ).rejects.toMatchObject({ code: "INVOICE_NOT_PAID" })
+  })
+
+  it("a paid fee cancelled with the doctor-delay refund choice is listed and refunded in one step", async () => {
+    // The front desk's real flow (WS-A): a paid booking, the doctor runs late, the patient picks "refund".
+    const session = SEED_REFS.session.arifToday
+    const booked = (
+      await db.appointments.where("sessionId").equals(session).toArray()
+    ).filter((a) => a.status === "booked" && a.feeBasketLineId)
+    let appointment = undefined as (typeof booked)[number] | undefined
+    for (const candidate of booked) {
+      const fee = await db.basketLines.get(candidate.feeBasketLineId!)
+      const patient = await db.patients.get(candidate.patientId)
+      if (fee?.status === "open" && !patient?.corporateEmployeeId) {
+        appointment = candidate
+        break
+      }
+    }
+    expect(appointment).toBeDefined()
+    const fee = (await db.basketLines.get(appointment!.feeBasketLineId!))!
+    await commit(
+      checkout,
+      {
+        patientId: appointment!.patientId,
+        basketLineIds: [fee.id],
+        tenders: [{ tender: "cash", amountP: fee.qty * fee.unitPriceP }],
+        idempotencyKey: `delay-fee-${appointment!.id}`,
+      },
+      { db, actor: RAFIQ }
+    )
+    await commit(
+      recordDelay,
+      { sessionId: session, minutes: 45, reason: "traffic" },
+      { db, actor: RECEPTION }
+    )
+    const choice = await commit(
+      applyDelayChoice,
+      { appointmentId: appointment!.id, choice: "refund" },
+      { db, actor: RECEPTION }
+    )
+    expect(choice.result.feePaid).toBe(true)
+
+    const requests = await refundRequestsAt(db, "B1")
+    const request = requests.find((r) => r.appointment.id === appointment!.id)!
+    expect(request.line.basketLineId).toBe(fee.id)
+    expect(request.doctor?.en).toBe("Dr. Arif Rahman")
+    const { result } = await commit(
+      refund,
+      {
+        invoiceLineIds: [request.line.id],
+        kind: "refund",
+        reason: "Doctor delay: the patient chose a refund",
+        idempotencyKey: `delay-refund-${appointment!.id}`,
+      },
+      { db, actor: RAFIQ }
+    )
+    expect(result.amountP).toBe(fee.qty * fee.unitPriceP)
+    expect(result.refunds.map((r) => r.tender)).toEqual(["cash"])
+    expect(result.reversals.map((r) => r.doctorId)).toEqual([HERO.doctor.arif])
+    expect(
+      (await refundRequestsAt(db, "B1")).some(
+        (r) => r.appointment.id === appointment!.id
+      )
+    ).toBe(false)
   })
 
   it("credit notes are numbered per company and fiscal year, one after another", async () => {
