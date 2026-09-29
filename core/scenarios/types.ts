@@ -39,11 +39,17 @@ export type ScenarioKit = {
    * that branch is offline. Defaults to the launching persona.
    */
   db(personaId?: string): Promise<MedcoreDb>
-  /** Run a real command as a persona. Refusals throw (RuleViolation etc.). */
+  /**
+   * Run a real command as a persona. Refusals throw (RuleViolation etc.).
+   * It runs on that persona's store, or on `storeOf`'s: an HQ approver acting
+   * on a branch's records while that branch is offline (as if it happened
+   * before the cut; it replays with the branch's work on reconnect).
+   */
   run<S extends z.ZodType, O>(
     def: CommandDef<S, O>,
     input: z.input<S>,
-    as: string
+    as: string,
+    opts?: { storeOf?: string }
   ): Promise<O>
   /**
    * Direct writes in one engine commit named `demo.setup.<id>`, for what no

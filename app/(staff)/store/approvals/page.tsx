@@ -1,5 +1,6 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { ApprovalsScreen } from "@/modules/procurement/components/approvals-screen"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.store" phase={4} />
+/** "/store/approvals": the purchase request approvals inbox by value (plan §9). */
+export default function StoreApprovalsPage() {
+  return <ApprovalsScreen mode="store" />
 }

@@ -73,9 +73,10 @@ export function createKit(scenario: ScenarioDef): ScenarioKit {
     today: () => dhakaDate(now()),
     actor: (personaId) => actorFor(personaOf(personaId)),
     db: (personaId = target.id) => storeFor(personaOf(personaId).branchId),
-    async run(def, input, as) {
+    async run(def, input, as, opts) {
       const persona = personaOf(as)
-      const db = await storeFor(persona.branchId)
+      const store = opts?.storeOf ? personaOf(opts.storeOf) : persona
+      const db = await storeFor(store.branchId)
       return (await commit(def, input, { db, actor: actorFor(persona) })).result
     },
     async fixture<O>(

@@ -4,7 +4,12 @@ import {
   type BranchCode,
   type CompanyCode,
 } from "@/config/brand.config"
-import { counterKey, docNo, uhidFromSerial } from "@/core/db/numbering"
+import {
+  counterKey,
+  docNo,
+  uhidFromSerial,
+  type OfflineDocKind,
+} from "@/core/db/numbering"
 
 import type { Tx } from "./types"
 
@@ -70,13 +75,37 @@ export const nextCreditNoteNo = async (tx: Tx, branch: BranchCode) =>
   docNo.creditNote(branch, await tx.nextNumber(counterKey.creditNote(branch)))
 export const nextAdmissionNo = async (tx: Tx, branch: BranchCode) =>
   docNo.admission(branch, await tx.nextNumber(counterKey.admission(branch)))
-export const nextPurchaseRequestNo = async (tx: Tx) =>
-  docNo.purchaseRequest(await tx.nextNumber(counterKey.purchaseRequest()))
-export const nextPurchaseOrderNo = async (tx: Tx) =>
-  docNo.purchaseOrder(await tx.nextNumber(counterKey.purchaseOrder()))
-export const nextGrnNo = async (tx: Tx) =>
-  docNo.grn(await tx.nextNumber(counterKey.grn()))
-export const nextTransferNo = async (tx: Tx) =>
-  docNo.transfer(await tx.nextNumber(counterKey.transfer()))
-export const nextVendorInvoiceNo = async (tx: Tx) =>
-  docNo.vendorInvoice(await tx.nextNumber(counterKey.vendorInvoice()))
+/**
+ * Network-wide series (PR, PO, GRN, transfer, vendor invoice) share one
+ * counter across branches, so a branch working offline numbers from its own
+ * range instead (PO-B1-OFF-0001): the replayed documents can never collide
+ * with numbers central issued meanwhile (purchase order numbers are unique).
+ */
+async function networkDocNo(
+  tx: Tx,
+  kind: OfflineDocKind,
+  online: (n: number) => string
+): Promise<string> {
+  const branch = edgeBranch(tx)
+  if (branch) {
+    return docNo.offlineDoc(kind, branch, await tx.nextNumber(counterKey.offlineDoc(kind, branch)))
+  }
+  return online(await tx.nextNumber(ONLINE_KEY[kind]))
+}
+
+const ONLINE_KEY: Record<OfflineDocKind, string> = {
+  pr: counterKey.purchaseRequest(),
+  po: counterKey.purchaseOrder(),
+  grn: counterKey.grn(),
+  trf: counterKey.transfer(),
+  vinv: counterKey.vendorInvoice(),
+}
+
+export const nextPurchaseRequestNo = (tx: Tx) =>
+  networkDocNo(tx, "pr", docNo.purchaseRequest)
+export const nextPurchaseOrderNo = (tx: Tx) =>
+  networkDocNo(tx, "po", docNo.purchaseOrder)
+export const nextGrnNo = (tx: Tx) => networkDocNo(tx, "grn", docNo.grn)
+export const nextTransferNo = (tx: Tx) => networkDocNo(tx, "trf", docNo.transfer)
+export const nextVendorInvoiceNo = (tx: Tx) =>
+  networkDocNo(tx, "vinv", docNo.vendorInvoice)
