@@ -236,6 +236,8 @@ export const financeBn: typeof financeEn = {
         qty: "পরিমাণ",
         price: "একক দাম",
       },
+      perPack: "{pack}-এর প্রতি প্যাক",
+      perUnit: "প্রতি {unit}",
       option: {
         "pay-po-price": "মজুতে গ্রহণ করা পণ্যের দাম পিও-র দামে দেওয়া হবে: {amount}।",
         "accept-invoice": "ইনভয়েসে যা লেখা তা-ই দেওয়া হবে: {amount}।",

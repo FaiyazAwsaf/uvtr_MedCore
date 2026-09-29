@@ -150,9 +150,14 @@ describe("finance.resolveMismatch", () => {
     expect(resolved.resolvedAt).toBeGreaterThan(0)
     expect(resolved.approvalId).toBeUndefined()
     expect((await db.vendorInvoices.get(vendorInvoice.id))!.status).toBe("payable")
-    // Procurement owns the purchase order: untouched.
-    expect((await db.purchaseOrders.get(po.id))!).toEqual(poBefore)
-    expect(events.map((e) => e.type).sort()).toEqual(["MismatchResolved", "PayableCreated"])
+    // Fully received and now billed: procurement's rule closes the order in the same commit.
+    expect(poBefore.status).toBe("received")
+    expect((await db.purchaseOrders.get(po.id))!.status).toBe("closed")
+    expect(events.map((e) => e.type).sort()).toEqual([
+      "MismatchResolved",
+      "PayableCreated",
+      "PurchaseOrderClosed",
+    ])
 
     await expectRule(
       commit(

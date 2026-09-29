@@ -35,6 +35,7 @@ import { rules as config } from "@/config/rules.config"
 import { useDb } from "@/core/db/DbProvider"
 import { cn } from "@/lib/utils"
 import { useLocale } from "@/lib/i18n/provider"
+import { QtyText, unitWord } from "@/modules/procurement/components/bits"
 
 import { resolveMismatch } from "../commands"
 import { matchWorklist, type MatchView } from "../queries"
@@ -137,7 +138,7 @@ export function MatchScreen() {
 }
 
 function MismatchCard({ view, onResolve }: { view: MatchView; onResolve: (r: Resolution) => void }) {
-  const { t, tk, num, dec, locale } = useLocale()
+  const { t, tk, dec, locale } = useLocale()
   const invoice = view.vendorInvoice
   return (
     <article
@@ -200,7 +201,17 @@ function MismatchCard({ view, onResolve }: { view: MatchView; onResolve: (r: Res
         <TableBody>
           {view.diffs.map((diff, index) => {
             const pct = diffPct(diff)
-            const value = (n: number) => (diff.field === "price" ? <MoneyText poisha={n} /> : num(n))
+            const value = (n: number) =>
+              diff.field === "price" ? (
+                <MoneyText poisha={n} />
+              ) : (
+                <QtyText
+                  qty={n}
+                  pack={diff.pack}
+                  brand={diff.unitLabel ? { unitLabel: diff.unitLabel } : undefined}
+                  showUnits={false}
+                />
+              )
             return (
               <TableRow key={`${diff.poLineId}:${diff.field}:${index}`} data-testid="match-diff" data-field={diff.field}>
                 <TableCell className="max-w-48 truncate" lang="en">
@@ -208,6 +219,13 @@ function MismatchCard({ view, onResolve }: { view: MatchView; onResolve: (r: Res
                 </TableCell>
                 <TableCell className="hidden @min-[32rem]/mm:table-cell">
                   {tk(`finance.match.diff.${diff.field}`)}
+                  {diff.field === "price" ? (
+                    <span className="block text-xs text-muted-foreground">
+                      {diff.pack
+                        ? t("finance.match.perPack", { pack: diff.pack.label })
+                        : t("finance.match.perUnit", { unit: unitWord(diff.unitLabel, 1, locale) })}
+                    </span>
+                  ) : null}
                 </TableCell>
                 <TableCell className="text-right">{value(diff.po)}</TableCell>
                 <TableCell className="hidden text-right @min-[40rem]/mm:table-cell">{value(diff.grn)}</TableCell>

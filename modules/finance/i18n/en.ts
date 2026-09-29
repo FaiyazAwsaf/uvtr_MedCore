@@ -234,6 +234,8 @@ export const financeEn = {
         qty: "Quantity",
         price: "Unit price",
       },
+      perPack: "per pack of {pack}",
+      perUnit: "per {unit}",
       option: {
         "pay-po-price": "Pay what was accepted into stock at the PO price: {amount}.",
         "accept-invoice": "Pay the invoice as billed: {amount}.",

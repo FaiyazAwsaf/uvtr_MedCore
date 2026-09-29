@@ -1,4 +1,4 @@
-import { companies, type BranchCode, type CompanyCode } from "@/config/brand.config"
+import { companies, type Bilingual, type BranchCode, type CompanyCode } from "@/config/brand.config"
 import { rules } from "@/config/rules.config"
 import { addDaysISO, atDhaka, dhakaDate } from "@/core/clock/dates"
 import type { MedcoreDb } from "@/core/db/database"
@@ -14,6 +14,7 @@ import type {
   InvoiceRow,
   ISODate,
   MfsSettlementRow,
+  PackSize,
   PatientRow,
   PayableRow,
   PaymentRow,
@@ -329,7 +330,13 @@ export async function settlementDetail(
  * Three-way match worklist (/finance/match)
  * ------------------------------------------------------------------ */
 
-export type MatchDiffView = ThreeWayMatchRow["diffs"][number] & { item: string }
+export type MatchDiffView = ThreeWayMatchRow["diffs"][number] & {
+  item: string
+  /** The PO line's ordering pack: quantities count packs and prices are per pack */
+  pack?: PackSize
+  /** The brand's base unit ("tablet"), for loose quantities */
+  unitLabel?: Bilingual
+}
 
 export type MatchView = {
   match: ThreeWayMatchRow
@@ -366,10 +373,14 @@ export async function matchWorklist(
       await Promise.all(match.grnIds.map((id) => db.grnLines.where("grnId").equals(id).toArray()))
     ).flat()
     const brands = await db.brands.bulkGet(poLines.map((l) => l.brandId))
-    const itemOf = new Map(
+    const lineOf = new Map(
       poLines.map((line, index) => [
         line.id,
-        brands[index] ? `${brands[index]!.name} ${brands[index]!.strength}`.trim() : line.brandId,
+        {
+          item: brands[index] ? `${brands[index]!.name} ${brands[index]!.strength}`.trim() : line.brandId,
+          pack: line.pack,
+          unitLabel: brands[index]?.unitLabel,
+        },
       ])
     )
     const approval = match.approvalId ? await db.approvals.get(match.approvalId) : undefined
@@ -381,7 +392,10 @@ export async function matchWorklist(
       vendor: vendor?.name,
       grnNos: grns.map((g) => g?.grnNo ?? "").filter(Boolean),
       vendorInvoice,
-      diffs: match.diffs.map((diff) => ({ ...diff, item: itemOf.get(diff.poLineId) ?? diff.poLineId })),
+      diffs: match.diffs.map((diff) => ({
+        ...diff,
+        ...(lineOf.get(diff.poLineId) ?? { item: diff.poLineId }),
+      })),
       atPoPriceP: vendorInvoice
         ? payAtPoPriceP(vendorInvoice.lines, poLines, acceptedByPoLine(grnLines, match.grnIds))
         : 0,

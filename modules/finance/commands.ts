@@ -7,6 +7,7 @@ import type { Tx } from "@/core/engine/types"
 import type { ApprovalKind, Id, MfsSettlementRow, Poisha, Refs } from "@/core/db/schema"
 import { formatDmy } from "@/lib/i18n/format"
 import { spreadDiscount } from "@/modules/billing/pricing"
+import { closePoIfSettled } from "@/modules/procurement/commands"
 import { nextCreditNoteNo } from "@/modules/billing/refund-tx"
 import { moneyParams } from "@/modules/billing/settle"
 
@@ -267,8 +268,9 @@ export const noteSettlementLine = defineCommand({
  * three-way match. Pay at the PO price (what was accepted into stock at the
  * ordered price), accept the invoice as billed (outside tolerance: the CFO
  * decides, or approves inline), or reject it so the vendor reissues. The
- * match, the vendor invoice and the payable change together; purchase orders
- * are left as they are (procurement owns them).
+ * match, the vendor invoice and the payable change together, and
+ * procurement's `closePoIfSettled` closes the order in the same commit once
+ * it is fully received and billed; a rejected invoice leaves it open.
  */
 export const resolveMismatch = defineCommand({
   name: "finance.resolveMismatch",
@@ -337,6 +339,8 @@ export const resolveMismatch = defineCommand({
     } else {
       const payable = await createPayable(tx, { vendorInvoice, amountP: amountP! })
       payableId = payable.id
+      // Procurement's rule: the order closes once every line is received and billed.
+      await closePoIfSettled(tx, po)
     }
     tx.emit("MismatchResolved", {
       branchId: po.branchId,
