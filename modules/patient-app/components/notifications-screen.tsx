@@ -10,6 +10,7 @@ import {
   ChevronRight,
   FileText,
   FlaskConical,
+  Hourglass,
   Lock,
   Pill,
   ReceiptText,
@@ -40,6 +41,7 @@ const KIND_ICON: Record<string, React.ReactNode> = {
   tokenCalled: <BellRing className="size-5" />,
   paymentReceived: <ReceiptText className="size-5" />,
   sampleRecollection: <FlaskConical className="size-5" />,
+  doctorDelayed: <Hourglass className="size-5" />,
 }
 
 /** Notifications of the member on screen, newest first (held ones stay hidden until released). */
@@ -60,13 +62,23 @@ export function useNotificationText(): (n: NotificationRow) => {
   title: string
   detail: string
 } {
-  const { t, tk, locale, dmy, time } = useLocale()
+  const { t, tk, locale, dmy, time, num } = useLocale()
   return React.useCallback(
     (n: NotificationRow) => {
       const key = notificationTitleKey(n)
       const kind = key ? key.split(".").at(-1)! : null
-      const title = key ? tk(key, n.params) : t("patientApp.push.generic")
       const p = n.params ?? {}
+      if (kind === "doctorDelayed") {
+        // Scheduling writes { doctor, doctorBn, minutes }.
+        return {
+          title: tk(key!, {
+            doctor: String(locale === "bn" && p.doctorBn ? p.doctorBn : (p.doctor ?? "")),
+            minutes: typeof p.minutes === "number" ? num(p.minutes) : String(p.minutes ?? ""),
+          }),
+          detail: t("patientApp.delay.inboxDetail"),
+        }
+      }
+      const title = key ? tk(key, n.params) : t("patientApp.push.generic")
       let detail = t("patientApp.inbox.detail.generic")
       if (kind === "paymentReceived") {
         detail =
@@ -99,7 +111,7 @@ export function useNotificationText(): (n: NotificationRow) => {
       }
       return { title, detail }
     },
-    [t, tk, locale, dmy, time]
+    [t, tk, locale, dmy, time, num]
   )
 }
 

@@ -401,5 +401,18 @@ export const consultationEn = {
       VITALS_EMPTY: "Enter at least one vital sign.",
       VITALS_BP: "The diastolic pressure must be lower than the systolic.",
     },
+    scenarios: {
+      S4D: {
+        title: "S4, doctor window: decide the substitution",
+        summary:
+          "No silent substitution: the prescriber approves or rejects the pharmacist's request.",
+        cue: {
+          1: "Keep this window beside the pharmacist's window running S4.",
+          2: "When the pharmacist requests a substitute, it arrives here as a substitution item.",
+          3: "Open it: the Rx, the prescribed brand and the proposed brand of the same generic.",
+          4: "Approve: the Rx becomes version 2 and returns to the pharmacy queue. Or reject with a note.",
+        },
+      },
+    },
   },
 }

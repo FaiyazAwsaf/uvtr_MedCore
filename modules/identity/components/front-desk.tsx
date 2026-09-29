@@ -10,6 +10,7 @@ import { EmptyState } from "@/components/shared/empty-state"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useDb } from "@/core/db/DbProvider"
+import { SEED_REFS } from "@/core/seed/content/seed-refs"
 import { cn } from "@/lib/utils"
 import { useLocale } from "@/lib/i18n/provider"
 
@@ -41,10 +42,28 @@ function prefillFrom(query: string, dob: string): RegisterPrefill {
 }
 
 /**
+ * S1 (plan §10): the registration form prefilled with a spelling variant of
+ * the seeded "Md. Rafiqul Islam", same date of birth, a different phone.
+ */
+const S1_PREFILL: RegisterPrefill = {
+  nameEn: SEED_REFS.s1.variantNameEn,
+  nameBn: SEED_REFS.s1.variantNameBn,
+  dob: SEED_REFS.s1.dob,
+  phone: SEED_REFS.s1.variantPhone,
+  sex: "M",
+  idMissingReason: "not-brought",
+  household: "none",
+}
+
+/**
  * The front desk (plan §9 `/reception`): one search box for UHID, phone, NID,
  * BRN or name (English or Bangla) with an optional date of birth, the
  * household picker for shared phones, the picked patient's identity banner
  * with quick actions, and registration.
+ *
+ * Scenario launchers open it with `?r=<run>` plus `register=S1` (the S1 form),
+ * or `patient=<id>&edit=contact` (S16); a new run number re-applies them even
+ * when the window is already on this screen.
  */
 export function FrontDesk() {
   const db = useDb()
@@ -54,9 +73,36 @@ export function FrontDesk() {
   const [dob, setDob] = React.useState("")
   const [selectedId, setSelectedId] = React.useState<string | null>(() => params.get("patient"))
   const [resultsOpen, setResultsOpen] = React.useState(true)
-  const [register, setRegister] = React.useState<{ open: boolean; prefill?: RegisterPrefill }>({
-    open: params.get("register") === "1",
-  })
+  const [register, setRegister] = React.useState<{
+    open: boolean
+    prefill?: RegisterPrefill
+    key: number
+  }>({ open: params.get("register") === "1", key: 0 })
+  /** A scenario's form values, reused whenever the form opens empty on this visit */
+  const [scenarioPrefill, setScenarioPrefill] = React.useState<RegisterPrefill | undefined>()
+  const [editContactKey, setEditContactKey] = React.useState<string | null>(null)
+  const launch = params.get("r")
+  const [seenLaunch, setSeenLaunch] = React.useState<string | null>(null)
+  if (launch && launch !== seenLaunch) {
+    setSeenLaunch(launch)
+    if (params.get("register") === "S1") {
+      setScenarioPrefill(S1_PREFILL)
+      setRegister((current) => ({ open: true, prefill: S1_PREFILL, key: current.key + 1 }))
+    }
+    const patient = params.get("patient")
+    if (patient) {
+      setSelectedId(patient)
+      setResultsOpen(false)
+      setQuery("")
+    }
+    if (params.get("edit") === "contact") setEditContactKey(launch)
+  }
+  const openRegister = (prefill: RegisterPrefill) =>
+    setRegister((current) => ({
+      open: true,
+      prefill: !query.trim() && !dob && scenarioPrefill ? scenarioPrefill : prefill,
+      key: current.key + 1,
+    }))
   const deferredQuery = React.useDeferredValue(query)
 
   const result = useLiveQuery(
@@ -65,6 +111,12 @@ export function FrontDesk() {
   )
 
   React.useEffect(() => replaceParam("patient", selectedId), [selectedId])
+  React.useEffect(() => {
+    // A launch is applied once; a reload must not re-open its form.
+    if (!seenLaunch) return
+    replaceParam("r", null)
+    replaceParam("edit", null)
+  }, [seenLaunch])
 
   const pick = (patientId: string) => {
     setSelectedId(patientId)
@@ -88,7 +140,7 @@ export function FrontDesk() {
         actions={
           <Button
             data-testid="register-open"
-            onClick={() => setRegister({ open: true, prefill: prefillFrom(query, dob) })}
+            onClick={() => openRegister(prefillFrom(query, dob))}
           >
             <UserPlus />
             {t("identity.desk.registerNew")}
@@ -172,8 +224,10 @@ export function FrontDesk() {
             result={result}
             selectedId={selectedId}
             onPick={(patient) => pick(patient.id)}
-            onRegister={() => setRegister({ open: true, prefill: prefillFrom(query, dob) })}
-            onAddToHousehold={(phone) => setRegister({ open: true, prefill: { phone } })}
+            onRegister={() => openRegister(prefillFrom(query, dob))}
+            onAddToHousehold={(phone) =>
+              setRegister((current) => ({ open: true, prefill: { phone }, key: current.key + 1 }))
+            }
           />
         ) : null}
 
@@ -192,6 +246,7 @@ export function FrontDesk() {
             ) : null}
             <PatientPanel
               patientId={selectedId}
+              editContactKey={editContactKey}
               onSelect={pick}
               onClose={() => {
                 setSelectedId(null)
@@ -209,7 +264,7 @@ export function FrontDesk() {
               description={t("identity.desk.idleHint")}
               action={{
                 label: t("identity.desk.registerNew"),
-                onClick: () => setRegister({ open: true }),
+                onClick: () => openRegister({}),
               }}
             />
           </div>
@@ -219,6 +274,7 @@ export function FrontDesk() {
       <RegisterSheet
         open={register.open}
         prefill={register.prefill}
+        formKey={register.key}
         onOpenChange={(open) => {
           setRegister((current) => ({ ...current, open }))
           if (!open) replaceParam("register", null)

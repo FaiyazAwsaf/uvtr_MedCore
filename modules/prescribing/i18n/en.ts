@@ -252,5 +252,19 @@ export const prescribingEn = {
       SUBSTITUTION_DECIDED: "This substitution request was already decided.",
       TRANSFER_SAME_BRANCH: "Pick a different branch to transfer from.",
     },
+    scenarios: {
+      S2: {
+        title: "Out of stock: alternatives and transfer",
+        summary:
+          "Live stock on the Rx pad; alternatives only alphabetical; a transfer from another branch.",
+        cue: {
+          1: "On the Rx pad, search Zimax 500 for {name}.",
+          2: "It is out at Dhanmondi: the badge shows where it is in stock, such as Mirpur.",
+          3: "The alternatives list the same generic in other brands and strengths, alphabetical only, never by price or margin.",
+          4: "Choose Azithrocin 500, or request a transfer of Zimax from Mirpur (B3).",
+          5: "Set the dose, add the line and sign: the pharmacy queue and the cashier update live.",
+        },
+      },
+    },
   },
 }

@@ -274,6 +274,58 @@ export const demoEn = {
         approver: "Approver",
       },
     },
+    journey: {
+      J1: {
+        title: "Registration",
+        cue: {
+          1: "Search the family phone 01711-523418: the Karim household appears.",
+          2: "Pick Abdul Karim: his record opens with the penicillin allergy.",
+          3: "Book him with Dr. Kamal (J2).",
+        },
+      },
+      J2: {
+        title: "Booking and check-in",
+        cue: {
+          1: "Dr. Kamal is picked for Abdul: choose a free slot and confirm.",
+          2: "Check him in: his token joins the queue and the display board.",
+          3: "The doctor's worklist shows him live (J3).",
+        },
+      },
+      J3: {
+        title: "Consultation",
+        cue: {
+          1: "Abdul is checked in and waiting: start his consultation.",
+          2: "Record with the scribe and accept the draft; sign the note.",
+          3: "Prescribe: Moxacil meets the allergy alert; Zimax is out, pick an alternative.",
+          4: "Order CBC, CRP and a chest X-ray, then sign the Rx.",
+        },
+      },
+      J4: {
+        title: "Payment",
+        cue: {
+          1: "Abdul's consult, tests, X-ray and medicines are on his open bill.",
+          2: "Take part by bKash and the rest in cash.",
+          3: "Approve the bKash push: the lab and the pharmacy unlock.",
+        },
+      },
+      J5: {
+        title: "Lab",
+        cue: {
+          1: "Abdul's CBC and CRP are paid and waiting for collection.",
+          2: "Collect with the second identifier, then receive.",
+          3: "Run the analyser and validate the results.",
+          4: "The pathologist signs: the report reaches the doctor's inbox and the patient app.",
+        },
+      },
+      J6: {
+        title: "Pharmacy",
+        cue: {
+          1: "Abdul's paid prescription is open for dispensing.",
+          2: "Confirm his identity, then dispense: the earliest-expiry batch is used.",
+          3: "The Bangla labels print (simulated) and the app shows what was collected.",
+        },
+      },
+    },
     launchers: {
       S14: {
         title: "Branch offline",

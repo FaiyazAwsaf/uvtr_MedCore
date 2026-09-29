@@ -55,6 +55,10 @@ export type RegisterPrefill = {
   nameBn?: string
   phone?: string
   dob?: string
+  sex?: "M" | "F"
+  idMissingReason?: IdMissingReason
+  /** "none": don't offer to link a household for this number */
+  household?: "none"
 }
 
 /** How the sheet finished: a new patient, "same person" on the warning, or an existing record opened. */
@@ -92,15 +96,15 @@ function initialForm(prefill?: RegisterPrefill): Form {
     dobMode: "dob",
     dob: prefill?.dob ?? "",
     age: "",
-    sex: "",
+    sex: prefill?.sex ?? "",
     ownPhone: true,
     phone: prefill?.phone ?? "",
     attendantPhone: "",
     nid: "",
     brn: "",
     passport: "",
-    idMissingReason: "",
-    householdMode: "auto",
+    idMissingReason: prefill?.idMissingReason ?? "",
+    householdMode: prefill?.household ?? "auto",
     relation: "",
     guardianId: "",
     guardianRelation: "",
@@ -130,11 +134,14 @@ export function RegisterSheet({
   open,
   onOpenChange,
   prefill,
+  formKey,
   onDone,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   prefill?: RegisterPrefill
+  /** A new value starts the form again from `prefill` (even while open) */
+  formKey?: number
   onDone: (patientId: string, outcome: RegisterOutcome) => void
 }) {
   const { t } = useLocale()
@@ -151,6 +158,7 @@ export function RegisterSheet({
         </SheetHeader>
         {open ? (
           <RegisterForm
+            key={formKey}
             prefill={prefill}
             onCancel={() => onOpenChange(false)}
             onDone={(patientId, outcome) => {
