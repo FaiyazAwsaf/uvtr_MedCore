@@ -1,5 +1,6 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { ExportScreen } from "@/modules/finance/components/export-screen"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.finance" phase={4} />
+/** "/finance/export": the daily accounting journal per company, simulated export (plan §9). */
+export default function FinanceExportPage() {
+  return <ExportScreen />
 }

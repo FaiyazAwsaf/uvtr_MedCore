@@ -508,6 +508,8 @@ export type StatementLine = {
   accrual: FeeShareAccrualRow
   invoice?: InvoiceRow
   description?: string
+  /** The line's Bangla text, from its basket line (invoice lines keep English only) */
+  descriptionBn?: string
   /** Rule value (share %) for percentage bases */
   pct?: number
   reverses?: { invoiceNo?: string; at: number }
@@ -541,6 +543,7 @@ export async function feeShareStatement(
   const contractById = new Map<Id, FeeShareContractRow>(contracts.map((c) => [c.id, c]))
   const lines = await db.invoiceLines.bulkGet(accruals.map((a) => a.invoiceLineId))
   const invoices = await invoicesById(db, accruals.map((a) => a.invoiceId))
+  const baskets = await db.basketLines.bulkGet(lines.map((line) => line?.basketLineId ?? ""))
   const originalIds = accruals.map((a) => a.reversalOfId).filter((id): id is Id => !!id)
   const originals = await db.feeShareAccruals.bulkGet(originalIds)
   const originalById = new Map(originals.filter(Boolean).map((o) => [o!.id, o!]))
@@ -559,6 +562,7 @@ export async function feeShareStatement(
       accrual,
       invoice: invoices.get(accrual.invoiceId),
       description: line?.description,
+      descriptionBn: baskets[index]?.descriptionBn,
       pct: rule && rule.basis !== "fixed" ? rule.value : undefined,
       reverses: original
         ? { invoiceNo: invoices.get(original.invoiceId)?.invoiceNo, at: original.at }

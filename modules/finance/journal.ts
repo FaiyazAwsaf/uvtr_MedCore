@@ -1,6 +1,7 @@
 import type { CompanyCode } from "@/config/brand.config"
 import type { ISODate, Poisha, ServiceType, Tender } from "@/core/db/schema"
 
+import { csvCell } from "./csv"
 import { financeEn } from "./i18n/en"
 
 /**
@@ -295,10 +296,6 @@ export function journalFileName(companyId: CompanyCode, date: ISODate): string {
 }
 
 const takaText = (poisha: Poisha) => (poisha / 100).toFixed(2)
-
-function csvCell(value: string): string {
-  return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
-}
 
 /** The account's name in English (accounting systems take the ledger in English). */
 export function accountNameEn(account: AccountKey): string {
