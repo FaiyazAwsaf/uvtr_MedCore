@@ -1,5 +1,6 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { MatchScreen } from "@/modules/finance/components/match-screen"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.finance" phase={4} />
+/** "/finance/match": the three-way match worklist (plan §9). */
+export default function FinanceMatchPage() {
+  return <MatchScreen />
 }

@@ -1,5 +1,6 @@
-import { StubPage } from "@/components/shared/stub-page"
+import { FeeShareScreen } from "@/modules/finance/components/fee-share-screen"
 
-export default function Page() {
-  return <StubPage sectionKey="shell.section.finance" phase={4} />
+/** "/finance/fee-share": a consultant's fee-share statement for a month (plan §9). */
+export default function FinanceFeeSharePage() {
+  return <FeeShareScreen />
 }
