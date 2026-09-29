@@ -185,6 +185,16 @@ describe("finance.matchSettlementLine and finance.noteSettlementLine", () => {
     expect(detail.lines.filter((l) => l.payment).every((l) => l.candidates.length === 0)).toBe(true)
   })
 
+  it("the bKash line recorded as cash at the counter offers the seeded ৳650 cash bill from yesterday at B1", async () => {
+    const detail = (await settlementDetail(db, BKASH))!
+    const line = detail.lines.find((l) => l.line.ref === "BK7QM2K9TD")!
+    expect(line.payment).toBeUndefined()
+    const planted = line.candidates.find(
+      (c) => c.kind === "cash" && c.payment.branchId === "B1" && c.payment.amountP === 650_00
+    )
+    expect(planted).toBeDefined()
+  })
+
   it("a note marks a line under investigation without matching it", async () => {
     const bkash = await file(BKASH)
     const { events } = await commit(

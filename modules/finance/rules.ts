@@ -36,11 +36,8 @@ import { feeShareAmounts, feeShareRuleFor } from "@/modules/billing/pricing"
  */
 export const CFO_AUTHORITY = "approve:pr:unlimited"
 
-/**
- * A corporate credit note above this needs the CFO (PRD §10.10, CONFIRM:
- * HOSPITAL). Kept here until it moves to config/rules.config.ts.
- */
-export const CORPORATE_CN_CFO_LIMIT_P: Poisha = 5_000_00
+/** A corporate credit note above this needs the CFO (rules.config.ts). */
+export const CORPORATE_CN_CFO_LIMIT_P: Poisha = rules.corporate.creditNoteCfoLimitP
 
 export function holdsCfo(authorities: readonly string[]): boolean {
   return authorities.includes("*") || authorities.includes(CFO_AUTHORITY)

@@ -46,8 +46,12 @@ export const rules = {
     discountBearer: "pro-rata",
   },
 
-  /** PRD §10.10. Corporate contracts. */
-  corporate: { coPayPct: 20, annualLimitPerEmployeeP: taka(50_000) },
+  /** PRD §10.10. Corporate contracts. A credit note on a disputed company share above `creditNoteCfoLimitP` needs the CFO (CONFIRM: HOSPITAL). */
+  corporate: {
+    coPayPct: 20,
+    annualLimitPerEmployeeP: taka(50_000),
+    creditNoteCfoLimitP: taka(5_000),
+  },
 
   /** PRD §19. A pending bKash or Nagad payment times out after this; it never unlocks work. */
   mfsPendingTimeoutMin: 15,
